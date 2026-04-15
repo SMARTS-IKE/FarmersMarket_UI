@@ -1,25 +1,114 @@
+@import "tailwindcss";
+
 :root {
-  --text: #6b6375;
-  --text-h: #08060d;
-  --bg: #fff;
-  --border: #e5e4e7;
-  --code-bg: #f4f3ec;
-  --accent: #aa3bff;
-  --accent-bg: rgba(170, 59, 255, 0.1);
-  --accent-border: rgba(170, 59, 255, 0.5);
-  --social-bg: rgba(244, 243, 236, 0.5);
-  --shadow:
-    rgba(0, 0, 0, 0.1) 0 10px 15px -3px, rgba(0, 0, 0, 0.05) 0 4px 6px -2px;
+  /* ─── Farmers Market Theme — Light ─────────────────────────── */
 
-  --sans: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --heading: system-ui, 'Segoe UI', Roboto, sans-serif;
-  --mono: ui-monospace, Consolas, monospace;
+  /* Surface & text */
+  --color-bg:            #fdf8f0;
+  --color-bg-subtle:     #f5ede0;
+  --color-surface:       #ffffff;
+  --color-border:        #d9c9b0;
+  --color-border-subtle: #ede0cc;
+  --color-text:          #4a3f35;
+  --color-text-heading:  #1c1208;
+  --color-text-muted:    #8c7b6b;
+  --color-code-bg:       #f0e8d8;
 
-  font: 18px/145% var(--sans);
-  letter-spacing: 0.18px;
+  /* Primary — herb green (main CTAs, links, focus rings) */
+  --color-primary:           #3a7d44;
+  --color-primary-hover:     #2e6336;
+  --color-primary-active:    #245229;
+  --color-primary-subtle:    rgba(58, 125, 68, 0.10);
+  --color-primary-border:    rgba(58, 125, 68, 0.40);
+  --color-primary-fg:        #ffffff;
+
+  /* Secondary — harvest amber (badges, tags, accents) */
+  --color-secondary:         #b45309;
+  --color-secondary-hover:   #92400e;
+  --color-secondary-active:  #78350f;
+  --color-secondary-subtle:  rgba(180, 83, 9, 0.10);
+  --color-secondary-border:  rgba(180, 83, 9, 0.40);
+  --color-secondary-fg:      #ffffff;
+
+  /* Danger — tomato red (errors, destructive actions) */
+  --color-danger:            #c0392b;
+  --color-danger-hover:      #a93226;
+  --color-danger-active:     #922b21;
+  --color-danger-subtle:     rgba(192, 57, 43, 0.10);
+  --color-danger-border:     rgba(192, 57, 43, 0.40);
+  --color-danger-fg:         #ffffff;
+
+  /* Warning — sunflower yellow (cautions, low-stock) */
+  --color-warning:           #d97706;
+  --color-warning-hover:     #b45309;
+  --color-warning-active:    #92400e;
+  --color-warning-subtle:    rgba(217, 119, 6, 0.10);
+  --color-warning-border:    rgba(217, 119, 6, 0.40);
+  --color-warning-fg:        #ffffff;
+
+  /* Success — leafy green (confirmations, in-stock) */
+  --color-success:           #2d8a4e;
+  --color-success-hover:     #226e3e;
+  --color-success-active:    #185530;
+  --color-success-subtle:    rgba(45, 138, 78, 0.10);
+  --color-success-border:    rgba(45, 138, 78, 0.40);
+  --color-success-fg:        #ffffff;
+
+  /* Info — sky blue (informational messages) */
+  --color-info:              #0369a1;
+  --color-info-hover:        #075985;
+  --color-info-active:       #0c4a6e;
+  --color-info-subtle:       rgba(3, 105, 161, 0.10);
+  --color-info-border:       rgba(3, 105, 161, 0.40);
+  --color-info-fg:           #ffffff;
+
+  /* Dark — espresso brown (dark buttons, footer) */
+  --color-dark:              #2c1f14;
+  --color-dark-hover:        #1a1208;
+  --color-dark-fg:           #f5ede0;
+
+  /* Light — warm cream (light buttons, chips) */
+  --color-light:             #f5ede0;
+  --color-light-hover:       #ead9c4;
+  --color-light-fg:          #4a3f35;
+
+  /* Shadows */
+  --shadow-sm:   rgba(60, 40, 10, 0.06) 0 1px 3px 0;
+  --shadow:      rgba(60, 40, 10, 0.08) 0 4px 12px -2px,
+                 rgba(60, 40, 10, 0.05) 0 2px 4px -1px;
+  --shadow-lg:   rgba(60, 40, 10, 0.12) 0 10px 24px -4px,
+                 rgba(60, 40, 10, 0.06) 0 4px 8px -2px;
+
+  /* Typography */
+  --font-sans:    'Georgia', 'Cambria', system-ui, serif;
+  --font-heading: 'Georgia', 'Cambria', system-ui, serif;
+  --font-mono:    ui-monospace, Consolas, monospace;
+
+  /* Spacing scale */
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+
+  /* Border radius */
+  --radius-sm: 4px;
+  --radius:    8px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+
+  /* Transitions */
+  --transition: 150ms ease;
+
+  font: 18px/150% var(--font-sans);
+  letter-spacing: 0.12px;
   color-scheme: light dark;
-  color: var(--text);
-  background: var(--bg);
+  color: var(--color-text);
+  background: var(--color-bg);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -32,21 +121,82 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --text: #9ca3af;
-    --text-h: #f3f4f6;
-    --bg: #16171d;
-    --border: #2e303a;
-    --code-bg: #1f2028;
-    --accent: #c084fc;
-    --accent-bg: rgba(192, 132, 252, 0.15);
-    --accent-border: rgba(192, 132, 252, 0.5);
-    --social-bg: rgba(47, 48, 58, 0.5);
-    --shadow:
-      rgba(0, 0, 0, 0.4) 0 10px 15px -3px, rgba(0, 0, 0, 0.25) 0 4px 6px -2px;
-  }
+    /* ─── Farmers Market Theme — Dark ──────────────────────────── */
 
-  #social .button-icon {
-    filter: invert(1) brightness(2);
+    /* Surface & text */
+    --color-bg:            #1a1510;
+    --color-bg-subtle:     #241d14;
+    --color-surface:       #2a2018;
+    --color-border:        #3d3020;
+    --color-border-subtle: #302415;
+    --color-text:          #c4b89f;
+    --color-text-heading:  #f5ede0;
+    --color-text-muted:    #7a6e5e;
+    --color-code-bg:       #2a2018;
+
+    /* Primary */
+    --color-primary:           #5ba565;
+    --color-primary-hover:     #6dbf78;
+    --color-primary-active:    #7fd98c;
+    --color-primary-subtle:    rgba(91, 165, 101, 0.15);
+    --color-primary-border:    rgba(91, 165, 101, 0.45);
+    --color-primary-fg:        #0d1f10;
+
+    /* Secondary */
+    --color-secondary:         #f59e0b;
+    --color-secondary-hover:   #fbbf24;
+    --color-secondary-active:  #fcd34d;
+    --color-secondary-subtle:  rgba(245, 158, 11, 0.12);
+    --color-secondary-border:  rgba(245, 158, 11, 0.40);
+    --color-secondary-fg:      #1c1208;
+
+    /* Danger */
+    --color-danger:            #e05c4b;
+    --color-danger-hover:      #ea7160;
+    --color-danger-active:     #f28676;
+    --color-danger-subtle:     rgba(224, 92, 75, 0.12);
+    --color-danger-border:     rgba(224, 92, 75, 0.40);
+    --color-danger-fg:         #1c0a08;
+
+    /* Warning */
+    --color-warning:           #fbbf24;
+    --color-warning-hover:     #fcd34d;
+    --color-warning-active:    #fde68a;
+    --color-warning-subtle:    rgba(251, 191, 36, 0.12);
+    --color-warning-border:    rgba(251, 191, 36, 0.40);
+    --color-warning-fg:        #1c1208;
+
+    /* Success */
+    --color-success:           #4ade80;
+    --color-success-hover:     #6ee7a0;
+    --color-success-active:    #86efb4;
+    --color-success-subtle:    rgba(74, 222, 128, 0.12);
+    --color-success-border:    rgba(74, 222, 128, 0.40);
+    --color-success-fg:        #052e16;
+
+    /* Info */
+    --color-info:              #38bdf8;
+    --color-info-hover:        #7dd3fc;
+    --color-info-active:       #bae6fd;
+    --color-info-subtle:       rgba(56, 189, 248, 0.12);
+    --color-info-border:       rgba(56, 189, 248, 0.40);
+    --color-info-fg:           #082f49;
+
+    /* Dark / Light */
+    --color-dark:              #f5ede0;
+    --color-dark-hover:        #ead9c4;
+    --color-dark-fg:           #1a1510;
+
+    --color-light:             #2a2018;
+    --color-light-hover:       #3d3020;
+    --color-light-fg:          #c4b89f;
+
+    /* Shadows */
+    --shadow-sm:   rgba(0, 0, 0, 0.25) 0 1px 3px 0;
+    --shadow:      rgba(0, 0, 0, 0.40) 0 4px 12px -2px,
+                   rgba(0, 0, 0, 0.25) 0 2px 4px -1px;
+    --shadow-lg:   rgba(0, 0, 0, 0.55) 0 10px 24px -4px,
+                   rgba(0, 0, 0, 0.30) 0 4px 8px -2px;
   }
 }
 
@@ -59,7 +209,7 @@ body {
   max-width: 100%;
   margin: 0 auto;
   text-align: center;
-  border-inline: 1px solid var(--border);
+  border-inline: 1px solid var(--color-border);
   min-height: 100svh;
   display: flex;
   flex-direction: column;
@@ -68,9 +218,9 @@ body {
 
 h1,
 h2 {
-  font-family: var(--heading);
+  font-family: var(--font-heading);
   font-weight: 500;
-  color: var(--text-h);
+  color: var(--color-text-heading);
 }
 
 h1 {
@@ -97,15 +247,73 @@ p {
 
 code,
 .counter {
-  font-family: var(--mono);
+  font-family: var(--font-mono);
   display: inline-flex;
-  border-radius: 4px;
-  color: var(--text-h);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-heading);
 }
 
 code {
   font-size: 15px;
   line-height: 135%;
   padding: 4px 8px;
-  background: var(--code-bg);
+  background: var(--color-code-bg);
 }
+
+/* ─── Background utilities ──────────────────────────────────────── */
+.bg-primary          { background-color: var(--color-primary); }
+.bg-primary-subtle   { background-color: var(--color-primary-subtle); }
+.bg-secondary        { background-color: var(--color-secondary); }
+.bg-secondary-subtle { background-color: var(--color-secondary-subtle); }
+.bg-danger           { background-color: var(--color-danger); }
+.bg-danger-subtle    { background-color: var(--color-danger-subtle); }
+.bg-warning          { background-color: var(--color-warning); }
+.bg-warning-subtle   { background-color: var(--color-warning-subtle); }
+.bg-success          { background-color: var(--color-success); }
+.bg-success-subtle   { background-color: var(--color-success-subtle); }
+.bg-info             { background-color: var(--color-info); }
+.bg-info-subtle      { background-color: var(--color-info-subtle); }
+.bg-dark             { background-color: var(--color-dark); }
+.bg-light            { background-color: var(--color-light); }
+.bg-surface          { background-color: var(--color-surface); }
+.bg-base             { background-color: var(--color-bg); }
+.bg-subtle           { background-color: var(--color-bg-subtle); }
+
+/* ─── Text utilities ────────────────────────────────────────────── */
+.text-primary          { color: var(--color-primary); }
+.text-primary-fg       { color: var(--color-primary-fg); }
+.text-secondary        { color: var(--color-secondary); }
+.text-secondary-fg     { color: var(--color-secondary-fg); }
+.text-danger           { color: var(--color-danger); }
+.text-danger-fg        { color: var(--color-danger-fg); }
+.text-warning          { color: var(--color-warning); }
+.text-warning-fg       { color: var(--color-warning-fg); }
+.text-success          { color: var(--color-success); }
+.text-success-fg       { color: var(--color-success-fg); }
+.text-info             { color: var(--color-info); }
+.text-info-fg          { color: var(--color-info-fg); }
+.text-dark             { color: var(--color-dark); }
+.text-dark-fg          { color: var(--color-dark-fg); }
+.text-light            { color: var(--color-light); }
+.text-light-fg         { color: var(--color-light-fg); }
+.text-base             { color: var(--color-text); }
+.text-heading          { color: var(--color-text-heading); }
+.text-muted            { color: var(--color-text-muted); }
+
+/* ─── Border utilities ──────────────────────────────────────────── */
+.border-primary          { border-color: var(--color-primary-border); }
+.border-primary-solid    { border-color: var(--color-primary); }
+.border-secondary        { border-color: var(--color-secondary-border); }
+.border-secondary-solid  { border-color: var(--color-secondary); }
+.border-danger           { border-color: var(--color-danger-border); }
+.border-danger-solid     { border-color: var(--color-danger); }
+.border-warning          { border-color: var(--color-warning-border); }
+.border-warning-solid    { border-color: var(--color-warning); }
+.border-success          { border-color: var(--color-success-border); }
+.border-success-solid    { border-color: var(--color-success); }
+.border-info             { border-color: var(--color-info-border); }
+.border-info-solid       { border-color: var(--color-info); }
+.border-dark             { border-color: var(--color-dark); }
+.border-light            { border-color: var(--color-light); }
+.border-base             { border-color: var(--color-border); }
+.border-subtle           { border-color: var(--color-border-subtle); }
