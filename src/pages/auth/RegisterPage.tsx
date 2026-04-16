@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useNavigate, Link } from '@tanstack/react-router';
-import { register } from '../../services/authService';
+import { setAuthNotification } from '../../lib/authNotifications';
 import type { RegisterCredentials } from '../../models/auth';
+import { useRegisterMutation } from '../../queries/authQueries';
 
 const ROLES = [
   { value: 'farmer', label: 'Παραγωγός' },
   { value: 'buyer', label: 'Αγοραστής' },
-  { value: 'admin', label: 'Διαχειριστής' },
+  { value: 'SystemAdmin', label: 'Διαχειριστής' },
 ];
 
 const inputClass =
@@ -22,8 +23,8 @@ export default function RegisterPage() {
   });
   const [repeatPassword, setRepeatPassword] = useState('');
   const [errors, setErrors] = useState<Partial<Record<keyof RegisterCredentials | 'repeatPassword' | 'form', string>>>({});
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const registerMutation = useRegisterMutation();
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -31,13 +32,18 @@ export default function RegisterPage() {
     const next: typeof errors = {};
 
     if (!form.firstName.trim())  next.firstName     = 'Το όνομα είναι υποχρεωτικό';
+    
     if (!form.lastName.trim())   next.lastName      = 'Το επώνυμο είναι υποχρεωτικό';
+    
     if (!form.email.trim())      next.email         = 'Το email είναι υποχρεωτικό';
     else if (!EMAIL_RE.test(form.email)) next.email = 'Μη έγκυρη διεύθυνση email';
+    
     if (!form.password)          next.password      = 'Ο κωδικός είναι υποχρεωτικός';
+    
     if (!repeatPassword)         next.repeatPassword = 'Επαναλάβετε τον κωδικό';
     else if (form.password && form.password !== repeatPassword)
                                  next.repeatPassword = 'Οι κωδικοί δεν ταιριάζουν';
+
     if (!form.role)              next.role          = 'Επιλέξτε ρόλο';
 
     setErrors(next);
@@ -54,14 +60,17 @@ export default function RegisterPage() {
     e.preventDefault();
     if (!validate()) return;
 
-    setLoading(true);
     try {
-      await register(form);
+      await registerMutation.mutateAsync(form);
+      setAuthNotification({
+        type: 'success',
+        message: 'Η εγγραφή ολοκληρώθηκε επιτυχώς. Μπορείτε τώρα να συνδεθείτε.',
+      });
       navigate({ to: '/auth/login' });
     } catch (err) {
-      setErrors({ form: err instanceof Error ? err.message : 'Η εγγραφή απέτυχε' });
-    } finally {
-      setLoading(false);
+      const message = err instanceof Error ? err.message : 'Η εγγραφή απέτυχε';
+      setErrors({ form: message });
+      setAuthNotification({ type: 'error', message });
     }
   }
 
@@ -135,45 +144,50 @@ export default function RegisterPage() {
           {errors.email && <p className="text-xs text-(--color-danger) mt-1">{errors.email}</p>}
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="password" className="text-sm font-semibold text-(--color-text-heading)">
-            Κωδικός πρόσβασης
-          </label>
-          <input
-            id="password"
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            required
-            value={form.password}
-            onChange={handleChange}
-            placeholder="••••••••"
-            className={`${inputClass} ${errors.password ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
-          />
-          {errors.password && <p className="text-xs text-(--color-danger) mt-1">{errors.password}</p>}
+        <div className="flex flex-row gap-1">
+            <div>
+              <label htmlFor="password" className="text-sm font-semibold text-(--color-text-heading)">
+                Κωδικός πρόσβασης
+              </label>
+              <input
+                id="password"
+                name="password"
+                type="password"
+                autoComplete="new-password"
+                required
+                value={form.password}
+                onChange={handleChange}
+                placeholder="••••••••"
+                className={`${inputClass} ${errors.password ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
+              />
+                {errors.password && <p className="text-xs text-(--color-danger) mt-1">{errors.password}</p>}
+            </div>
+          
+
+            <div>
+              <label htmlFor="repeatPassword" className="text-sm font-semibold text-(--color-text-heading)">
+                Επανάληψη κωδικού
+              </label>
+              <input
+                id="repeatPassword"
+                type="password"
+                autoComplete="new-password"
+                required
+                value={repeatPassword}
+                onChange={(e) => {
+                  setRepeatPassword(e.target.value);
+                  setErrors((prev) => ({ ...prev, repeatPassword: undefined }));
+                }}
+                placeholder="••••••••"
+                className={`${inputClass} ${errors.repeatPassword ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
+              />
+              {errors.repeatPassword && (
+                <p className="text-xs text-(--color-danger) mt-1">{errors.repeatPassword}</p>
+              )}
+            </div>
         </div>
 
-        <div className="flex flex-col gap-1">
-          <label htmlFor="repeatPassword" className="text-sm font-semibold text-(--color-text-heading)">
-            Επανάληψη κωδικού
-          </label>
-          <input
-            id="repeatPassword"
-            type="password"
-            autoComplete="new-password"
-            required
-            value={repeatPassword}
-            onChange={(e) => {
-              setRepeatPassword(e.target.value);
-              setErrors((prev) => ({ ...prev, repeatPassword: undefined }));
-            }}
-            placeholder="••••••••"
-            className={`${inputClass} ${errors.repeatPassword ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
-          />
-          {errors.repeatPassword && (
-            <p className="text-xs text-(--color-danger) mt-1">{errors.repeatPassword}</p>
-          )}
-        </div>
+        
 
         <div className="flex flex-col gap-1">
           <label htmlFor="role" className="text-sm font-semibold text-(--color-text-heading)">
@@ -199,10 +213,10 @@ export default function RegisterPage() {
 
         <button
           type="submit"
-          disabled={loading}
+          disabled={registerMutation.isPending}
           className="mt-2 w-full py-3 px-4 text-[15px] font-semibold rounded-lg bg-(--color-primary) text-(--color-primary-fg) transition hover:bg-(--color-primary-hover) active:bg-(--color-primary-active) disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
         >
-          {loading ? 'Εγγραφή…' : 'Εγγραφή'}
+          {registerMutation.isPending ? 'Εγγραφή…' : 'Εγγραφή'}
         </button>
       </form>
 

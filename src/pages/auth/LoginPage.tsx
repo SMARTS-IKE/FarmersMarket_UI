@@ -1,25 +1,36 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from '@tanstack/react-router';
 import { login } from '../../services/authService';
+import { consumeAuthNotification } from '../../lib/authNotifications';
 import { useAuthStore } from '../../store/authStore';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const setAuth = useAuthStore((s) => s.setAuth);
   const navigate = useNavigate();
 
+  useEffect(() => {
+    const notification = consumeAuthNotification();
+
+    if (notification?.type === 'success') {
+      setSuccessMessage(notification.message);
+    }
+  }, []);
+
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setError('');
+    setSuccessMessage('');
     setLoading(true);
 
     try {
       const data = await login({ email, password });
       setAuth(data);
-      navigate({ to: '/dashboard' });
+      navigate({ to: '/admin' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {
@@ -32,6 +43,15 @@ export default function LoginPage() {
       <p className="text-sm text-(--color-text-muted) text-center mb-6">Είσοδος στο λογαριασμό σας</p>
 
       <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
+        {successMessage && (
+          <div
+            className="rounded-lg border border-emerald-300 bg-emerald-50 px-4 py-3 text-sm text-emerald-700"
+            role="status"
+          >
+            {successMessage}
+          </div>
+        )}
+
         {error && (
           <div
             className="bg-danger-subtle border border-(--color-danger-border) text-danger rounded-lg px-4 py-3 text-sm"

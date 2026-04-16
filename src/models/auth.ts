@@ -13,6 +13,8 @@ export interface RegisterCredentials {
 
 export interface AuthResponse {
   token: string;
+  email?: string;
+  roles?: string[];
   user?: User;
   [key: string]: unknown;
 }
@@ -21,5 +23,7 @@ export interface User {
   id?: string | number;
   name?: string;
   email?: string;
+  role?: string;
+  roles?: string[];
   [key: string]: unknown;
 }
