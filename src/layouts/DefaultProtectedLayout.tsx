@@ -13,7 +13,7 @@ export default function DefaultProtectedLayout({ children }: DefaultProtectedLay
   return (
     <div className="min-h-svh bg-(--color-bg) px-4 py-6 md:px-6">
       <div className="mx-auto flex min-h-[calc(100svh-3rem)] w-full max-w-7xl flex-col gap-6 rounded-[28px] border border-(--color-border) bg-(--color-surface) p-6 shadow-[var(--shadow-lg)] md:p-8">
-        <header className="flex items-center justify-between gap-4 border-b border-(--color-border-subtle) pb-5">
+        <header className="flex items-center justify-between gap-4 rounded-2xl bg-(--color-bg-header-footer) px-6 py-4 mb-2">
           <div>
             <p className="text-xs font-semibold uppercase tracking-[0.28em] text-(--color-text-muted)">
               Farmers Market

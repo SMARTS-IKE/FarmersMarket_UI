@@ -1,18 +1,20 @@
 @import "tailwindcss";
 
 :root {
-  /* ─── Farmers Market Theme — Light ─────────────────────────── */
+  /* ─── Farmers Market Theme ─────────────────────────── */
 
   /* Surface & text */
+  --color-bg-header-footer: #d3b9a1;
   --color-bg:            #fdf8f0;
-  --color-bg-subtle:     #f5ede0;
-  --color-surface:       #ffffff;
+  --color-bg-subtle:     #9f9c98;
+  --color-surface:       #f1efd5;
   --color-border:        #d9c9b0;
   --color-border-subtle: #ede0cc;
   --color-text:          #4a3f35;
   --color-text-heading:  #1c1208;
   --color-text-muted:    #8c7b6b;
   --color-code-bg:       #f0e8d8;
+  --color-text-subtle:   #78350f;
 
   /* Primary — herb green (main CTAs, links, focus rings) */
   --color-primary:           #3a7d44;
@@ -118,87 +120,6 @@
   }
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    /* ─── Farmers Market Theme — Dark ──────────────────────────── */
-
-    /* Surface & text */
-    --color-bg:            #1a1510;
-    --color-bg-subtle:     #241d14;
-    --color-surface:       #2a2018;
-    --color-border:        #3d3020;
-    --color-border-subtle: #302415;
-    --color-text:          #c4b89f;
-    --color-text-heading:  #f5ede0;
-    --color-text-muted:    #7a6e5e;
-    --color-code-bg:       #2a2018;
-
-    /* Primary */
-    --color-primary:           #5ba565;
-    --color-primary-hover:     #6dbf78;
-    --color-primary-active:    #7fd98c;
-    --color-primary-subtle:    rgba(91, 165, 101, 0.15);
-    --color-primary-border:    rgba(91, 165, 101, 0.45);
-    --color-primary-fg:        #0d1f10;
-
-    /* Secondary */
-    --color-secondary:         #f59e0b;
-    --color-secondary-hover:   #fbbf24;
-    --color-secondary-active:  #fcd34d;
-    --color-secondary-subtle:  rgba(245, 158, 11, 0.12);
-    --color-secondary-border:  rgba(245, 158, 11, 0.40);
-    --color-secondary-fg:      #1c1208;
-
-    /* Danger */
-    --color-danger:            #e05c4b;
-    --color-danger-hover:      #ea7160;
-    --color-danger-active:     #f28676;
-    --color-danger-subtle:     rgba(224, 92, 75, 0.12);
-    --color-danger-border:     rgba(224, 92, 75, 0.40);
-    --color-danger-fg:         #1c0a08;
-
-    /* Warning */
-    --color-warning:           #fbbf24;
-    --color-warning-hover:     #fcd34d;
-    --color-warning-active:    #fde68a;
-    --color-warning-subtle:    rgba(251, 191, 36, 0.12);
-    --color-warning-border:    rgba(251, 191, 36, 0.40);
-    --color-warning-fg:        #1c1208;
-
-    /* Success */
-    --color-success:           #4ade80;
-    --color-success-hover:     #6ee7a0;
-    --color-success-active:    #86efb4;
-    --color-success-subtle:    rgba(74, 222, 128, 0.12);
-    --color-success-border:    rgba(74, 222, 128, 0.40);
-    --color-success-fg:        #052e16;
-
-    /* Info */
-    --color-info:              #38bdf8;
-    --color-info-hover:        #7dd3fc;
-    --color-info-active:       #bae6fd;
-    --color-info-subtle:       rgba(56, 189, 248, 0.12);
-    --color-info-border:       rgba(56, 189, 248, 0.40);
-    --color-info-fg:           #082f49;
-
-    /* Dark / Light */
-    --color-dark:              #f5ede0;
-    --color-dark-hover:        #ead9c4;
-    --color-dark-fg:           #1a1510;
-
-    --color-light:             #2a2018;
-    --color-light-hover:       #3d3020;
-    --color-light-fg:          #c4b89f;
-
-    /* Shadows */
-    --shadow-sm:   rgba(0, 0, 0, 0.25) 0 1px 3px 0;
-    --shadow:      rgba(0, 0, 0, 0.40) 0 4px 12px -2px,
-                   rgba(0, 0, 0, 0.25) 0 2px 4px -1px;
-    --shadow-lg:   rgba(0, 0, 0, 0.55) 0 10px 24px -4px,
-                   rgba(0, 0, 0, 0.30) 0 4px 8px -2px;
-  }
-}
-
 body {
   margin: 0;
 }
@@ -278,6 +199,7 @@ p {
 .text-base             { color: var(--color-text); }
 .text-heading          { color: var(--color-text-heading); }
 .text-muted            { color: var(--color-text-muted); }
+.text-subtle           { color: var(--color-text-subtle); }
 
 /* ─── Border utilities ──────────────────────────────────────────── */
 .border-primary          { border-color: var(--color-primary-border); }

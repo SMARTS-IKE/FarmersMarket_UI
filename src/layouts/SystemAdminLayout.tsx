@@ -17,9 +17,9 @@ export default function SystemAdminLayout() {
   }
 
   return (
-    <div className="min-h-svh px-3 py-4 md:px-6 md:py-6">
-      <div className="mx-auto flex min-h-[calc(100svh-2rem)] w-full flex-col overflow-visible border border-(--color-border) bg-(--color-surface) shadow-[var(--shadow-lg)] md:min-h-[calc(100svh-3rem)] md:overflow-hidden">
-        <header className="border-b border-(--color-border-subtle) bg-(--color-surface)/95 px-4 py-4 backdrop-blur md:px-6">
+    <div className="min-h-svh">
+      <div className="flex min-h-svh w-full flex-col overflow-visible border border-(--color-border) bg-(--color-surface) shadow-[var(--shadow-lg)] md:overflow-hidden">
+        <header className="border-b border-(--color-text-muted) bg-(--color-bg-header-footer)/95 px-4 py-4 backdrop-blur md:px-6">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
 
             <nav className="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center lg:flex-1" aria-label="System admin sections">
@@ -64,14 +64,14 @@ export default function SystemAdminLayout() {
         </header>
 
         <div className="grid flex-1 gap-px bg-(--color-border-subtle) lg:grid-cols-[240px_minmax(0,1fr)_280px]">
-          <aside className="bg-(--color-bg-subtle) px-4 py-3 md:flex md:flex-col md:justify-between md:p-6">
+          <aside className="bg-(--color-bg-subtle) px-3 py-3 md:flex md:flex-col md:justify-between ">
             <div className="flex flex-col gap-2 md:gap-4">
               <div>
-                <p className="text-xs uppercase text-(--color-text-muted)">
-                 Πλατφόρμα Διαχείρισης Λαικών Αγορών
+                <p className="text-xs uppercase text-center font-bold text-(--color-text)">
+                 ΠΛΑΤΦΟΡΜΑ ΔΙΑΧΕΙΡΙΣΗΣ ΛΑΪΚΩΝ ΑΓΟΡΩΝ
                 </p>
               </div>
-              <h2 className="mt-1 text-xl leading-tight md:mt-4 md:text-[30px]">{activeTab.title}</h2>
+              <span className="mt-1 text-2xl text-subtle text-center md:mt-4">{activeTab.title}</span>
             </div>
           </aside>
 
