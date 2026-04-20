@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   Box,
   Table,
@@ -16,6 +16,7 @@ import SearchIcon from "@mui/icons-material/Search";
 import InputAdornment from "@mui/material/InputAdornment";
 import TableFilterBar from "./TableFilterBar";
 import type { FilterDef, FilterValues } from "./TableFilterBar";
+import { useLayoutSlot } from "../../lib/layoutSlotContext";
 
 export type { FilterDef, FilterValues };
 export type { FilterType, DropdownItem } from "./TableFilterBar";
@@ -69,6 +70,15 @@ export default function DataTable<T extends object>({
   const [filterText, setFilterText] = useState("");
   const [page, setPage] = useState(0);
   const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
+  const { setFilterSlot } = useLayoutSlot();
+
+  useEffect(() => {
+    if (filters && filters.length > 0 && onSearch) {
+      setFilterSlot(<TableFilterBar filters={filters} onSearch={onSearch} />);
+    }
+    return () => setFilterSlot(null);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [filters, onSearch]);
 
   const filterableCols = useMemo(
     () => columns.filter((c) => c.filterable !== false),
@@ -142,11 +152,6 @@ export default function DataTable<T extends object>({
         </Box>
       )}
 
-      {/* Declarative filter bar */}
-      {filters && filters.length > 0 && onSearch && (
-        <TableFilterBar filters={filters} onSearch={onSearch} />
-      )}
-
       <Paper variant="outlined">
         <TableContainer>
           <Table size="small">
@@ -167,10 +172,11 @@ export default function DataTable<T extends object>({
                   </TableCell>
                 </TableRow>
               ) : (
-                paginatedRows.map((row) => (
+                paginatedRows.map((row, index) => (
                   <TableRow
                     key={String((row as Record<string, unknown>)[rowKey as string])}
                     hover
+                    sx={{ backgroundColor: index % 2 === 0 ? "var(--color-bg)" : "var(color-border-subtle)" }}
                   >
                     {columns.map((col) => (
                       <TableCell key={String(col.key)}>
@@ -193,6 +199,17 @@ export default function DataTable<T extends object>({
           rowsPerPage={rowsPerPage}
           onRowsPerPageChange={handleChangeRowsPerPage}
           rowsPerPageOptions={rowsPerPageOptions}
+          sx={{
+            minHeight: 35,
+            height: 35,
+            backgroundColor: "var(--color-dark)",
+            color: "var(--color-surface)",
+            overflow: "hidden",
+            "& .MuiTablePagination-toolbar": { minHeight: 35, height: 35, paddingTop: 0, paddingBottom: 0 },
+            "& .MuiSelect-icon": { color: "var(--color-surface)" },
+            "& .MuiIconButton-root": { color: "var(--color-surface)" },
+            "& .MuiIconButton-root.Mui-disabled": { color: "var(--color-text-muted)" },
+          }}
         />
       </Paper>
     </Box>

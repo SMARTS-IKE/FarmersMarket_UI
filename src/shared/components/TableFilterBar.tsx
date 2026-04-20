@@ -1,14 +1,8 @@
 import { useState, useMemo } from "react";
-import {
-  Box,
-  TextField,
-  MenuItem,
-  Button,
-  Select,
-  FormControl,
-  InputLabel,
-} from "@mui/material";
+import { Box } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
+import CustomButton from "./CustomButton";
+import CustomInputField from "./CustomInputField";
 
 export type FilterType = "TEXT" | "DROPDOWN" | "DATE";
 
@@ -55,69 +49,56 @@ export default function TableFilterBar({ filters, onSearch }: TableFilterBarProp
 
   return (
     <Box
-      className="flex flex-wrap items-end gap-3 rounded-sm border border-gray-200 bg-gray-50 p-4"
+      className="flex flex-wrap items-end gap-3 rounded-sm "
       onKeyDown={handleKeyDown}
     >
       {filters.map((filter) => {
         if (filter.type === "DROPDOWN") {
           return (
-            <FormControl key={filter.title} size="small" sx={{ minWidth: 160 }}>
-              <InputLabel>{filter.label}</InputLabel>
-              <Select
-                label={filter.label}
-                value={values[filter.title] ?? ""}
-                onChange={(e) => handleChange(filter.title, e.target.value)}
-              >
-                <MenuItem value="">
-                  <em>Όλα</em>
-                </MenuItem>
-                {filter.dataItems?.map((item) => (
-                  <MenuItem key={item.value} value={item.value}>
-                    {item.label}
-                  </MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            <CustomInputField
+              key={filter.title}
+              type="DROPDOWN"
+              label={filter.label}
+              value={values[filter.title] ?? ""}
+              dropdownItems={filter.dataItems}
+              onChange={(val) => handleChange(filter.title, val)}
+              width={160}
+            />
           );
         }
 
         if (filter.type === "DATE") {
           return (
-            <TextField
+            <CustomInputField
               key={filter.title}
-              size="small"
+              type="DATE"
               label={filter.label}
-              type="date"
               value={values[filter.title] ?? ""}
-              onChange={(e) => handleChange(filter.title, e.target.value)}
-              slotProps={{ inputLabel: { shrink: true } }}
-              sx={{ minWidth: 160 }}
+              onChange={(val) => handleChange(filter.title, val)}
+              width={160}
             />
           );
         }
 
         // TEXT (default)
         return (
-          <TextField
+          <CustomInputField
             key={filter.title}
-            size="small"
+            type="TEXT"
             label={filter.label}
             value={values[filter.title] ?? ""}
-            onChange={(e) => handleChange(filter.title, e.target.value)}
-            sx={{ minWidth: 160 }}
+            onChange={(val) => handleChange(filter.title, val)}
+            width={160}
           />
         );
       })}
 
-      <Button
-        variant="contained"
-        size="medium"
-        startIcon={<SearchIcon />}
+      <CustomButton
+        title="Αναζήτηση"
+        prefixIcon={<SearchIcon />}
         onClick={handleSearch}
-        sx={{ height: 40 }}
-      >
-        Αναζήτηση
-      </Button>
+        width={140}
+      />
     </Box>
   );
 }

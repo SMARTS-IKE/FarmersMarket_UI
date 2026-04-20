@@ -9,6 +9,7 @@ export interface SystemAdminTab {
   label: string;
   title: string;
   description: string;
+  hasList?: boolean;
 }
 
 export const systemAdminTabs: SystemAdminTab[] = [
@@ -23,12 +24,14 @@ export const systemAdminTabs: SystemAdminTab[] = [
     label: 'Διαχείριση Χρηστών',
     title: 'Διαχείριση Χρηστών',
     description: '',
+    hasList: true,
   },
   {
     to: '/admin/sellers',
     label: 'Μητρώο Πωλητών',
     title: 'Μητρώο Πωλητών',
     description: '',
+    hasList: true,
   },
   {
     to: '/admin/markets',
