@@ -51,7 +51,7 @@ const columns: ColumnDef<Seller>[] = [
             color: statusConfig.color,
             fontWeight: 700,
             boxShadow: "none",
-            borderRadius: "9999px",
+            borderRadius: 100,
             pointerEvents: "none",
           }}
         />
