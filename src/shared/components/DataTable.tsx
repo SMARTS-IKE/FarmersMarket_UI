@@ -52,6 +52,8 @@ interface DataTableProps<T> {
   filters?: FilterDef[];
   /** Called when the user clicks the Search button; receives filter title→value map */
   onSearch?: (values: FilterValues) => void;
+  /** Optional row click handler for selection-driven flows */
+  onRowClick?: (row: T) => void;
 }
 
 // ── Main DataTable component ─────────────────────────────────────
@@ -66,6 +68,7 @@ export default function DataTable<T extends object>({
   showFilter = true,
   filters,
   onSearch,
+  onRowClick,
 }: DataTableProps<T>) {
   const [filterText, setFilterText] = useState("");
   const [page, setPage] = useState(0);
@@ -176,7 +179,11 @@ export default function DataTable<T extends object>({
                   <TableRow
                     key={String((row as Record<string, unknown>)[rowKey as string])}
                     hover
-                    sx={{ backgroundColor: index % 2 === 0 ? "var(--color-bg)" : "var(color-border-subtle)" }}
+                    onClick={onRowClick ? () => onRowClick(row) : undefined}
+                    sx={{
+                      backgroundColor: index % 2 === 0 ? "var(--color-bg)" : "var(--color-border-subtle)",
+                      cursor: onRowClick ? "pointer" : "default",
+                    }}
                   >
                     {columns.map((col) => (
                       <TableCell key={String(col.key)}>

@@ -1,7 +1,7 @@
 import { http } from '../lib/http';
-import type { UserSearchRequest, UserListResponse } from '../models/user';
+import type { AppUser, AssignRoleRequest, UpdateUserRequest, UserListResult, UserSearchRequest } from '../models/user';
 
-export async function getUsers(params: UserSearchRequest): Promise<UserListResponse> {
+export async function getUsers(params: UserSearchRequest): Promise<UserListResult> {
   const query = new URLSearchParams();
 
   if (params.name) query.set('Name', params.name);
@@ -11,5 +11,21 @@ export async function getUsers(params: UserSearchRequest): Promise<UserListRespo
   query.set('PageSize', String(params.pageSize));
 
   const qs = query.toString();
-  return http.get<UserListResponse>(`/Users${qs ? `?${qs}` : ''}`);
+  return http.get<UserListResult>(`/Users${qs ? `?${qs}` : ''}`);
+}
+
+export async function getUserById(id: string): Promise<AppUser> {
+  return http.get<AppUser>(`/Users/${id}`);
+}
+
+export async function updateUser(id: string, payload: UpdateUserRequest): Promise<void> {
+  await http.put<void, UpdateUserRequest>(`/Users/${id}`, payload);
+}
+
+export async function assignUserRole(id: string, payload: AssignRoleRequest): Promise<void> {
+  await http.post<void, AssignRoleRequest>(`/Users/${id}/roles`, payload);
+}
+
+export async function removeUserRole(id: string, role: string): Promise<void> {
+  await http.delete<void>(`/Users/${id}/roles/${encodeURIComponent(role)}`);
 }

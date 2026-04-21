@@ -22,3 +22,15 @@ export interface UserListResponse {
   page: number;
   pageSize: number;
 }
+
+export type UserListResult = AppUser[] | UserListResponse;
+
+export interface UpdateUserRequest {
+  firstName: string;
+  lastName: string;
+  isActive: boolean;
+}
+
+export interface AssignRoleRequest {
+  role: string;
+}

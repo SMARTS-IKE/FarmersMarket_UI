@@ -1,6 +1,7 @@
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import DataTable, { ColumnDef, FilterDef, FilterValues } from "../../../shared/components/DataTable";
-import type { AppUser, UserListResponse, UserSearchRequest } from "../../../models/user";
+import type { AppUser, UserSearchRequest } from "../../../models/user";
 import { useUsersQuery } from "../../../queries/userQueries";
 
 const columns: ColumnDef<AppUser>[] = [
@@ -30,6 +31,7 @@ const tableFilters: FilterDef[] = [
 ];
 
 export default function AdminUsersPage() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<UserSearchRequest>({
     name: "",
     email: "",
@@ -39,8 +41,7 @@ export default function AdminUsersPage() {
   });
 
   const { data } = useUsersQuery(filters);
-  const responseData: UserListResponse = { items: data ? data as unknown as AppUser[] : [], totalCount: 0, page: 1, pageSize: 25 };
-  const users = responseData.items ?? [];
+  const users = Array.isArray(data) ? data : data?.items ?? [];
 
   const handleSearch = (values: FilterValues) => {
     setFilters((prev) => ({
@@ -50,6 +51,13 @@ export default function AdminUsersPage() {
       role: String(values["role"] ?? ""),
       page: 1,
     }));
+  };
+
+  const handleRowClick = (user: AppUser) => {
+    navigate({
+      to: "/admin/users/$id",
+      params: { id: user.id },
+    });
   };
 
   return (
@@ -63,6 +71,7 @@ export default function AdminUsersPage() {
         showFilter={false}
         filters={tableFilters}
         onSearch={handleSearch}
+        onRowClick={handleRowClick}
       />
     </div>
   );

@@ -14,7 +14,7 @@ interface CustomButtonProps {
 export default function CustomButton({
   title = "Κουμπί",
   prefixIcon,
-  backgroundColor = "var(--color-dark)",
+  backgroundColor = "var(--color-text)",
   disabled = false,
   width = 140,
   onClick,

@@ -19,7 +19,7 @@ function SystemAdminLayoutInner() {
   const navigate = useNavigate();
   const { user, email, clearAuth } = useAuthStore();
   const activeTab = getSystemAdminTab(location.pathname);
-  const isList = !!activeTab.hasList;
+  const isList = !!activeTab.hasList && location.pathname === activeTab.to;
   const { filterSlot } = useLayoutSlot();
 
   function handleLogout() {
@@ -74,7 +74,7 @@ function SystemAdminLayoutInner() {
           </div>
         </header>
 
-        <div className="grid flex-1 gap-px bg-(--color-border-subtle) lg:grid-cols-[240px_minmax(0,1fr)_280px]">
+        <div className="grid flex-1 gap-px bg-(--color-border-subtle) lg:grid-cols-[300px_minmax(0,1fr)_320px]">
           <aside className={`bg-(--color-bg-subtle) px-3 py-3 md:flex md:flex-col md:justify-between${isList ? ' lg:hidden' : ''}`}>
             <div className="flex flex-col gap-2 md:gap-4">
               <div>
