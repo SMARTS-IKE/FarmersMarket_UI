@@ -7,12 +7,14 @@ import {
   FormHelperText,
   InputAdornment,
   Box,
+  Chip,
+  Input,
 } from "@mui/material";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import type { SxProps, Theme } from "@mui/material";
 import { useState } from "react";
 
-export type InputFieldType = "TEXT" | "NUMBER" | "TEXTAREA" | "DROPDOWN" | "DATE";
+export type InputFieldType = "TEXT" | "NUMBER" | "TEXTAREA" | "DROPDOWN" | "MULTI_SELECT" | "DATE";
 
 export interface DropdownOption {
   label: string;
@@ -32,7 +34,7 @@ export interface ValidationRules {
 interface CustomInputFieldProps {
   type?: InputFieldType;
   label?: string;
-  value?: string | number;
+  value?: string | number | string[];
   defaultValue?: string | number;
   placeholder?: string;
   disabled?: boolean;
@@ -40,9 +42,10 @@ interface CustomInputFieldProps {
   width?: number | string;
   prefixIcon?: React.ReactNode;
   dropdownItems?: DropdownOption[];
+  disabledDropdownValues?: Array<string | number>;
   validation?: ValidationRules;
   error?: string;
-  onChange?: (value: string | number) => void;
+  onChange?: (value: string | number | string[]) => void;
   onBlur?: () => void;
   sx?: SxProps<Theme>;
 }
@@ -90,6 +93,7 @@ export default function CustomInputField({
   width = 240,
   prefixIcon,
   dropdownItems = [],
+  disabledDropdownValues = [],
   validation,
   error,
   onChange,
@@ -97,7 +101,9 @@ export default function CustomInputField({
   sx,
 }: CustomInputFieldProps) {
   const internalError =
-    error ?? (validation && value !== undefined ? validate(value, validation, type) : "");
+    error ?? (validation && value !== undefined && !Array.isArray(value)
+      ? validate(value, validation, type)
+      : "");
 
   const focusSx: SxProps<Theme> = {
     "& .MuiInput-underline:after": { borderBottomColor: "var(--color-dark)" },
@@ -114,6 +120,88 @@ export default function CustomInputField({
   };
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
+  const [multiOpen, setMultiOpen] = useState(false);
+
+  if (type === "MULTI_SELECT") {
+    const multiValue = Array.isArray(value) ? value : [];
+    return (
+      <FormControl
+        variant="standard"
+        disabled={disabled}
+        error={!!internalError}
+        sx={{ width, ...sx }}
+      >
+        {label && <InputLabel>{label}</InputLabel>}
+        <Select
+          multiple
+          open={multiOpen}
+          onOpen={() => setMultiOpen(true)}
+          onClose={() => setMultiOpen(false)}
+          value={multiValue}
+          onChange={(e) => onChange?.(e.target.value as string[])}
+          onBlur={onBlur}
+          input={<Input />}
+          IconComponent={() => null}
+          endAdornment={
+            <InputAdornment
+              position="end"
+              sx={{ mr: "2px", cursor: "pointer" }}
+              onClick={() => !disabled && setMultiOpen((prev) => !prev)}
+            >
+              <Box
+                component="span"
+                sx={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  width: 28,
+                  height: 28,
+                  borderRadius: "4px",
+                  backgroundColor: backgroundColor ?? "var(--color-dark)",
+                  "& svg": {
+                    transition: "transform 200ms",
+                    transform: multiOpen ? "rotate(180deg)" : "rotate(0deg)",
+                    color: "var(--color-surface)",
+                    fontSize: 20,
+                  },
+                }}
+              >
+                <ArrowDropDownIcon />
+              </Box>
+            </InputAdornment>
+          }
+          renderValue={(selected) => (
+            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+              {(selected as string[]).map((val) => (
+                <Chip
+                  key={val}
+                  label={dropdownItems.find((d) => d.value === val)?.label ?? val}
+                  size="small"
+                />
+              ))}
+            </Box>
+          )}
+          sx={{
+            "&:before": { borderBottomColor: "rgba(0, 0, 0, 0.42)" },
+            "&:hover:not(.Mui-disabled):before": { borderBottomColor: "rgba(0, 0, 0, 0.87)" },
+            "&:after": { borderBottomColor: "var(--color-dark)" },
+            ...sx,
+          }}
+        >
+          {dropdownItems.map((item) => (
+            <MenuItem
+              key={item.value}
+              value={item.value as string}
+              disabled={disabledDropdownValues.includes(item.value)}
+            >
+              {item.label}
+            </MenuItem>
+          ))}
+        </Select>
+        {internalError && <FormHelperText>{internalError}</FormHelperText>}
+      </FormControl>
+    );
+  }
 
   if (type === "DROPDOWN") {
     return (
@@ -176,7 +264,11 @@ export default function CustomInputField({
             <em>Επιλέξτε…</em>
           </MenuItem>
           {dropdownItems.map((item) => (
-            <MenuItem key={item.value} value={item.value}>
+            <MenuItem
+              key={item.value}
+              value={item.value}
+              disabled={disabledDropdownValues.includes(item.value)}
+            >
               {item.label}
             </MenuItem>
           ))}

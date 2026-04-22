@@ -4,7 +4,7 @@ import DashboardPage from '../pages/adminPages/AdminDashboardPage';
 import AdminUsersPage from '../pages/adminPages/users/AdminUsersPage';
 import UserPage from '../pages/adminPages/users/UserPage';
 import AdminSellersPage from '../pages/adminPages/sellers/AdminSellersPage';
-import AdminMarketsPage from '../pages/adminPages/AdminMarketsPage';
+import AdminMarketsPage from '../pages/adminPages/markets/AdminMarketsPage';
 import AdminReportsPage from '../pages/adminPages/AdminReportsPage';
 import AdminRequestsPage from '../pages/adminPages/AdminRequestsPage';
 import { requireAuth, rootRoute } from './baseRoutes';

@@ -38,6 +38,7 @@ export const systemAdminTabs: SystemAdminTab[] = [
     label: 'Διαχείριση Αγορών',
     title: 'Διαχείριση Αγορών',
     description: '',
+    hasList: true,
   },
   {
     to: '/admin/reports',

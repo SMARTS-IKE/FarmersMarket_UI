@@ -104,7 +104,7 @@ function SystemAdminLayoutInner() {
                 </div>
                 {/* Filter slot */}
                 {filterSlot && (
-                  <div className="flex-1 flex items-end justify-center">
+                  <div className="flex flex-1 min-w-0 items-end justify-center overflow-x-auto">
                     {filterSlot}
                   </div>
                 )}
