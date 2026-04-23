@@ -5,6 +5,8 @@ import AdminUsersPage from '../pages/adminPages/users/AdminUsersPage';
 import UserPage from '../pages/adminPages/users/UserPage';
 import AdminSellersPage from '../pages/adminPages/sellers/AdminSellersPage';
 import AdminMarketsPage from '../pages/adminPages/markets/AdminMarketsPage';
+import AdminMarketCreatePage from '../pages/adminPages/markets/AdminMarketCreatePage';
+import AdminMarketDetailPage from '../pages/adminPages/markets/AdminMarketDetailPage';
 import AdminReportsPage from '../pages/adminPages/AdminReportsPage';
 import AdminRequestsPage from '../pages/adminPages/AdminRequestsPage';
 import { requireAuth, rootRoute } from './baseRoutes';
@@ -46,6 +48,18 @@ export const marketsRoute = createRoute({
   component: AdminMarketsPage,
 });
 
+export const marketCreateRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/admin/markets/new',
+  component: AdminMarketCreatePage,
+});
+
+export const marketDetailRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/admin/markets/$marketId',
+  component: AdminMarketDetailPage,
+});
+
 export const reportsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/admin/reports',
@@ -64,6 +78,8 @@ export const adminRouteTree = protectedRoute.addChildren([
   userDetailRoute,
   sellersRoute,
   marketsRoute,
+  marketCreateRoute,
+  marketDetailRoute,
   reportsRoute,
   requestsRoute,
 ]);

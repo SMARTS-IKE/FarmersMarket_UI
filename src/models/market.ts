@@ -47,3 +47,27 @@ export interface MarketListResponse {
   page: number;
   pageSize: number;
 }
+
+export type MarketFormMode = "create" | "edit" | "view";
+
+export interface MarketOperatingDay {
+  day: string;
+  openTime: string;
+  closeTime: string;
+}
+
+export interface MarketFormValues {
+  name: string;
+  marketType: Exclude<MarketType, 0>;
+  address: string;
+  operatingDays: MarketOperatingDay[];
+}
+
+export interface MarketFormProps {
+  mode: MarketFormMode;
+  values: MarketFormValues;
+  onChange: (values: MarketFormValues) => void;
+  onSubmit?: (values: MarketFormValues) => void;
+  onCancel?: () => void;
+  submitLabel?: string;
+}

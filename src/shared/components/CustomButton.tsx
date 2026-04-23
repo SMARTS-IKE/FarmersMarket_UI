@@ -12,7 +12,7 @@ interface CustomButtonProps {
 }
 
 export default function CustomButton({
-  title = "Κουμπί",
+  title = "",
   prefixIcon,
   backgroundColor = "var(--color-text)",
   disabled = false,
@@ -20,6 +20,8 @@ export default function CustomButton({
   onClick,
   sx,
 }: CustomButtonProps) {
+  const hasTitle = title.trim() !== "";
+
   return (
     <Button
       variant="contained"
@@ -29,8 +31,15 @@ export default function CustomButton({
       sx={{
         height: 30,
         width,
+        minWidth: 0,
         backgroundColor,
         textTransform: "none",
+        ...(!hasTitle && {
+          "& .MuiButton-startIcon": {
+            marginLeft: 0,
+            marginRight: 0,
+          },
+        }),
         "&:hover": {
           backgroundColor,
           filter: "brightness(0.9)",
@@ -38,7 +47,7 @@ export default function CustomButton({
         ...sx,
       }}
     >
-      {title}
+      {hasTitle ? title : null}
     </Button>
   );
 }

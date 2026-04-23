@@ -1,5 +1,5 @@
 import { http } from '../lib/http';
-import type { DAY_NAME_TO_NUMBER, MarketApiRequest, MarketListResponse, MarketSearchRequest } from '../models/market';
+import type { DAY_NAME_TO_NUMBER, Market, MarketApiRequest, MarketListResponse, MarketSearchRequest } from '../models/market';
 
 function toApiRequest(params: MarketSearchRequest): MarketApiRequest {
   const req: MarketApiRequest = {
@@ -31,13 +31,17 @@ export async function getMarkets(params: MarketSearchRequest): Promise<MarketLis
   const apiParams = toApiRequest(params);
   const query = new URLSearchParams();
 
-  if (apiParams.name) query.set('name', apiParams.name);
-  if (apiParams.marketType !== undefined) query.set('marketType', String(apiParams.marketType));
-  if (apiParams.day !== undefined) query.set('day', String(apiParams.day));
-  if (apiParams.isActive !== undefined) query.set('isActive', String(apiParams.isActive));
+  if (apiParams.name) query.set('Name', apiParams.name);
+  if (apiParams.marketType !== undefined) query.set('MarketType', String(apiParams.marketType));
+  if (apiParams.day !== undefined) query.set('Day', String(apiParams.day));
+  if (apiParams.isActive !== undefined) query.set('IsActive', String(apiParams.isActive));
   query.set('Page', String(apiParams.Page));
   query.set('PageSize', String(apiParams.PageSize));
 
   const qs = query.toString();
   return http.get<MarketListResponse>(`/Markets${qs ? `?${qs}` : ''}`);
+}
+
+export async function getMarketById(id: string): Promise<Market> {
+  return http.get<Market>(`/Markets/${id}`);
 }

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import DataTable from "../../../shared/components/DataTable";
 import CustomInputField from "../../../shared/components/CustomInputField";
 import CustomButton from "../../../shared/components/CustomButton";
@@ -6,6 +7,7 @@ import type { Market, MarketSearchRequest } from "../../../models/market";
 import { useMarketsQuery } from "../../../queries/marketQueries";
 import SearchIcon from "@mui/icons-material/Search";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import AddIcon from "@mui/icons-material/Add";
 import { columns, DAYS } from "./market.utils";
 import { useLayoutSlot } from "../../../lib/layoutSlotContext";
 
@@ -20,6 +22,7 @@ const EMPTY_FILTERS: MarketSearchRequest = {
 };
 
 export default function AdminMarketsPage() {
+  const navigate = useNavigate({ from: "/admin/markets" });
   const [draft, setDraft] = useState<MarketSearchRequest>(EMPTY_FILTERS);
   const [filters, setFilters] = useState<MarketSearchRequest>(EMPTY_FILTERS);
   const { setFilterSlot } = useLayoutSlot();
@@ -34,6 +37,14 @@ export default function AdminMarketsPage() {
   const handleReset = () => {
     setDraft(EMPTY_FILTERS);
     setFilters(EMPTY_FILTERS);
+  };
+
+  const openCreateForm = () => {
+    navigate({ to: "./new" });
+  };
+
+  const handleRowClick = (market: Market) => {
+    navigate({ to: "./$marketId", params: { marketId: String(market.id) } });
   };
 
   useEffect(() => {
@@ -72,8 +83,13 @@ export default function AdminMarketsPage() {
           <CustomInputField
             type="DROPDOWN"
             label="Ημέρα Λειτουργίας"
-            value={draft.operatingDays}
-            onChange={(v) => setDraft((p) => ({ ...p, operatingDays: v as string[] }))}
+            value={draft.operatingDays[0] ?? ""}
+            onChange={(v) =>
+              setDraft((p) => ({
+                ...p,
+                operatingDays: v ? [String(v)] : [],
+              }))
+            }
             dropdownItems={DAYS}
             width={360}
           />
@@ -100,6 +116,15 @@ export default function AdminMarketsPage() {
 
   return (
     <div className="flex h-full w-full flex-col gap-6 text-left">
+      <div className="flex justify-end">
+        <CustomButton
+          title="Νέα Αγορά"
+          prefixIcon={<AddIcon />}
+          width={150}
+          onClick={openCreateForm}
+        />
+      </div>
+
       {/* Table */}
       <div className="w-full">
         <DataTable<Market>
@@ -107,6 +132,7 @@ export default function AdminMarketsPage() {
           columns={columns}
           rowKey="id"
           showFilter={false}
+          onRowClick={handleRowClick}
         />
       </div>
     </div>
