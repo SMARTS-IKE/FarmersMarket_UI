@@ -49,7 +49,7 @@ export default function AdminMarketsPage() {
 
   useEffect(() => {
     setFilterSlot(
-      <div className="flex w-max min-w-full flex-col items-center justify-center gap-8 px-2">
+      <div className="flex w-max min-w-full flex-col items-center justify-center gap-8 px-2 max-w-[100px] overflowY-auto">
         <div className="flex flex-nowrap items-end justify-center gap-3">
           <CustomInputField
             type="TEXT"

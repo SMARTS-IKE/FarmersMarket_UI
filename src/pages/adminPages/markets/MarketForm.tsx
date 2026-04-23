@@ -110,8 +110,7 @@ export default function MarketForm({
   };
 
   return (
-    <Box  >
-      <Box className="flex flex-col gap-6">
+      <Box className="flex flex-col gap-6 md:max-h-[85vh] overflow-y-auto mb-4">
         <Typography variant="h6" sx={{ fontWeight: 700 }}>
           {resolvedTitle}
         </Typography>
@@ -271,6 +270,5 @@ export default function MarketForm({
           )}
         </Box>
       </Box>
-    </Box>
   );
 }
