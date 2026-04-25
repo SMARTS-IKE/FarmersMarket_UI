@@ -1,6 +1,6 @@
 import { useState } from "react";
 import DataTable, { ColumnDef, FilterDef, FilterValues } from "../../../shared/components/DataTable";
-import type { Seller, SellerListResponse, SellerSearchRequest, SellerType } from "../../../models/seller";
+import type { Seller, SellerSearchRequest, SellerType } from "../../../models/seller";
 import { useSellersQuery } from "../../../queries/sellerQueries";
 import CustomButton from "../../../shared/components/CustomButton";
 
@@ -74,58 +74,58 @@ const tableFilters: FilterDef[] = [
   },
 ];
 
-const mockSellerResponse: SellerListResponse = {
-  items: [
-    {
-      id: 101,
-      firstName: "Γιώργος",
-      lastName: "Παπαδόπουλος",
-      afm: "123456789",
-      email: "g.papadopoulos@example.com",
-      phone: "6900000001",
-      address: "Λάρισα",
-      sellerType: 1,
-      isActive: true,
-    },
-    {
-      id: 102,
-      firstName: "Ελένη",
-      lastName: "Κωνσταντίνου",
-      afm: "987654321",
-      email: "e.konstantinou@example.com",
-      phone: "6900000002",
-      address: "Θεσσαλονίκη",
-      sellerType: 2,
-      isActive: true,
-    },
-    {
-      id: 103,
-      firstName: "Νικόλαος",
-      lastName: "Ιωάννου",
-      afm: "456123789",
-      email: "n.ioannou@example.com",
-      phone: "6900000003",
-      address: "Πάτρα",
-      sellerType: 1,
-      isActive: false,
-    },
-  ],
-  totalCount: 3,
-  page: 1,
-  pageSize: 25,
-};
+// const mockSellerResponse: SellerListResponse = {
+//   items: [
+//     {
+//       id: 101,
+//       firstName: "Γιώργος",
+//       lastName: "Παπαδόπουλος",
+//       afm: "123456789",
+//       email: "g.papadopoulos@example.com",
+//       phone: "6900000001",
+//       address: "Λάρισα",
+//       sellerType: 1,
+//       isActive: true,
+//     },
+//     {
+//       id: 102,
+//       firstName: "Ελένη",
+//       lastName: "Κωνσταντίνου",
+//       afm: "987654321",
+//       email: "e.konstantinou@example.com",
+//       phone: "6900000002",
+//       address: "Θεσσαλονίκη",
+//       sellerType: 2,
+//       isActive: true,
+//     },
+//     {
+//       id: 103,
+//       firstName: "Νικόλαος",
+//       lastName: "Ιωάννου",
+//       afm: "456123789",
+//       email: "n.ioannou@example.com",
+//       phone: "6900000003",
+//       address: "Πάτρα",
+//       sellerType: 1,
+//       isActive: false,
+//     },
+//   ],
+//   totalCount: 3,
+//   page: 1,
+//   pageSize: 25,
+// };
 
 export default function AdminSellersPage() {
   const [filters, setFilters] = useState<SellerSearchRequest>({
     name: "",
     afm: "",
-    sellerType: 0,
+    sellerType: 1,
     page: 1,
     pageSize: 25,
   });
 
-  useSellersQuery(filters);
-  const sellers = mockSellerResponse.items;
+  const { data: sellersQueryResults } = useSellersQuery(filters);
+  const sellers: Seller[] = sellersQueryResults?.items ?? [];
 
   const handleSearch = (values: FilterValues) => {
     setFilters((prev) => ({

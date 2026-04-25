@@ -118,9 +118,9 @@ export default function AdminMarketsPage() {
     <div className="flex h-full w-full flex-col gap-6 text-left">
       <div className="flex justify-end">
         <CustomButton
-          title="Νέα Αγορά"
+          title="Δημιουργία νέας Αγοράς"
           prefixIcon={<AddIcon />}
-          width={150}
+          width={'fit-content'}
           onClick={openCreateForm}
         />
       </div>

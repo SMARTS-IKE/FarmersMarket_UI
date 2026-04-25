@@ -28,9 +28,24 @@ export interface Market {
   name: string;
   marketType: MarketType;
   address: string;
+  latitude: number;
+  longitude: number;
+  totalSpots: number;
+  occupiedSpots: number;
   openTime: string;
   closeTime: string;
-  operatingDays: string;
+  notes: string;
+  isActive: boolean;
+  schedules: MarketSchedule[];
+  sellers: unknown[];
+}
+
+export interface MarketSchedule {
+  id: number;
+  day: DayOfWeek;
+  exceptionDate: string | null;
+  isCancelled: boolean;
+  cancellationReason: string | null;
 }
 
 export interface MarketSearchRequest {
@@ -61,6 +76,9 @@ export interface MarketFormValues {
   marketType: Exclude<MarketType, 0>;
   address: string;
   operatingDays: MarketOperatingDay[];
+  availableSlots: number;
+  supervisors: string[];
+  area: string;
 }
 
 export interface MarketFormProps {

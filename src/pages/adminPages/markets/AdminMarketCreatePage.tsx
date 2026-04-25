@@ -8,6 +8,9 @@ const EMPTY_FORM_VALUES: MarketFormValues = {
   marketType: 1,
   address: "",
   operatingDays: [],
+  availableSlots: 0,
+  supervisors: [],
+  area: "",
 };
 
 export default function AdminMarketCreatePage() {
@@ -18,9 +21,8 @@ export default function AdminMarketCreatePage() {
     navigate({ to: "/admin/markets" });
   };
 
-  const handleSubmit = (values: MarketFormValues) => {
+  const handleSubmit = (_values: MarketFormValues) => {
     // TODO: wire create market mutation once backend endpoint is available
-    console.log("Create market submit", values);
     navigate({ to: "/admin/markets" });
   };
 

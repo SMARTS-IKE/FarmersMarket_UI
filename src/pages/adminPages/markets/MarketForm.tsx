@@ -8,8 +8,15 @@ import MapLocationPlaceholder from "../../../shared/components/MapLocationPlaceh
 import { DAYS } from "./market.utils";
 
 const marketTypeOptions = [
-  { label: "Λαϊκή", value: "1" },
-  { label: "Οργανωμένη", value: "2" },
+  { label: "Γενική Αγορά", value: "1" },
+  { label: "Βιολογικών Προϊόντων", value: "2" },
+];
+
+const supervisorOptions = [
+  { label: "Γεωργίου Νικόλαος", value: "supervisor-1" },
+  { label: "Παπαδόπουλος Ιωάννης", value: "supervisor-2" },
+  { label: "Παπανικολάου Κωνσταντίνα", value: "market-manager" },
+  { label: "Γεωργκακοπούλου Αικατερίνη", value: "area-manager" },
 ];
 
 const dayOptions = DAYS;
@@ -150,8 +157,8 @@ export default function MarketForm({
           <CustomInputField
             type="TEXT"
             label="Περιοχή"
-            value={values.address}
-            onChange={(v) => onChange({ ...values, address: String(v) })}
+            value={values.area}
+            onChange={(v) => onChange({ ...values, area: String(v) })}
             disabled={isViewMode}
             validation={{ required: true, minLength: 3 }}
             width={'38%'}
@@ -160,7 +167,7 @@ export default function MarketForm({
 
         <Box className="mt-4 flex flex-col gap-4 lg:flex-row">
           <Box className="flex-1">
-            <MapLocationPlaceholder height={400} />
+            <MapLocationPlaceholder height={270} />
           </Box>
 
           {/* Operating Days Section */}
@@ -187,7 +194,7 @@ export default function MarketForm({
                 {values.operatingDays.map((dayEntry, index) => (
                   <Box
                     key={index}
-                    className="flex flex-wrap items-end gap-3 rounded-lg p-4"
+                    className="flex flex-wrap items-start gap-3 justify-between rounded-lg p-4 h-[120px]"
                   >
                     <CustomInputField
                       type="DROPDOWN"
@@ -213,7 +220,7 @@ export default function MarketForm({
                       disabled={isViewMode}
                       dropdownItems={timeOptions}
                       validation={{ required: true }}
-                      width={180}
+                      width={130}
                     />
 
                     <CustomInputField
@@ -233,7 +240,7 @@ export default function MarketForm({
                           : []
                       }
                       validation={{ required: true }}
-                      width={160}
+                      width={130}
                     />
 
                     {!isViewMode && (
@@ -241,6 +248,7 @@ export default function MarketForm({
                         prefixIcon={<DeleteIcon />}
                         backgroundColor="var(--color-danger)"
                         onClick={() => handleRemoveDay(index)}
+                        sx={{ marginTop: "17px" }}
                         width={10}
                       />
                     )}
@@ -251,15 +259,50 @@ export default function MarketForm({
           </Box>
         </Box>
 
+        <Box className="flex flex-col gap-4 md:flex-row md:justify-between">
+          <CustomInputField
+            type="NUMBER"
+            label="Αριθμός Διαθέσιμων Θέσεων"
+            value={values.availableSlots}
+            onChange={(v) => onChange({ ...values, availableSlots: Number(v) })}
+            disabled={isViewMode}
+            validation={{ required: true, min: 0 }}
+            width="22%"
+          />
+
+          <CustomInputField
+            type="MULTI_SELECT"
+            label="Ορισμός Εποπτών/Υπευθύνων"
+            value={values.supervisors}
+            onChange={(v) => onChange({ ...values, supervisors: v as string[] })}
+            dropdownItems={supervisorOptions}
+            disabled={isViewMode}
+            width="60%"
+          />
+        </Box>
+
         <Box className="flex flex-wrap justify-end gap-3">
-          {onCancel && (
+          {/* {onCancel && (
             <CustomButton
               title={isViewMode ? "Κλείσιμο" : "Ακύρωση"}
-              backgroundColor="var(--color-text-muted)"
+              backgroundColor={isViewMode ? "var(--color-text-muted)" : "transparent"}
               onClick={onCancel}
               width={120}
+              sx={
+                !isViewMode
+                  ? {
+                      color: "var(--color-dark)",
+                      border: "1px solid var(--color-text-muted)",
+                      "&:hover": {
+                        backgroundColor: "transparent",
+                        borderColor: "var(--color-text-muted)",
+                        filter: "none",
+                      },
+                    }
+                  : undefined
+              }
             />
-          )}
+          )} */}
 
           {!isViewMode && onSubmit && (
             <CustomButton

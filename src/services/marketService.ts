@@ -1,5 +1,5 @@
 import { http } from '../lib/http';
-import type { DAY_NAME_TO_NUMBER, Market, MarketApiRequest, MarketListResponse, MarketSearchRequest } from '../models/market';
+import { DAY_NAME_TO_NUMBER, type Market, type MarketApiRequest, type MarketListResponse, type MarketSearchRequest } from '../models/market';
 
 function toApiRequest(params: MarketSearchRequest): MarketApiRequest {
   const req: MarketApiRequest = {
@@ -12,16 +12,7 @@ function toApiRequest(params: MarketSearchRequest): MarketApiRequest {
 
   // The API accepts a single day filter — use the first selected day if any
   if (params.operatingDays.length > 0) {
-    const dayMap: typeof DAY_NAME_TO_NUMBER = {
-      Sunday: 0,
-      Monday: 1,
-      Tuesday: 2,
-      Wednesday: 3,
-      Thursday: 4,
-      Friday: 5,
-      Saturday: 6,
-    };
-    req.day = dayMap[params.operatingDays[0]];
+    req.day = DAY_NAME_TO_NUMBER[params.operatingDays[0]];
   }
 
   return req;
@@ -39,7 +30,18 @@ export async function getMarkets(params: MarketSearchRequest): Promise<MarketLis
   query.set('PageSize', String(apiParams.PageSize));
 
   const qs = query.toString();
-  return http.get<MarketListResponse>(`/Markets${qs ? `?${qs}` : ''}`);
+  const response = await http.get<MarketListResponse | Market[]>(`/Markets${qs ? `?${qs}` : ''}`);
+
+  if (Array.isArray(response)) {
+    return {
+      items: response,
+      totalCount: response.length,
+      page: params.page,
+      pageSize: params.pageSize,
+    };
+  }
+
+  return response;
 }
 
 export async function getMarketById(id: string): Promise<Market> {

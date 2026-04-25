@@ -6,7 +6,7 @@ export async function getSellers(params: SellerSearchRequest): Promise<SellerLis
 
   if (params.name) query.set('Name', params.name);
   if (params.afm) query.set('Afm', params.afm);
-  query.set('SellerType', String(params?.sellerType || '0'));
+  if (params.sellerType) query.set('SellerType', String(params.sellerType));
   if (params.isActive !== undefined) query.set('IsActive', String(params.isActive));
   query.set('Page', String(params.page));
   query.set('PageSize', String(params.pageSize));
