@@ -1,4 +1,4 @@
-import { useLoadingStore } from '../store/loadingStore';
+import { useLoadingStore } from '../../store/loadingStore';
 
 export default function BlockUI() {
   const isBlocked = useLoadingStore((s) => s.isBlocked);
@@ -10,7 +10,7 @@ export default function BlockUI() {
       role="status"
       aria-label="Loading"
       aria-live="polite"
-      className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/30 backdrop-blur-[2px]"
+      className="fixed inset-0 z-9999 flex items-center justify-center bg-black/30 backdrop-blur-[2px]"
     >
       <div className="flex flex-col items-center gap-4 bg-(--color-surface) border border-(--color-border) rounded-2xl shadow-lg px-10 py-8">
         <Spinner />

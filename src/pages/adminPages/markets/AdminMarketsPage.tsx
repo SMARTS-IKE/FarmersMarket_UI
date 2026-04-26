@@ -8,7 +8,7 @@ import { useMarketsQuery } from "../../../queries/marketQueries";
 import SearchIcon from "@mui/icons-material/Search";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import AddIcon from "@mui/icons-material/Add";
-import { columns, DAYS } from "./market.utils";
+import { columns, DAYS } from "../../../components/markets/market.utils";
 import { useLayoutSlot } from "../../../lib/layoutSlotContext";
 
 
@@ -49,7 +49,7 @@ export default function AdminMarketsPage() {
 
   useEffect(() => {
     setFilterSlot(
-      <div className="flex w-max min-w-full flex-col items-center justify-center gap-8 px-2 max-w-[100px] overflowY-auto">
+      <div className="flex w-max min-w-full max-w-25 flex-col items-center justify-center gap-8 px-2 overflowY-auto">
         <div className="flex flex-nowrap items-end justify-center gap-3">
           <CustomInputField
             type="TEXT"

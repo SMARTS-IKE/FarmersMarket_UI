@@ -1,10 +1,10 @@
 import { Box, Typography } from "@mui/material";
 import DeleteIcon from "@mui/icons-material/Delete";
 import AddIcon from "@mui/icons-material/Add";
-import type { MarketFormProps } from "../../../models/market";
-import CustomInputField from "../../../shared/components/CustomInputField";
-import CustomButton from "../../../shared/components/CustomButton";
-import MapLocationPlaceholder from "../../../shared/components/MapLocationPlaceholder";
+import type { MarketFormProps } from "../../models/market";
+import CustomInputField from "../../shared/components/CustomInputField";
+import CustomButton from "../../shared/components/CustomButton";
+import MapLocationPlaceholder from "../../shared/components/MapLocationPlaceholder";
 import { DAYS } from "./market.utils";
 
 const marketTypeOptions = [
@@ -60,13 +60,7 @@ export default function MarketForm({
   submitLabel,
 }: MarketFormProps) {
   const isViewMode = mode === "view";
-
-  const resolvedTitle =
-    mode === "create"
-      ? "Δημιουργία Αγοράς"
-      : mode === "edit"
-        ? "Επεξεργασία Αγοράς"
-        : "Προβολή Αγοράς";
+  const isEditMode = mode === "edit";
 
   const handleAddDay = () => {
     onChange({
@@ -117,10 +111,7 @@ export default function MarketForm({
   };
 
   return (
-      <Box className="flex flex-col gap-6 md:max-h-[85vh] overflow-y-auto mb-4">
-        <Typography variant="h6" sx={{ fontWeight: 700 }}>
-          {resolvedTitle}
-        </Typography>
+      <Box className="flex flex-col gap-6 md:max-h-[75vh] overflow-y-auto mb-4">
 
         <Box className="w-full flex flex-wrap justify-between">
           <CustomInputField
@@ -167,7 +158,7 @@ export default function MarketForm({
 
         <Box className="mt-4 flex flex-col gap-4 lg:flex-row">
           <Box className="flex-1">
-            <MapLocationPlaceholder height={270} />
+            <MapLocationPlaceholder height={260} />
           </Box>
 
           {/* Operating Days Section */}
@@ -194,7 +185,7 @@ export default function MarketForm({
                 {values.operatingDays.map((dayEntry, index) => (
                   <Box
                     key={index}
-                    className="flex flex-wrap items-start gap-3 justify-between rounded-lg p-4 h-[120px]"
+                    className="flex h-30 flex-wrap items-start justify-between gap-3 rounded-lg p-4"
                   >
                     <CustomInputField
                       type="DROPDOWN"
@@ -262,13 +253,26 @@ export default function MarketForm({
         <Box className="flex flex-col gap-4 md:flex-row md:justify-between">
           <CustomInputField
             type="NUMBER"
-            label="Αριθμός Διαθέσιμων Θέσεων"
+            label="Σύνολο Θέσεων"
             value={values.availableSlots}
             onChange={(v) => onChange({ ...values, availableSlots: Number(v) })}
             disabled={isViewMode}
             validation={{ required: true, min: 0 }}
-            width="22%"
+            width="15%"
           />
+
+          {isEditMode && 
+              <CustomInputField
+                type="NUMBER"
+                label="Δεσμευμένες Θέσεις"
+                value={values.occupiedSpots ?? 0}
+                onChange={(v) => onChange({ ...values, occupiedSpots: Number(v) })}
+                disabled={true}
+                validation={{ required: true, min: 0 }}
+                width="15%"
+              />
+          }
+           
 
           <CustomInputField
             type="MULTI_SELECT"
@@ -282,7 +286,7 @@ export default function MarketForm({
         </Box>
 
         <Box className="flex flex-wrap justify-end gap-3">
-          {/* {onCancel && (
+          {onCancel && (
             <CustomButton
               title={isViewMode ? "Κλείσιμο" : "Ακύρωση"}
               backgroundColor={isViewMode ? "var(--color-text-muted)" : "transparent"}
@@ -302,7 +306,7 @@ export default function MarketForm({
                   : undefined
               }
             />
-          )} */}
+          )}
 
           {!isViewMode && onSubmit && (
             <CustomButton

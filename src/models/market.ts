@@ -79,6 +79,7 @@ export interface MarketFormValues {
   availableSlots: number;
   supervisors: string[];
   area: string;
+  occupiedSpots: number;
 }
 
 export interface MarketFormProps {

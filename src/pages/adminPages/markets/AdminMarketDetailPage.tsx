@@ -1,9 +1,11 @@
-import { useEffect, useState } from "react";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { Alert, Box, Snackbar, Tab, Tabs } from "@mui/material";
+import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
+import { useBlocker, useNavigate, useParams } from "@tanstack/react-router";
 import CustomButton from "../../../shared/components/CustomButton";
-import MarketForm from "./MarketForm";
-import type { Market, MarketFormMode, MarketFormValues } from "../../../models/market";
+import MarketForm from "../../../components/markets/MarketForm";
+import type { Market, MarketFormValues } from "../../../models/market";
 import { useMarketQuery } from "../../../queries/marketQueries";
+import ConnectedSellersTable from "../../../components/markets/ConnectedSellersTable";
 
 const EMPTY_FORM_VALUES: MarketFormValues = {
   name: "",
@@ -11,6 +13,7 @@ const EMPTY_FORM_VALUES: MarketFormValues = {
   address: "",
   operatingDays: [],
   availableSlots: 0,
+  occupiedSpots: 0,
   supervisors: [],
   area: "",
 };
@@ -26,6 +29,7 @@ const DAY_NUMBER_TO_NAME: Record<number, string> = {
 };
 
 function mapMarketToFormValues(market: Market): MarketFormValues {
+  console.log(market);
   const operatingDays = market.schedules
     .filter((schedule) => !schedule.isCancelled)
     .map((schedule) => ({
@@ -35,7 +39,8 @@ function mapMarketToFormValues(market: Market): MarketFormValues {
     }))
     .filter((entry) => entry.day);
 
-  const availableSlots = Math.max((market.totalSpots ?? 0) - (market.occupiedSpots ?? 0), 0);
+  const availableSlots = market.totalSpots ?? 0;
+  const occupiedSpots = market.occupiedSpots ?? 0;
 
   return {
     name: market.name,
@@ -43,6 +48,7 @@ function mapMarketToFormValues(market: Market): MarketFormValues {
     address: market.address,
     operatingDays,
     availableSlots,
+    occupiedSpots,
     supervisors: [],
     area: "",
   };
@@ -53,31 +59,79 @@ export default function AdminMarketDetailPage() {
   const params = useParams({ strict: false });
   const marketId = typeof params.marketId === "string" ? params.marketId : "";
   const { data: market, isLoading, isError, error } = useMarketQuery(marketId);
-  const [mode, setMode] = useState<MarketFormMode>("edit");
+  const [activeTab, setActiveTab] = useState(0);
   const [formValues, setFormValues] = useState<MarketFormValues>(EMPTY_FORM_VALUES);
+  const [initialFormValues, setInitialFormValues] = useState<MarketFormValues>(EMPTY_FORM_VALUES);
+  const [navigationNotice, setNavigationNotice] = useState("");
+  const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
+  const connectedSellersCount = market?.sellers?.length ?? 0;
+  const hasUnsavedChanges = useMemo(
+    () => JSON.stringify(formValues) !== JSON.stringify(initialFormValues),
+    [formValues, initialFormValues]
+  );
+
+  const showNavigationNotice = (message: string) => {
+    setNavigationNotice(message);
+    setIsSnackbarOpen(true);
+  };
+
+  useBlocker({
+    shouldBlockFn: () => {
+      if (!hasUnsavedChanges) return false;
+      showNavigationNotice("Έχετε μη αποθηκευμένες αλλαγές. Αποθηκεύστε ή ακυρώστε για να συνεχίσετε.");
+      return true;
+    },
+    enableBeforeUnload: hasUnsavedChanges,
+  });
 
   const handleBackToList = () => {
+    if (hasUnsavedChanges) {
+      showNavigationNotice("Έχετε μη αποθηκευμένες αλλαγές. Αποθηκεύστε ή ακυρώστε για να συνεχίσετε.");
+      return;
+    }
+
     navigate({ to: "/admin/markets" });
+  };
+
+  const handleTabChange = (_event: SyntheticEvent, nextTab: number) => {
+    if (hasUnsavedChanges) {
+      showNavigationNotice("Υπάρχουν μη αποθηκευμένες αλλαγές. Η αλλαγή καρτέλας δεν επιτρέπεται.");
+      return;
+    }
+
+    setActiveTab(nextTab);
   };
 
   useEffect(() => {
     if (!market) return;
-    setFormValues(mapMarketToFormValues(market));
-    setMode("edit");
+    const mappedValues = mapMarketToFormValues(market);
+    setFormValues(mappedValues);
+    setInitialFormValues(mappedValues);
   }, [market]);
 
-  const handleCancel = () => {
-    if (mode === "edit" && market) {
-      setFormValues(mapMarketToFormValues(market));
-      setMode("view");
-      return;
+  useEffect(() => {
+    if (!hasUnsavedChanges) {
+      setNavigationNotice("");
+      setIsSnackbarOpen(false);
     }
+  }, [hasUnsavedChanges]);
+
+  const handleSnackbarClose = (_event?: Event | SyntheticEvent, reason?: string) => {
+    if (reason === "clickaway") return;
+    setIsSnackbarOpen(false);
+  };
+
+  const handleCancel = () => {
+    setFormValues(initialFormValues);
+    setNavigationNotice("");
+    setIsSnackbarOpen(false);
   };
 
   const handleSubmit = (values: MarketFormValues) => {
     // TODO: wire update market mutation once backend endpoint is available
-    console.log("Update market submit", { marketId, values });
-    setMode("view");
+    setInitialFormValues(values);
+    setNavigationNotice("");
+    setIsSnackbarOpen(false);
   };
 
   if (!marketId) {
@@ -107,7 +161,7 @@ export default function AdminMarketDetailPage() {
   if (isError || !market) {
     return (
       <div className="flex flex-col gap-4 rounded-2xl border border-(--color-danger-border) bg-danger-subtle p-6 text-(--color-text-heading)">
-        <h1 className="text-2xl font-semibold">Στοιχεία αγοράς</h1>
+        <h6 className="text-sm font-semibold text-(--color-text-heading)">Επεξεργασία Αγοράς</h6>
         <p className="text-sm text-(--color-danger)">{error?.message ?? "Η φόρτωση των στοιχείων αγοράς απέτυχε."}</p>
         <CustomButton
           title="Επιστροφή στη λίστα αγορών"
@@ -122,38 +176,59 @@ export default function AdminMarketDetailPage() {
   return (
     <div className="flex h-full w-full flex-col gap-6 text-left">
       <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-semibold text-(--color-text-heading)">Επεξεργασία Αγοράς</h2>
         <CustomButton
           title="Επιστροφή στη λίστα αγορών"
           backgroundColor="var(--color-text-muted)"
           width="fit-content"
           onClick={handleBackToList}
         />
-
-        {/* <div className="flex items-center gap-3">
-          {mode === "view" ? (
-            <CustomButton title="Επεξεργασία" onClick={() => setMode("edit")} width={140} />
-          ) : (
-            <CustomButton
-              title="Προβολή"
-              onClick={() => {
-                setFormValues(mapMarketToFormValues(market));
-                setMode("view");
-              }}
-              backgroundColor="var(--color-text-muted)"
-              width={120}
-            />
-          )}
-        </div> */}
       </div>
 
-      <MarketForm
-        mode={mode}
-        values={formValues}
-        onChange={setFormValues}
-        onSubmit={mode === "edit" ? handleSubmit : undefined}
-        onCancel={mode === "edit" ? handleCancel : undefined}
-        submitLabel="Αποθήκευση"
-      />
+      <Box className="">
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          variant="fullWidth"
+          sx={{
+            marginBottom: 3,
+            borderBottom: "1px solid var(--color-border)",
+            "& .MuiTab-root": {
+              textTransform: "none",
+              fontWeight: 600,
+            },
+          }}
+        >
+          <Tab label="Στοιχεία αγοράς" />
+          <Tab label={`Συμμετέχοντες πωλητές (${connectedSellersCount})`} />
+        </Tabs>
+
+        {activeTab === 0 ? (
+          <MarketForm
+            mode="edit"
+            values={formValues}
+            onChange={setFormValues}
+            onSubmit={hasUnsavedChanges ? handleSubmit : undefined}
+            onCancel={hasUnsavedChanges ? handleCancel : undefined}
+            submitLabel="Αποθήκευση"
+          />
+        ) : (
+          <div className="flex flex-col gap-4">
+            <ConnectedSellersTable sellers={market.sellers ?? []} />
+          </div>
+        )}
+      </Box>
+
+      <Snackbar
+        open={isSnackbarOpen && Boolean(navigationNotice)}
+        autoHideDuration={4500}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={handleSnackbarClose} severity="warning" variant="filled" sx={{ width: "100%" }}>
+          {navigationNotice}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

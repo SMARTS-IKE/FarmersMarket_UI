@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import type { MarketFormValues } from "../../../models/market";
-import MarketForm from "./MarketForm";
+import MarketForm from "../../../components/markets/MarketForm";
 
 const EMPTY_FORM_VALUES: MarketFormValues = {
   name: "",
@@ -9,6 +9,7 @@ const EMPTY_FORM_VALUES: MarketFormValues = {
   address: "",
   operatingDays: [],
   availableSlots: 0,
+  occupiedSpots: 0,
   supervisors: [],
   area: "",
 };

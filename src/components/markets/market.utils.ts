@@ -11,7 +11,6 @@ export const DAYS = [
   { label: "Κυριακή", value: "Sunday" },
 ];
 
-
 export const marketTypeLabel = (type: number) => {
   switch (type) {
     case 1: return "Γενική Αγορά";
