@@ -47,3 +47,17 @@ export async function getMarkets(params: MarketSearchRequest): Promise<MarketLis
 export async function getMarketById(id: string): Promise<Market> {
   return http.get<Market>(`/Markets/${id}`);
 }
+
+export async function addMarketSeller(
+  marketId: string,
+  payload: { sellerId: number; spotNumber: number; spotLength: number }
+): Promise<void> {
+  return http.post<void, { sellerId: number; spotNumber: number; spotLength: number }>(
+    `/Markets/${marketId}/sellers`,
+    payload
+  );
+}
+
+export async function removeMarketSeller(marketId: string, sellerId: number): Promise<void> {
+  return http.delete<void>(`/Markets/${marketId}/sellers/${sellerId}`);
+}

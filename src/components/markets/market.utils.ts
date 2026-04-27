@@ -50,4 +50,5 @@ export const columns: ColumnDef<Market>[] = [
       .join(", "),
   },
    { key: "totalSpots", label: "Διαθέσιμες Θέσεις" },
+   { key: "occupiedSpots", label: "Δεσμευμένες Θέσεις" },
 ];

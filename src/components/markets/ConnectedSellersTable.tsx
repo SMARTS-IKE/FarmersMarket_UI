@@ -1,3 +1,4 @@
+import DeleteIcon from "@mui/icons-material/Delete";
 import { useMemo } from "react";
 import CustomButton from "../../shared/components/CustomButton";
 import DataTable, { type ColumnDef } from "../../shared/components/DataTable";
@@ -6,6 +7,7 @@ import { useSellersQuery } from "../../queries/sellerQueries";
 
 interface ConnectedSellersTableProps {
   sellers: unknown[];
+  onRemoveSeller?: (sellerId: number) => void;
 }
 
 const LICENSE_STATUS_CONFIG: Record<string, { label: string; backgroundColor: string; color: string }> = {
@@ -41,7 +43,10 @@ const LICENSE_STATUS_CONFIG: Record<string, { label: string; backgroundColor: st
   },
 };
 
-const connectedSellerColumns: ColumnDef<Record<string, unknown>>[] = [
+function createConnectedSellerColumns(
+  onRemoveSeller?: (sellerId: number) => void
+): ColumnDef<Record<string, unknown>>[] {
+  return [
   { key: "firstName", label: "Όνομα" },
   { key: "lastName", label: "Επώνυμο" },
   {
@@ -58,6 +63,12 @@ const connectedSellerColumns: ColumnDef<Record<string, unknown>>[] = [
     label: "Αριθμός θέσης",
     filterable: false,
     render: (row) => String(row.spotNumber ?? "—"),
+  },
+  {
+    key: "spotLength",
+    label: "Μήκος θέσης",
+    filterable: false,
+    render: (row) => String(row.spotLength ?? "—"),
   },
   {
     key: "licenseStatus",
@@ -83,7 +94,31 @@ const connectedSellerColumns: ColumnDef<Record<string, unknown>>[] = [
       );
     },
   },
+  {
+    key: "actions",
+    label: "Ενέργειες",
+    filterable: false,
+    render: (row) => {
+      const sellerId = Number(row.sellerId ?? row.id);
+
+      return (
+        <CustomButton
+          title="Διαγραφή"
+          prefixIcon={<DeleteIcon />}
+          backgroundColor="var(--color-danger)"
+          width="fit-content"
+          disabled={!Number.isFinite(sellerId) || !onRemoveSeller}
+          onClick={() => {
+            if (Number.isFinite(sellerId)) {
+              onRemoveSeller?.(sellerId);
+            }
+          }}
+        />
+      );
+    },
+  },
 ];
+}
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
@@ -229,6 +264,10 @@ function normalizeConnectedSeller(
     readNumber(record, ["spotNumber", "positionNumber", "stallNumber", "marketSpotNumber"]) ??
     (readString(record, ["spotNumber", "positionNumber", "stallNumber", "marketSpotNumber"]) || "—");
 
+  const spotLength =
+    readNumber(record, ["spotLength", "stallLength", "marketSpotLength"]) ??
+    (readString(record, ["spotLength", "stallLength", "marketSpotLength"]) || "—");
+
   const sellerIsActive =
     (sellerDetails ? readBoolean(sellerDetails, ["isActive", "active"]) : null) ??
     readBoolean(sellerRecord, ["isActive", "active"]) ??
@@ -245,6 +284,7 @@ function normalizeConnectedSeller(
     lastName,
     sellerType,
     spotNumber,
+    spotLength,
     licenseStatus: licenseStatus.label,
     licenseStatusKey: licenseStatus.key,
     isActive: sellerIsActive,
@@ -253,7 +293,7 @@ function normalizeConnectedSeller(
   return connectedSeller;
 }
 
-export default function ConnectedSellersTable({ sellers }: ConnectedSellersTableProps) {
+export default function ConnectedSellersTable({ sellers, onRemoveSeller }: ConnectedSellersTableProps) {
   const sellerIds = useMemo(
     () =>
       sellers
@@ -269,6 +309,7 @@ export default function ConnectedSellersTable({ sellers }: ConnectedSellersTable
     page: 1,
     pageSize: 5000,
   });
+
 
   const sellerDetailsById = useMemo(() => {
     const byId = new Map<number, Record<string, unknown>>();
@@ -291,10 +332,12 @@ export default function ConnectedSellersTable({ sellers }: ConnectedSellersTable
     [sellers, sellerDetailsById]
   );
 
+  const columns = useMemo(() => createConnectedSellerColumns(onRemoveSeller), [onRemoveSeller]);
+
   return (
     <DataTable<Record<string, unknown>>
       rows={connectedSellers}
-      columns={connectedSellerColumns}
+      columns={columns}
       rowKey="id"
       showFilter={false}
       defaultRowsPerPage={10}

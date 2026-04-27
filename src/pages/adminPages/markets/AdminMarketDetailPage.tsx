@@ -1,11 +1,18 @@
+import AddIcon from "@mui/icons-material/Add";
 import { Alert, Box, Snackbar, Tab, Tabs } from "@mui/material";
 import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
 import { useBlocker, useNavigate, useParams } from "@tanstack/react-router";
 import CustomButton from "../../../shared/components/CustomButton";
+import AddSellerModal from "../../../components/markets/AddSellerModal";
 import MarketForm from "../../../components/markets/MarketForm";
 import type { Market, MarketFormValues } from "../../../models/market";
-import { useMarketQuery } from "../../../queries/marketQueries";
+import {
+  useAddMarketSellerMutation,
+  useMarketQuery,
+  useRemoveMarketSellerMutation,
+} from "../../../queries/marketQueries";
 import ConnectedSellersTable from "../../../components/markets/ConnectedSellersTable";
+import { useSellersQuery } from "../../../queries/sellerQueries";
 
 const EMPTY_FORM_VALUES: MarketFormValues = {
   name: "",
@@ -28,8 +35,127 @@ const DAY_NUMBER_TO_NAME: Record<number, string> = {
   6: "Saturday",
 };
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
+}
+
+function readNumber(record: Record<string, unknown>, keys: string[]): number | null {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+
+    if (typeof value === "string") {
+      const parsed = Number(value);
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+  }
+
+  return null;
+}
+
+function readString(record: Record<string, unknown>, keys: string[]): string {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+
+  return "";
+}
+
+function readBoolean(record: Record<string, unknown>, keys: string[]): boolean | null {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "boolean") {
+      return value;
+    }
+  }
+
+  return null;
+}
+
+function hasActiveLicense(seller: unknown): boolean {
+  const sellerRecord = asRecord(seller);
+  if (!sellerRecord) return false;
+
+  const nestedLicenseRecord =
+    asRecord(sellerRecord.license) ??
+    asRecord(sellerRecord.sellerLicense) ??
+    asRecord(sellerRecord.permit);
+
+  const explicitLicenseStatus =
+    readString(sellerRecord, ["licenseStatus", "permitStatus", "permitState"]) ||
+    (nestedLicenseRecord
+      ? readString(nestedLicenseRecord, ["licenseStatus", "permitStatus", "permitState", "status"])
+      : "");
+
+  if (explicitLicenseStatus) {
+    const normalizedStatus = explicitLicenseStatus.toLowerCase();
+    if (normalizedStatus.includes("active") || normalizedStatus.includes("ενεργ")) {
+      return true;
+    }
+
+    if (
+      normalizedStatus.includes("pending") ||
+      normalizedStatus.includes("expired") ||
+      normalizedStatus.includes("revoked") ||
+      normalizedStatus.includes("inactive") ||
+      normalizedStatus.includes("εκκρε") ||
+      normalizedStatus.includes("ληξ") ||
+      normalizedStatus.includes("ανακλ") ||
+      normalizedStatus.includes("ανενεργ")
+    ) {
+      return false;
+    }
+  }
+
+  const explicitLicenseFlag =
+    readBoolean(sellerRecord, ["isLicenseActive", "licenseIsActive", "hasActiveLicense"]) ??
+    (nestedLicenseRecord
+      ? readBoolean(nestedLicenseRecord, ["isLicenseActive", "licenseIsActive", "hasActiveLicense"])
+      : null);
+  if (explicitLicenseFlag !== null) {
+    return explicitLicenseFlag;
+  }
+
+  // Fallback for payloads that expose only a generic active flag.
+  return readBoolean(sellerRecord, ["isActive", "active"]) === true;
+}
+
+function extractConnectedSellerId(entry: unknown): number | null {
+  const record = asRecord(entry);
+  if (!record) return null;
+
+  const nestedSellerRecord =
+    asRecord(record.seller) ??
+    asRecord(record.sellerInfo) ??
+    asRecord(record.sellerDetails) ??
+    asRecord(record.user);
+
+  const explicitSellerId =
+    readNumber(record, ["sellerId"]) ??
+    (nestedSellerRecord ? readNumber(nestedSellerRecord, ["sellerId", "id"]) : null);
+  if (explicitSellerId !== null) return explicitSellerId;
+
+  // Fallback to top-level id only when the shape looks like a seller entity.
+  const looksLikeSellerEntity =
+    typeof record.firstName === "string" ||
+    typeof record.lastName === "string" ||
+    typeof record.afm === "string" ||
+    record.sellerType !== undefined;
+
+  if (!looksLikeSellerEntity) return null;
+
+  return readNumber(record, ["id"]);
+}
+
 function mapMarketToFormValues(market: Market): MarketFormValues {
-  console.log(market);
+
   const operatingDays = market.schedules
     .filter((schedule) => !schedule.isCancelled)
     .map((schedule) => ({
@@ -59,16 +185,50 @@ export default function AdminMarketDetailPage() {
   const params = useParams({ strict: false });
   const marketId = typeof params.marketId === "string" ? params.marketId : "";
   const { data: market, isLoading, isError, error } = useMarketQuery(marketId);
+  const addMarketSellerMutation = useAddMarketSellerMutation(marketId);
+  const removeMarketSellerMutation = useRemoveMarketSellerMutation(marketId);
+  const { data: sellersQueryResults } = useSellersQuery({
+    name: "",
+    afm: "",
+    sellerType: 1,
+    page: 1,
+    pageSize: 5000,
+  });
   const [activeTab, setActiveTab] = useState(0);
   const [formValues, setFormValues] = useState<MarketFormValues>(EMPTY_FORM_VALUES);
   const [initialFormValues, setInitialFormValues] = useState<MarketFormValues>(EMPTY_FORM_VALUES);
+  const [connectedSellers, setConnectedSellers] = useState<unknown[]>([]);
+  const [isAddSellerModalOpen, setIsAddSellerModalOpen] = useState(false);
   const [navigationNotice, setNavigationNotice] = useState("");
   const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
-  const connectedSellersCount = market?.sellers?.length ?? 0;
+  const connectedSellersCount = connectedSellers.length;
   const hasUnsavedChanges = useMemo(
     () => JSON.stringify(formValues) !== JSON.stringify(initialFormValues),
     [formValues, initialFormValues]
   );
+
+  const connectedSellerIds = useMemo(
+    () =>
+      new Set(
+        connectedSellers
+          .map(extractConnectedSellerId)
+          .filter((sellerId): sellerId is number => Number.isFinite(sellerId))
+      ),
+    [connectedSellers]
+  );
+
+  const availableSellerOptions = useMemo(
+    () =>
+      (sellersQueryResults?.items ?? [])
+        .filter((seller) => hasActiveLicense(seller))
+        .filter((seller) => !connectedSellerIds.has(seller.id))
+        .map((seller) => ({
+          label: `${seller.firstName} ${seller.lastName}`.trim() || `Πωλητής #${seller.id}`,
+          value: String(seller.id),
+        })),
+    [connectedSellerIds, sellersQueryResults?.items]
+  );
+
 
   const showNavigationNotice = (message: string) => {
     setNavigationNotice(message);
@@ -107,6 +267,8 @@ export default function AdminMarketDetailPage() {
     const mappedValues = mapMarketToFormValues(market);
     setFormValues(mappedValues);
     setInitialFormValues(mappedValues);
+    setConnectedSellers(market.sellers ?? []);
+    setIsAddSellerModalOpen(false);
   }, [market]);
 
   useEffect(() => {
@@ -132,6 +294,66 @@ export default function AdminMarketDetailPage() {
     setInitialFormValues(values);
     setNavigationNotice("");
     setIsSnackbarOpen(false);
+  };
+
+  const handleOpenAddSellerModal = () => {
+    setIsAddSellerModalOpen(true);
+  };
+
+  const handleCloseAddSellerModal = () => {
+    setIsAddSellerModalOpen(false);
+  };
+
+  const handleSaveSellerFromModal = ({
+    sellerId,
+    spotNumber,
+    spotLength,
+  }: {
+    sellerId: number;
+    spotNumber: number;
+    spotLength: number;
+  }) => {
+    if (!marketId || addMarketSellerMutation.isPending) return;
+
+    const sellerToAdd = sellersQueryResults?.items.find((seller) => seller.id === sellerId);
+    if (!sellerToAdd) return;
+
+    addMarketSellerMutation.mutate(
+      { sellerId, spotNumber, spotLength },
+      {
+        onSuccess: () => {
+          setConnectedSellers((currentSellers) => [
+            ...currentSellers,
+            {
+              ...sellerToAdd,
+              sellerId: sellerToAdd.id,
+              spotNumber,
+              spotLength,
+            },
+          ]);
+
+          handleCloseAddSellerModal();
+        },
+        onError: (mutationError) => {
+          showNavigationNotice(mutationError.message || "Η σύνδεση πωλητή απέτυχε.");
+        },
+      }
+    );
+  };
+
+  const handleRemoveSeller = (sellerId: number) => {
+    if (!marketId || removeMarketSellerMutation.isPending) return;
+
+    removeMarketSellerMutation.mutate(sellerId, {
+      onSuccess: () => {
+        setConnectedSellers((currentSellers) =>
+          currentSellers.filter((seller) => extractConnectedSellerId(seller) !== sellerId)
+        );
+      },
+      onError: (mutationError) => {
+        showNavigationNotice(mutationError.message || "Η διαγραφή πωλητή απέτυχε.");
+      },
+    });
   };
 
   if (!marketId) {
@@ -196,6 +418,13 @@ export default function AdminMarketDetailPage() {
             "& .MuiTab-root": {
               textTransform: "none",
               fontWeight: 600,
+              color: "var(--color-text-muted)",
+            },
+            "& .MuiTab-root.Mui-selected": {
+              color: "var(--color-dark)",
+            },
+            "& .MuiTabs-indicator": {
+              backgroundColor: "var(--color-dark)",
             },
           }}
         >
@@ -214,7 +443,24 @@ export default function AdminMarketDetailPage() {
           />
         ) : (
           <div className="flex flex-col gap-4">
-            <ConnectedSellersTable sellers={market.sellers ?? []} />
+            <div className="flex bg-(--color-surface) p-4">
+              <CustomButton
+                title="Προσθήκη πωλητή"
+                prefixIcon={<AddIcon />}
+                width="fit-content"
+                disabled={availableSellerOptions.length === 0}
+                onClick={handleOpenAddSellerModal}
+              />
+            </div>
+
+            <ConnectedSellersTable sellers={connectedSellers} onRemoveSeller={handleRemoveSeller} />
+
+            <AddSellerModal
+              open={isAddSellerModalOpen}
+              onClose={handleCloseAddSellerModal}
+              onSave={handleSaveSellerFromModal}
+              sellerOptions={availableSellerOptions}
+            />
           </div>
         )}
       </Box>
