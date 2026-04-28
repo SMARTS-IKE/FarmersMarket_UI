@@ -1,5 +1,5 @@
 import { http } from '../lib/http';
-import type { SellerSearchRequest, SellerListResponse } from '../models/seller';
+import type { Seller, SellerSearchRequest, SellerListResponse } from '../models/seller';
 
 export async function getSellers(params: SellerSearchRequest): Promise<SellerListResponse> {
   const query = new URLSearchParams();
@@ -13,4 +13,8 @@ export async function getSellers(params: SellerSearchRequest): Promise<SellerLis
 
   const qs = query.toString();
   return http.get<SellerListResponse>(`/Sellers${qs ? `?${qs}` : ''}`);
+}
+
+export async function getSellerById(id: string): Promise<Seller> {
+  return http.get<Seller>(`/Sellers/${id}`);
 }

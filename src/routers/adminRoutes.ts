@@ -4,6 +4,7 @@ import DashboardPage from '../pages/adminPages/AdminDashboardPage';
 import AdminUsersPage from '../pages/adminPages/users/AdminUsersPage';
 import UserPage from '../pages/adminPages/users/UserPage';
 import AdminSellersPage from '../pages/adminPages/sellers/AdminSellersPage';
+import SellerPage from '../pages/adminPages/sellers/SellerPage';
 import AdminMarketsPage from '../pages/adminPages/markets/AdminMarketsPage';
 import AdminMarketCreatePage from '../pages/adminPages/markets/AdminMarketCreatePage';
 import AdminMarketDetailPage from '../pages/adminPages/markets/AdminMarketDetailPage';
@@ -42,6 +43,12 @@ export const sellersRoute = createRoute({
   component: AdminSellersPage,
 });
 
+export const sellerDetailRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/admin/sellers/$sellerId',
+  component: SellerPage,
+});
+
 export const marketsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/admin/markets',
@@ -77,6 +84,7 @@ export const adminRouteTree = protectedRoute.addChildren([
   usersRoute,
   userDetailRoute,
   sellersRoute,
+  sellerDetailRoute,
   marketsRoute,
   marketCreateRoute,
   marketDetailRoute,

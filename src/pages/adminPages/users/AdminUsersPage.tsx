@@ -9,6 +9,11 @@ const columns: ColumnDef<AppUser>[] = [
   { key: "lastName", label: "Επώνυμο" },
   { key: "email", label: "Email" },
   {
+    key: "isActive",
+    label: "Κατάσταση",
+    render: (row) => (row.isActive ? "Ενεργός" : "Ανενεργός"),
+  },
+  {
     key: "roles",
     label: "Ρόλοι",
     render: (row) => row.roles?.join(", ") ?? "—",

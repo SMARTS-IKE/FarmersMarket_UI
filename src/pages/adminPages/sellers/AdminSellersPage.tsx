@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import DataTable, { ColumnDef, FilterDef, FilterValues } from "../../../shared/components/DataTable";
 import type { Seller, SellerSearchRequest, SellerType } from "../../../models/seller";
 import { useSellersQuery } from "../../../queries/sellerQueries";
@@ -70,6 +71,7 @@ const tableFilters: FilterDef[] = [
 ];
 
 export default function AdminSellersPage() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<SellerSearchRequest>({
     name: "",
     afm: "",
@@ -91,6 +93,10 @@ export default function AdminSellersPage() {
     }));
   };
 
+  const handleRowClick = (seller: Seller) => {
+    navigate({ to: "/admin/sellers/$sellerId", params: { sellerId: String(seller.id) } });
+  };
+
   return (
     <div className="flex h-full flex-col gap-6 text-left">
 
@@ -101,6 +107,7 @@ export default function AdminSellersPage() {
           showFilter={false}
           filters={tableFilters}
           onSearch={handleSearch}
+          onRowClick={handleRowClick}
         />
     </div>
   );

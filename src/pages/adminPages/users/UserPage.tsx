@@ -1,5 +1,6 @@
-import { useEffect, useState } from 'react';
-import { Link, useParams } from '@tanstack/react-router';
+import { useEffect, useMemo, useState, type SyntheticEvent } from 'react';
+import { useBlocker, useNavigate, useParams } from '@tanstack/react-router';
+import { Alert, Snackbar } from '@mui/material';
 import CustomButton from '../../../shared/components/CustomButton';
 import CustomInputField from '../../../shared/components/CustomInputField';
 import {
@@ -8,13 +9,10 @@ import {
   useUpdateUserMutation,
   useUserQuery,
 } from '../../../queries/userQueries';
+import { USER_ROLE_MAPPING_TITLES } from '../../../shared/mappings/users.mapping';
 
-const ROLE_OPTIONS = [
-  'Admin',
-  'SystemAdmin',
-  'Seller',
-  'Customer',
-] as const;
+const ROLE_OPTIONS = USER_ROLE_MAPPING_TITLES ? Object.values(USER_ROLE_MAPPING_TITLES) : [];
+const ROLE_KEYS = USER_ROLE_MAPPING_TITLES ? Object.keys(USER_ROLE_MAPPING_TITLES) : [];
 
 const editableFieldSx = {
   '& .MuiInputBase-root': {
@@ -42,6 +40,7 @@ const editableFieldSx = {
 };
 
 export default function UserPage() {
+  const navigate = useNavigate();
   const params = useParams({ strict: false });
   const userId = typeof params.id === 'string' ? params.id : '';
   const { data: user, isLoading, isError, error } = useUserQuery(userId);
@@ -51,30 +50,77 @@ export default function UserPage() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [isActive, setIsActive] = useState(false);
+  const [initialFirstName, setInitialFirstName] = useState('');
+  const [initialLastName, setInitialLastName] = useState('');
+  const [initialIsActive, setInitialIsActive] = useState(false);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
-  const [saveMessage, setSaveMessage] = useState<string | null>(null);
-  const [saveError, setSaveError] = useState<string | null>(null);
+  const [initialSelectedRoles, setInitialSelectedRoles] = useState<string[]>([]);
+  const [isNavigationLocked, setIsNavigationLocked] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState('');
+  const [notificationSeverity, setNotificationSeverity] = useState<'success' | 'warning' | 'error'>('warning');
+  const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
 
   useEffect(() => {
     if (!user) return;
-    setFirstName(user.firstName ?? '');
-    setLastName(user.lastName ?? '');
-    setIsActive(Boolean(user.isActive));
-    setSelectedRoles(user.roles ?? []);
-    setSaveMessage(null);
-    setSaveError(null);
+    const nextFirstName = user.firstName ?? '';
+    const nextLastName = user.lastName ?? '';
+    const nextIsActive = Boolean(user.isActive);
+    const nextRoles = user.roles ?? [];
+    setFirstName(nextFirstName);
+    setLastName(nextLastName);
+    setIsActive(nextIsActive);
+    setSelectedRoles(nextRoles);
+    setInitialFirstName(nextFirstName);
+    setInitialLastName(nextLastName);
+    setInitialIsActive(nextIsActive);
+    setInitialSelectedRoles(nextRoles);
+    setIsNavigationLocked(false);
+    setNotificationMessage('');
+    setIsSnackbarOpen(false);
   }, [user]);
 
   const isSavingUser = updateUserMutation.isPending;
   const isUpdatingRole = assignRoleMutation.isPending || removeRoleMutation.isPending;
-  const originalRoles = user?.roles ?? [];
-  const rolesToAdd = selectedRoles.filter((role) => !originalRoles.includes(role));
-  const rolesToRemove = originalRoles.filter((role) => !selectedRoles.includes(role));
-  const hasRoleChanges = rolesToAdd.length > 0 || rolesToRemove.length > 0;
+  const rolesToAdd = selectedRoles.filter((role) => !initialSelectedRoles.includes(role));
+  const rolesToRemove = initialSelectedRoles.filter((role) => !selectedRoles.includes(role));
+  const hasRoleChanges = useMemo(() => {
+    if (selectedRoles.length !== initialSelectedRoles.length) return true;
+    const selectedRolesSet = new Set(selectedRoles);
+    return initialSelectedRoles.some((role) => !selectedRolesSet.has(role));
+  }, [initialSelectedRoles, selectedRoles]);
+
+  const hasUserChanges =
+    firstName !== initialFirstName ||
+    lastName !== initialLastName ||
+    isActive !== initialIsActive;
+  const hasPendingChanges = hasUserChanges || hasRoleChanges;
+
+  const showNotification = (message: string, severity: 'success' | 'warning' | 'error' = 'warning') => {
+    setNotificationMessage(message);
+    setNotificationSeverity(severity);
+    setIsSnackbarOpen(true);
+  };
+
+  useEffect(() => {
+    if (hasPendingChanges) {
+      setIsNavigationLocked(true);
+    }
+  }, [hasPendingChanges]);
+
+  useBlocker({
+    shouldBlockFn: () => {
+      if (!isNavigationLocked) return false;
+      showNotification('Έχετε μη αποθηκευμένες αλλαγές. Αποθηκεύστε ή ακυρώστε για να συνεχίσετε.', 'warning');
+      return true;
+    },
+    enableBeforeUnload: isNavigationLocked,
+  });
 
   async function handleSave() {
-    setSaveMessage(null);
-    setSaveError(null);
+    if (!hasPendingChanges) return;
+
+    setNotificationMessage('');
+    setIsSnackbarOpen(false);
 
     try {
       await updateUserMutation.mutateAsync({
@@ -88,15 +134,30 @@ export default function UserPage() {
         ...rolesToRemove.map((role) => removeRoleMutation.mutateAsync(role)),
       ]);
 
-      setSaveMessage('Οι αλλαγές χρήστη και ρόλων αποθηκεύτηκαν.');
+      setInitialFirstName(firstName);
+      setInitialLastName(lastName);
+      setInitialIsActive(isActive);
+      setInitialSelectedRoles(selectedRoles);
+      setIsNavigationLocked(false);
+      showNotification('Οι αλλαγές χρήστη και ρόλων αποθηκεύτηκαν.', 'success');
     } catch (mutationError) {
-      setSaveError(mutationError instanceof Error ? mutationError.message : 'Η αποθήκευση απέτυχε.');
+      showNotification(mutationError instanceof Error ? mutationError.message : 'Η αποθήκευση απέτυχε.', 'error');
     }
   }
 
+  function handleCancel() {
+    setFirstName(initialFirstName);
+    setLastName(initialLastName);
+    setIsActive(initialIsActive);
+    setSelectedRoles(initialSelectedRoles);
+    setNotificationMessage('');
+    setIsSnackbarOpen(false);
+    setIsNavigationLocked(false);
+  }
+
   function handleRoleToggle(role: string) {
-    setSaveMessage(null);
-    setSaveError(null);
+    setNotificationMessage('');
+    setIsSnackbarOpen(false);
 
     setSelectedRoles((current) =>
       current.includes(role)
@@ -105,20 +166,31 @@ export default function UserPage() {
     );
   }
 
-  const hasUserChanges =
-    firstName !== (user?.firstName ?? '') ||
-    lastName !== (user?.lastName ?? '') ||
-    isActive !== Boolean(user?.isActive);
-  const hasPendingChanges = hasUserChanges || hasRoleChanges;
+  const handleBackToList = () => {
+    if (isNavigationLocked) {
+      showNotification('Έχετε μη αποθηκευμένες αλλαγές. Αποθηκεύστε ή ακυρώστε για να συνεχίσετε.', 'warning');
+      return;
+    }
+
+    navigate({ to: "/admin/users" });
+  };
+
+  const handleSnackbarClose = (_event?: Event | SyntheticEvent, reason?: string) => {
+    if (reason === 'clickaway') return;
+    setIsSnackbarOpen(false);
+  };
 
   if (!userId) {
     return (
       <div className="flex flex-col gap-4 rounded-2xl border border-(--color-border) bg-(--color-surface) p-6 text-(--color-text-heading)">
         <h1 className="text-2xl font-semibold">Στοιχεία χρήστη</h1>
         <p className="text-sm text-(--color-text-muted)">Δεν βρέθηκε έγκυρο αναγνωριστικό χρήστη.</p>
-        <Link to="/admin/users" className="text-sm font-medium text-(--color-primary)">
-          Επιστροφή στη λίστα χρηστών
-        </Link>
+        <CustomButton
+          title="Επιστροφή στη λίστα χρηστών"
+          onClick={handleBackToList}
+          width="fit-content"
+          backgroundColor="var(--color-text-muted)"
+        />
       </div>
     );
   }
@@ -137,9 +209,12 @@ export default function UserPage() {
       <div className="flex flex-col gap-4 rounded-2xl border border-(--color-danger-border) bg-danger-subtle p-6 text-(--color-text-heading)">
         <h1 className="text-2xl font-semibold">Στοιχεία χρήστη</h1>
         <p className="text-sm text-(--color-danger)">{error?.message ?? 'Η φόρτωση των στοιχείων χρήστη απέτυχε.'}</p>
-        <Link to="/admin/users" className="text-sm font-medium text-(--color-primary)">
-          Επιστροφή στη λίστα χρηστών
-        </Link>
+        <CustomButton
+          title="Επιστροφή στη λίστα χρηστών"
+          onClick={handleBackToList}
+          width="fit-content"
+          backgroundColor="var(--color-text-muted)"
+        />
       </div>
     );
   }
@@ -153,40 +228,19 @@ export default function UserPage() {
           </div>
           <div className="flex flex-wrap items-center gap-3">
             <CustomButton
-              title={isSavingUser || isUpdatingRole ? 'Αποθήκευση...' : 'Αποθήκευση αλλαγών'}
-              onClick={handleSave}
-              disabled={!hasPendingChanges || isSavingUser || isUpdatingRole}
-              width={190}
-              backgroundColor="var(--color-text)"
-              sx={{ borderRadius: '9999px' }}
-            />
-            <Link
-              to="/admin/users"
-              className="rounded-full border border-(--color-text-muted) bg-white/80 px-5 py-2 text-sm font-medium text-(--color-text-heading) shadow-[0_3px_12px_rgba(60,40,10,0.08)]"
-            >
-              Επιστροφή στη λίστα χρηστών
-            </Link>
+                      title="Επιστροφή στη λίστα χρηστών"
+                      backgroundColor="var(--color-text-muted)"
+                      width="fit-content"
+                      onClick={handleBackToList} />
           </div>
         </div>
-
-        {saveError && (
-          <div className="rounded-xl border border-(--color-danger-border) bg-danger-subtle px-4 py-3 text-sm text-(--color-danger)">
-            {saveError}
-          </div>
-        )}
-
-        {saveMessage && (
-          <div className="rounded-xl border border-(--color-success-border) bg-success-subtle px-4 py-3 text-sm text-(--color-success)">
-            {saveMessage}
-          </div>
-        )}
 
         <section className="grid content-start gap-10">
           <div className="mx-auto grid w-full max-w-3xl gap-8 md:grid-cols-2 mb-10">
               <div className="md:col-span-2">
                 <CustomInputField
                   type="TEXT"
-                  label="Ηλεκτρονικό ταχυδρομείο *"
+                  label="Ηλεκτρονικό ταχυδρομείο"
                   value={user.email || '—'}
                   disabled
                   width="100%"
@@ -218,7 +272,7 @@ export default function UserPage() {
               />
           </div>
 
-          <div className="grid gap-16 xl:grid-cols-2 xl:items-start">
+          <div className="grid gap-16 xl:grid-cols-1 xl:items-start">
             <div className="space-y-4">
                 <div className="grid grid-cols-2 gap-4">
                   <CustomButton
@@ -288,14 +342,14 @@ export default function UserPage() {
             <div className="grid content-start gap-4">
               <div className="grid grid-cols-2 gap-4">
               {[
-                ...ROLE_OPTIONS.map((role) => ({ label: role, active: selectedRoles.includes(role) })),
+                ...ROLE_KEYS.map((role, index) => ({ label: role, active: selectedRoles.includes(role), index })),
               ].map((role) => (
                 <CustomButton
                   key={role.label}
-                  title={role.label}
+                  title={ROLE_OPTIONS[role.index] || ''}
                   width="100%"
                   onClick={() => handleRoleToggle(role.label)}
-                  disabled={isSavingUser || isUpdatingRole}
+                  disabled={false}
                   backgroundColor={role.active ? 'var(--color-dark)' : 'rgba(255,255,255,0.85)'}
                   sx={{
                     minHeight: 44,
@@ -322,7 +376,48 @@ export default function UserPage() {
             </div>
           </div>
         </section>
+
+        <div className="flex flex-wrap justify-end gap-3">
+          {isNavigationLocked && (
+            <CustomButton
+              title="Ακύρωση"
+              backgroundColor="transparent"
+              onClick={handleCancel}
+              disabled={isSavingUser || isUpdatingRole}
+              width={120}
+              sx={{
+                color: 'var(--color-dark)',
+                border: '1px solid var(--color-text-muted)',
+                '&:hover': {
+                  backgroundColor: 'transparent',
+                  borderColor: 'var(--color-text-muted)',
+                  filter: 'none',
+                },
+              }}
+            />
+          )}
+
+          {hasPendingChanges && (
+            <CustomButton
+              title={isSavingUser || isUpdatingRole ? 'Αποθήκευση...' : 'Αποθήκευση'}
+              onClick={handleSave}
+              disabled={isSavingUser || isUpdatingRole}
+              width={140}
+            />
+          )}
+        </div>
       </div>
+
+      <Snackbar
+        open={isSnackbarOpen && Boolean(notificationMessage)}
+        autoHideDuration={4500}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={notificationSeverity} variant="filled" sx={{ width: '100%' }}>
+          {notificationMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

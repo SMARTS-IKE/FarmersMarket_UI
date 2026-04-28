@@ -3,12 +3,10 @@ import { useNavigate, Link } from '@tanstack/react-router';
 import { setAuthNotification } from '../../lib/authNotifications';
 import type { RegisterCredentials } from '../../models/auth';
 import { useRegisterMutation } from '../../queries/authQueries';
+import { USER_ROLE_MAPPING_TITLES } from '../../shared/mappings/users.mapping';
 
-const ROLES = [
-  { value: 'farmer', label: 'Παραγωγός' },
-  { value: 'buyer', label: 'Αγοραστής' },
-  { value: 'SystemAdmin', label: 'Διαχειριστής' },
-];
+const ROLE_VALUES = USER_ROLE_MAPPING_TITLES ? Object.values(USER_ROLE_MAPPING_TITLES) : [];
+const ROLE_KEYS = USER_ROLE_MAPPING_TITLES ? Object.keys(USER_ROLE_MAPPING_TITLES) : [];
 
 const inputClass =
   'w-full px-4 py-3 text-[15px] rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text-heading) placeholder:text-(--color-text-muted) outline-none transition focus:border-(--color-primary) focus:ring-3 focus:ring-(--color-primary-subtle)';
@@ -202,9 +200,9 @@ export default function RegisterPage() {
             className={`${inputClass} ${errors.role ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
           >
             <option value="" disabled>Επιλέξτε ρόλο…</option>
-            {ROLES.map((r) => (
-              <option key={r.value} value={r.value}>
-                {r.label}
+            {ROLE_VALUES.map((r, index) => (
+              <option value={ROLE_KEYS[index]}>
+                {r}
               </option>
             ))}
           </select>
