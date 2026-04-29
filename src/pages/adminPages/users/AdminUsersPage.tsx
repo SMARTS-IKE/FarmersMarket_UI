@@ -3,6 +3,13 @@ import { useNavigate } from "@tanstack/react-router";
 import DataTable, { ColumnDef, FilterDef, FilterValues } from "../../../shared/components/DataTable";
 import type { AppUser, UserSearchRequest } from "../../../models/user";
 import { useUsersQuery } from "../../../queries/userQueries";
+import { USER_ROLE_MAPPING_TITLES } from "../../../shared/mappings/users.mapping";
+
+const userRoleValues = Object.entries(USER_ROLE_MAPPING_TITLES).map(([key, value]) => ({
+  label: value,
+  value: key,
+}));
+
 
 const columns: ColumnDef<AppUser>[] = [
   { key: "firstName", label: "Όνομα" },
@@ -27,11 +34,7 @@ const tableFilters: FilterDef[] = [
     title: "role",
     label: "Ρόλος",
     type: "DROPDOWN",
-    dataItems: [
-      { label: "Admin", value: "Admin" },
-      { label: "Seller", value: "Seller" },
-      { label: "Customer", value: "Customer" },
-    ],
+    dataItems: userRoleValues,
   },
 ];
 
@@ -46,7 +49,17 @@ export default function AdminUsersPage() {
   });
 
   const { data } = useUsersQuery(filters);
-  const users = Array.isArray(data) ? data : data?.items ?? [];
+  const rawUsers = Array.isArray(data)
+    ? data
+    : data?.items ?? [];
+
+  const users = rawUsers.map((user) => ({
+    ...user,
+    roles: (user.roles ?? []).map((roleKey) => {
+      const mappedRole = USER_ROLE_MAPPING_TITLES[roleKey as keyof typeof USER_ROLE_MAPPING_TITLES];
+      return mappedRole ?? roleKey;
+    }),
+  }));
 
   const handleSearch = (values: FilterValues) => {
     setFilters((prev) => ({

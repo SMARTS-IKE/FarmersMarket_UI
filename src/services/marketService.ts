@@ -61,3 +61,7 @@ export async function addMarketSeller(
 export async function removeMarketSeller(marketId: string, sellerId: number): Promise<void> {
   return http.delete<void>(`/Markets/${marketId}/sellers/${sellerId}`);
 }
+
+export async function addMarketSupervisor(marketId: string, userId: string): Promise<void> {
+  return http.post<void, null>(`/Markets/${marketId}/supervisors/${userId}`, null);
+}

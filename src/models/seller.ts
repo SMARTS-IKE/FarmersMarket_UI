@@ -1,5 +1,5 @@
 /** Maps to SellerType enum: 0 = Unknown, 1 = Παραγωγός, 2 = Μεταπωλητής */
-export type SellerType = 0 | 1 | 2;
+export type SellerType = 0 | 1 | "";
 
 export interface SellerSearchRequest {
   name: string;

@@ -8,6 +8,7 @@ import MarketForm from "../../../components/markets/MarketForm";
 import type { Market, MarketFormValues } from "../../../models/market";
 import {
   useAddMarketSellerMutation,
+  useAddMarketSupervisorMutation,
   useMarketQuery,
   useRemoveMarketSellerMutation,
 } from "../../../queries/marketQueries";
@@ -187,6 +188,7 @@ export default function AdminMarketDetailPage() {
   const { data: market, isLoading, isError, error } = useMarketQuery(marketId);
   const addMarketSellerMutation = useAddMarketSellerMutation(marketId);
   const removeMarketSellerMutation = useRemoveMarketSellerMutation(marketId);
+  const addMarketSupervisorMutation = useAddMarketSupervisorMutation(marketId);
   const { data: sellersQueryResults } = useSellersQuery({
     name: "",
     afm: "",
@@ -290,6 +292,22 @@ export default function AdminMarketDetailPage() {
   };
 
   const handleSubmit = (values: MarketFormValues) => {
+    // Check if supervisors have changed
+    const initialSupervisors = new Set(initialFormValues.supervisors || []);
+    const newSupervisors = new Set(values.supervisors || []);
+    
+    // Find newly added supervisors
+    const addedSupervisors = Array.from(newSupervisors).filter(
+      (supervisor) => !initialSupervisors.has(supervisor)
+    );
+
+    // Call mutation for each newly added supervisor
+    if (addedSupervisors.length > 0) {
+      for (const userId of addedSupervisors) {
+        addMarketSupervisorMutation.mutate(userId);
+      }
+    }
+
     // TODO: wire update market mutation once backend endpoint is available
     setInitialFormValues(values);
     setNavigationNotice("");
@@ -443,7 +461,7 @@ export default function AdminMarketDetailPage() {
           />
         ) : (
           <div className="flex flex-col gap-4">
-            <div className="flex bg-(--color-surface) p-4">
+            {/* <div className="flex bg-(--color-surface) p-4">
               <CustomButton
                 title="Προσθήκη πωλητή"
                 prefixIcon={<AddIcon />}
@@ -451,7 +469,7 @@ export default function AdminMarketDetailPage() {
                 disabled={availableSellerOptions.length === 0}
                 onClick={handleOpenAddSellerModal}
               />
-            </div>
+            </div> */}
 
             <ConnectedSellersTable sellers={connectedSellers} onRemoveSeller={handleRemoveSeller} />
 

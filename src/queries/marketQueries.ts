@@ -1,7 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { queryClient } from '../lib/queryClient';
 import type { Market, MarketListResponse, MarketSearchRequest } from '../models/market';
-import { addMarketSeller, getMarketById, getMarkets, removeMarketSeller } from '../services/marketService';
+import { addMarketSeller, addMarketSupervisor, getMarketById, getMarkets, removeMarketSeller } from '../services/marketService';
 
 const SELLERS_STALE_TIME_MS = 5 * 60 * 1000;
 const SELLERS_GC_TIME_MS = 15 * 60 * 1000;
@@ -45,6 +45,18 @@ export function useRemoveMarketSellerMutation(marketId: string) {
 export function useAddMarketSellerMutation(marketId: string) {
   return useMutation<void, Error, { sellerId: number; spotNumber: number; spotLength: number }>({
     mutationFn: (payload) => addMarketSeller(marketId, payload),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: marketKeys.detail(marketId) }),
+        queryClient.invalidateQueries({ queryKey: marketKeys.all }),
+      ]);
+    },
+  });
+}
+
+export function useAddMarketSupervisorMutation(marketId: string) {
+  return useMutation<void, Error, string>({
+    mutationFn: (userId) => addMarketSupervisor(marketId, userId),
     onSuccess: async () => {
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: marketKeys.detail(marketId) }),

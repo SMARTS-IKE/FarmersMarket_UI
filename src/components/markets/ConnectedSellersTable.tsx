@@ -305,7 +305,7 @@ export default function ConnectedSellersTable({ sellers, onRemoveSeller }: Conne
   const { data: allSellersData } = useSellersQuery({
     name: "",
     afm: "",
-    sellerType: 1,
+    sellerType: "",
     page: 1,
     pageSize: 5000,
   });

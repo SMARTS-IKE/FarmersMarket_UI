@@ -6,18 +6,15 @@ import CustomInputField from "../../shared/components/CustomInputField";
 import CustomButton from "../../shared/components/CustomButton";
 import MapLocationPlaceholder from "../../shared/components/MapLocationPlaceholder";
 import { DAYS } from "./market.utils";
+import { useUsersQuery } from "../../queries/userQueries";
+import { USER_ROLE_MAPPING } from "../../shared/mappings/users.mapping";
 
 const marketTypeOptions = [
   { label: "Γενική Αγορά", value: "1" },
   { label: "Βιολογικών Προϊόντων", value: "2" },
 ];
 
-const supervisorOptions = [
-  { label: "Γεωργίου Νικόλαος", value: "supervisor-1" },
-  { label: "Παπαδόπουλος Ιωάννης", value: "supervisor-2" },
-  { label: "Παπανικολάου Κωνσταντίνα", value: "market-manager" },
-  { label: "Γεωργκακοπούλου Αικατερίνη", value: "area-manager" },
-];
+
 
 const dayOptions = DAYS;
 const dayOrder = dayOptions.reduce<Record<string, number>>((acc, option, idx) => {
@@ -61,6 +58,15 @@ export default function MarketForm({
 }: MarketFormProps) {
   const isViewMode = mode === "view";
   const isEditMode = mode === "edit";
+
+  const { data: usersData } = useUsersQuery({ name: "", email: "", role: "", page: 1, pageSize: 5000 });
+  const usersArray = (Array.isArray(usersData) ? usersData : (usersData?.items ?? [])).filter((u) =>
+    u.roles.includes(USER_ROLE_MAPPING.ADMIN)
+  );
+  const usersList = usersArray.map((u) => ({
+    label: `${u.firstName} ${u.lastName}`,
+    value: u.id,
+  }));
 
   const handleAddDay = () => {
     onChange({
@@ -279,7 +285,7 @@ export default function MarketForm({
             label="Ορισμός Εποπτών/Υπευθύνων"
             value={values.supervisors}
             onChange={(v) => onChange({ ...values, supervisors: v as string[] })}
-            dropdownItems={supervisorOptions}
+            dropdownItems={usersList}
             disabled={isViewMode}
             width="60%"
           />

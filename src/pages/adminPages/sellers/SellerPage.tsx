@@ -82,7 +82,7 @@ export default function SellerPage() {
     email: "",
     phone: "",
     address: "",
-    sellerType: "0",
+    sellerType: "",
     isActive: false,
   });
   const [navigationNotice, setNavigationNotice] = useState("");
@@ -119,7 +119,7 @@ export default function SellerPage() {
       email: seller.email ?? "",
       phone: seller.phone ?? "",
       address: seller.address ?? "",
-      sellerType: String(seller.sellerType ?? 0),
+      sellerType: String(seller.sellerType),
       isActive: Boolean(seller.isActive),
     };
 
@@ -293,9 +293,8 @@ export default function SellerPage() {
                 onChange={(value) => setSellerType(String(value))}
                 width="100%"
                 dropdownItems={[
-                  { label: SELLER_TYPE_LABELS[0] ?? "Άγνωστο", value: "0" },
-                  { label: SELLER_TYPE_LABELS[1] ?? "Παραγωγός", value: "1" },
-                  { label: SELLER_TYPE_LABELS[2] ?? "Πωλητής", value: "2" },
+                  { label: SELLER_TYPE_LABELS[0] ?? "Παραγωγός", value: "0" },
+                  { label: SELLER_TYPE_LABELS[1] ?? "Επαγγελματίας", value: "1" },
                 ]}
               />
               <CustomInputField

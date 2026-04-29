@@ -63,10 +63,10 @@ const tableFilters: FilterDef[] = [
     title: "sellerType",
     label: "Τύπος Πωλητή",
     type: "DROPDOWN",
-    dataItems: [
-      { label: "Παραγωγός", value: 1 },
-      { label: "Επαγγελματίας", value: 2 },
-    ],
+    dataItems: Object.entries(SELLER_TYPE_LABELS).map(([value, label]) => ({
+      label,
+      value: Number(value),
+    })),
   },
 ];
 
@@ -75,7 +75,7 @@ export default function AdminSellersPage() {
   const [filters, setFilters] = useState<SellerSearchRequest>({
     name: "",
     afm: "",
-    sellerType: 1,
+    sellerType: "",
     page: 1,
     pageSize: 25,
   });
@@ -88,7 +88,7 @@ export default function AdminSellersPage() {
       ...prev,
       name: String(values["name"] ?? ""),
       afm: String(values["afm"] ?? ""),
-      sellerType: (Number(values["sellerType"]) || 0) as SellerType,
+      sellerType: (Number(values["sellerType"]) || "") as SellerType,
       page: 1,
     }));
   };
