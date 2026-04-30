@@ -9,7 +9,8 @@ import AdminMarketsPage from '../pages/adminPages/markets/AdminMarketsPage';
 import AdminMarketCreatePage from '../pages/adminPages/markets/AdminMarketCreatePage';
 import AdminMarketDetailPage from '../pages/adminPages/markets/AdminMarketDetailPage';
 import AdminReportsPage from '../pages/adminPages/AdminReportsPage';
-import AdminRequestsPage from '../pages/adminPages/AdminRequestsPage';
+import AdminRequestsPage from '../pages/adminPages/requests/AdminRequestsPage';
+import DesignRequestFormPage from '../pages/adminPages/requests/DesignRequestFormPage';
 import { requireAuth, rootRoute } from './baseRoutes';
 
 export const protectedRoute = createRoute({
@@ -79,6 +80,12 @@ export const requestsRoute = createRoute({
   component: AdminRequestsPage,
 });
 
+export const designRequestFormRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/admin/requests/design-form',
+  component: DesignRequestFormPage,
+});
+
 export const adminRouteTree = protectedRoute.addChildren([
   dashboardRoute,
   usersRoute,
@@ -90,4 +97,5 @@ export const adminRouteTree = protectedRoute.addChildren([
   marketDetailRoute,
   reportsRoute,
   requestsRoute,
+  designRequestFormRoute,
 ]);

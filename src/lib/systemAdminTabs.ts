@@ -51,6 +51,7 @@ export const systemAdminTabs: SystemAdminTab[] = [
     label: 'Διαχείριση Αιτήσεων',
     title: 'Διαχείριση Αιτήσεων',
     description: '',
+    hasList: true,
   }
 ];
 
