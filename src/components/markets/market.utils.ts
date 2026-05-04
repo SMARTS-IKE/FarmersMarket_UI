@@ -49,6 +49,6 @@ export const columns: ColumnDef<Market>[] = [
       .map((schedule) => dayNumberToGreekLabel[schedule.day] ?? String(schedule.day))
       .join(", "),
   },
-   { key: "totalSpots", label: "Διαθέσιμες Θέσεις" },
+   { key: "totalSpots", label: "Σύνολο Θέσεων" },
    { key: "occupiedSpots", label: "Δεσμευμένες Θέσεις" },
 ];

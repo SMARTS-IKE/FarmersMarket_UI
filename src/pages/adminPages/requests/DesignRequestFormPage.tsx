@@ -1,29 +1,278 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { Box } from "@mui/material";
 import CustomButton from "../../../shared/components/CustomButton";
+import CreateFieldModal from "../../../components/requests/CreateFieldModal";
+import SelectReadyFieldModal from "../../../components/requests/SelectReadyFieldModal";
+import {
+  ADD_NEW_FIELD_OPTION_VALUE,
+  FIELD_TYPE_OPTIONS,
+  READY_TO_USE_FIELDS,
+  STEPS,
+} from "../../../components/requests/request.utils";
+import StepBasicInfo from "../../../components/requests/designRequestSteps/StepBasicInfo";
+import StepDynamicFields from "../../../components/requests/designRequestSteps/StepDynamicFields";
+import StepRequiredDocuments from "../../../components/requests/designRequestSteps/StepRequiredDocuments";
+import StepConfirmation from "../../../components/requests/designRequestSteps/StepConfirmation";
+import type { DesignRequestDraft, DesignRequestFieldType } from "../../../models/request";
 
-const STEPS = [
-  {
-    title: "Βήμα 1: Βασικά Στοιχεία",
-    content: "Συμπληρώστε τον τίτλο, το είδος αίτησης και μια σύντομη περιγραφή.",
-  },
-  {
-    title: "Βήμα 2: Κριτήρια",
-    content: "Ορίστε τα πεδία που είναι υποχρεωτικά και τους κανόνες εγκυρότητας.",
-  },
-  {
-    title: "Βήμα 3: Επιβεβαίωση",
-    content: "Ελέγξτε την τελική μορφή της φόρμας πριν από την αποθήκευση.",
-  },
-];
+const INITIAL_DRAFT: DesignRequestDraft = {
+  title: "",
+  description: "",
+  dynamicFields: [
+    { id: 1, title: "", type: "TEXT", availableValues: [], weight: 1, isRequired: false },
+  ],
+  requiredDocuments: [{ id: 1, title: "", isRequired: true }],
+};
 
 export default function DesignRequestFormPage() {
   const navigate = useNavigate({ from: "/admin/requests/design-form" });
   const [selectedStep, setSelectedStep] = useState(0);
+  const [draft, setDraft] = useState<DesignRequestDraft>(INITIAL_DRAFT);
+  const [nextFieldId, setNextFieldId] = useState(2);
+  const [nextDocumentId, setNextDocumentId] = useState(2);
+  const [isSelectFieldModalOpen, setIsSelectFieldModalOpen] = useState(false);
+  const [isCreateFieldModalOpen, setIsCreateFieldModalOpen] = useState(false);
+  const [selectedReadyFieldId, setSelectedReadyFieldId] = useState("");
+  const [newFieldDraft, setNewFieldDraft] = useState({
+    title: "",
+    type: "TEXT" as DesignRequestFieldType,
+    availableValues: "",
+    weight: 1,
+    isRequired: false,
+  });
 
   const handleBack = () => {
     navigate({ to: "/admin/requests" });
+  };
+
+  const addDynamicField = (field: {
+    title: string;
+    type: DesignRequestFieldType;
+    availableValues: string;
+    weight: number;
+    isRequired: boolean;
+  }) => {
+    const availableValues = field.type === "DROPDOWN"
+      ? field.availableValues
+          .split(",")
+          .map((value) => value.trim())
+          .filter((value) => value !== "")
+      : [];
+
+    setDraft((prev) => ({
+      ...prev,
+      dynamicFields: [
+        ...prev.dynamicFields,
+        {
+          id: nextFieldId,
+          title: field.title.trim(),
+          type: field.type,
+          availableValues,
+          weight: field.weight,
+          isRequired: field.isRequired,
+        },
+      ],
+    }));
+    setNextFieldId((prev) => prev + 1);
+  };
+
+  const openAddFieldModal = () => {
+    setSelectedReadyFieldId("");
+    setIsSelectFieldModalOpen(true);
+  };
+
+  const closeSelectFieldModal = () => {
+    setIsSelectFieldModalOpen(false);
+  };
+
+  const openCreateFieldModal = () => {
+    setIsSelectFieldModalOpen(false);
+    setNewFieldDraft({
+      title: "",
+      type: "TEXT",
+      availableValues: "",
+      weight: 1,
+      isRequired: false,
+    });
+    setIsCreateFieldModalOpen(true);
+  };
+
+  const closeCreateFieldModal = () => {
+    setIsCreateFieldModalOpen(false);
+  };
+
+  const createFieldFromModal = () => {
+    addDynamicField(newFieldDraft);
+    setIsCreateFieldModalOpen(false);
+  };
+
+  const addReadyFieldFromModal = () => {
+    const selectedTemplate = READY_TO_USE_FIELDS.find((field) => field.id === selectedReadyFieldId);
+    if (!selectedTemplate) return;
+
+    addDynamicField({
+      title: selectedTemplate.title,
+      type: selectedTemplate.type,
+      availableValues: selectedTemplate.availableValues,
+      weight: selectedTemplate.weight,
+      isRequired: selectedTemplate.isRequired,
+    });
+
+    setIsSelectFieldModalOpen(false);
+    setSelectedReadyFieldId("");
+  };
+
+  const handleReadyFieldSelection = (value: string | number | string[]) => {
+    const selectedValue = String(value);
+    if (selectedValue === ADD_NEW_FIELD_OPTION_VALUE) {
+      openCreateFieldModal();
+      return;
+    }
+
+    setSelectedReadyFieldId(selectedValue);
+  };
+
+  const readyFieldDropdownItems = useMemo(
+    () => [
+      { label: "+Προσθήκη νέου", value: ADD_NEW_FIELD_OPTION_VALUE },
+      ...READY_TO_USE_FIELDS.map((field) => ({ label: field.title, value: field.id })),
+    ],
+    []
+  );
+
+  const removeDynamicField = (id: number) => {
+    setDraft((prev) => ({
+      ...prev,
+      dynamicFields: prev.dynamicFields.filter((field) => field.id !== id),
+    }));
+  };
+
+  const addRequiredDocument = () => {
+    setDraft((prev) => ({
+      ...prev,
+      requiredDocuments: [
+        ...prev.requiredDocuments,
+        { id: nextDocumentId, title: "", isRequired: true },
+      ],
+    }));
+    setNextDocumentId((prev) => prev + 1);
+  };
+
+  const removeRequiredDocument = (id: number) => {
+    setDraft((prev) => ({
+      ...prev,
+      requiredDocuments: prev.requiredDocuments.filter((doc) => doc.id !== id),
+    }));
+  };
+
+  const updateRequiredDocumentTitle = (id: number, title: string) => {
+    setDraft((prev) => ({
+      ...prev,
+      requiredDocuments: prev.requiredDocuments.map((doc) =>
+        doc.id === id ? { ...doc, title } : doc
+      ),
+    }));
+  };
+
+  const updateRequiredDocumentRequired = (id: number, isRequired: boolean) => {
+    setDraft((prev) => ({
+      ...prev,
+      requiredDocuments: prev.requiredDocuments.map((doc) =>
+        doc.id === id ? { ...doc, isRequired } : doc
+      ),
+    }));
+  };
+
+  const canGoNext = useMemo(() => {
+    if (selectedStep === 0) {
+      return draft.title.trim() !== "" && draft.description.trim() !== "";
+    }
+    if (selectedStep === 1) {
+      return (
+        draft.dynamicFields.length > 0 &&
+        draft.dynamicFields.every(
+          (field) =>
+            field.title.trim() !== "" &&
+            field.weight > 0 &&
+            (field.type !== "DROPDOWN" || field.availableValues.length > 0)
+        )
+      );
+    }
+    if (selectedStep === 2) {
+      return draft.requiredDocuments.length > 0 && draft.requiredDocuments.every((doc) => doc.title.trim() !== "");
+    }
+    return true;
+  }, [draft, selectedStep]);
+
+  const canCreateField = useMemo(() => {
+    const titleValid = newFieldDraft.title.trim() !== "";
+    const weightValid = newFieldDraft.weight > 0;
+    const valuesValid =
+      newFieldDraft.type !== "DROPDOWN" ||
+      newFieldDraft.availableValues
+        .split(",")
+        .map((value) => value.trim())
+        .filter((value) => value !== "").length > 0;
+
+    return titleValid && weightValid && valuesValid;
+  }, [newFieldDraft]);
+
+  const moveToNextStep = () => {
+    setSelectedStep((prev) => Math.min(prev + 1, STEPS.length - 1));
+  };
+
+  const moveToPreviousStep = () => {
+    setSelectedStep((prev) => Math.max(prev - 1, 0));
+  };
+
+  const submitDesignRequest = () => {
+    // Placeholder until submit endpoint is available.
+    navigate({ to: "/admin/requests" });
+  };
+
+  const renderStepContent = () => {
+    if (selectedStep === 0) {
+      return (
+        <StepBasicInfo
+          title={draft.title}
+          description={draft.description}
+          onTitleChange={(value) => setDraft((prev) => ({ ...prev, title: value }))}
+          onDescriptionChange={(value) => setDraft((prev) => ({ ...prev, description: value }))}
+        />
+      );
+    }
+
+    if (selectedStep === 1) {
+      return (
+        <StepDynamicFields
+          dynamicFields={draft.dynamicFields}
+          onOpenAddFieldModal={openAddFieldModal}
+          onRemoveDynamicField={removeDynamicField}
+        />
+      );
+    }
+
+    if (selectedStep === 2) {
+      return (
+        <StepRequiredDocuments
+          requiredDocuments={draft.requiredDocuments}
+          onAddRequiredDocument={addRequiredDocument}
+          onRemoveRequiredDocument={removeRequiredDocument}
+          onUpdateRequiredDocumentTitle={updateRequiredDocumentTitle}
+          onUpdateRequiredDocumentRequired={updateRequiredDocumentRequired}
+        />
+      );
+    }
+
+    return (
+      <StepConfirmation
+        draft={draft}
+        fieldTypeOptions={FIELD_TYPE_OPTIONS}
+        onEdit={() => setSelectedStep(0)}
+        onSubmit={submitDesignRequest}
+      />
+    );
   };
 
   return (
@@ -78,6 +327,8 @@ export default function DesignRequestFormPage() {
             borderRadius: "10px",
             p: 3,
             backgroundColor: "var(--color-light)",
+            display: "flex",
+            flexDirection: "column",
           }}
         >
           <h3 className="text-xl font-semibold text-(--color-dark)">
@@ -86,8 +337,47 @@ export default function DesignRequestFormPage() {
           <p className="mt-3 text-sm text-(--color-text-muted)">
             {STEPS[selectedStep].content}
           </p>
+
+          {renderStepContent()}
+
+          {selectedStep < STEPS.length - 1 && (
+            <div className="mt-auto flex flex-wrap justify-end gap-3 pt-6">
+              <CustomButton
+                title="Προηγούμενο"
+                backgroundColor="var(--color-text-muted)"
+                width="fit-content"
+                disabled={selectedStep === 0}
+                onClick={moveToPreviousStep}
+              />
+              <CustomButton
+                title="Επόμενο"
+                width="fit-content"
+                disabled={!canGoNext}
+                onClick={moveToNextStep}
+              />
+            </div>
+          )}
         </Box>
       </Box>
+
+      <SelectReadyFieldModal
+        open={isSelectFieldModalOpen}
+        selectedReadyFieldId={selectedReadyFieldId}
+        dropdownItems={readyFieldDropdownItems}
+        onClose={closeSelectFieldModal}
+        onSelectionChange={handleReadyFieldSelection}
+        onAdd={addReadyFieldFromModal}
+      />
+
+      <CreateFieldModal
+        open={isCreateFieldModalOpen}
+        fieldTypeOptions={FIELD_TYPE_OPTIONS}
+        newFieldDraft={newFieldDraft}
+        canCreateField={canCreateField}
+        onClose={closeCreateFieldModal}
+        onCreate={createFieldFromModal}
+        onFieldDraftChange={setNewFieldDraft}
+      />
     </div>
   );
 }
