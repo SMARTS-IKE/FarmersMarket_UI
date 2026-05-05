@@ -86,6 +86,12 @@ export const designRequestFormRoute = createRoute({
   component: DesignRequestFormPage,
 });
 
+export const designRequestFormEditRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/admin/requests/design-form/$requestFormId',
+  component: DesignRequestFormPage,
+});
+
 export const adminRouteTree = protectedRoute.addChildren([
   dashboardRoute,
   usersRoute,
@@ -98,4 +104,5 @@ export const adminRouteTree = protectedRoute.addChildren([
   reportsRoute,
   requestsRoute,
   designRequestFormRoute,
+  designRequestFormEditRoute,
 ]);

@@ -5,7 +5,6 @@ export interface RequestSheet {
   id: number;
   title: string;
   description: string;
-  status: RequestStatus;
   createdAt: string;
 }
 
@@ -26,6 +25,32 @@ export interface SellerRequestSearchRequest {
 
 export interface SellerRequestListResponse {
   items: SellerRequest[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface RequestFormField {
+  id: number;
+  label: string;
+  typeOfFields: number;
+  isRequired: boolean;
+  weight: number;
+  order: number;
+  options: string[];
+}
+
+export interface RequestFormItem {
+  id: number;
+  title: string;
+  description: string;
+  createdAt: string;
+  updatedAt: string;
+  fields: RequestFormField[];
+}
+
+export interface RequestFormListResponse {
+  items: RequestFormItem[];
   totalCount: number;
   page: number;
   pageSize: number;

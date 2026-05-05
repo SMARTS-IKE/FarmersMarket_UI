@@ -1,9 +1,10 @@
-import { useMemo, useState } from "react";
-import { useNavigate } from "@tanstack/react-router";
+import { useEffect, useMemo, useState } from "react";
+import { useNavigate, useParams } from "@tanstack/react-router";
 import { Box } from "@mui/material";
 import CustomButton from "../../../shared/components/CustomButton";
 import CreateFieldModal from "../../../components/requests/CreateFieldModal";
 import SelectReadyFieldModal from "../../../components/requests/SelectReadyFieldModal";
+import { useRequestFormsQuery } from "../../../queries/requestQueries";
 import {
   ADD_NEW_FIELD_OPTION_VALUE,
   FIELD_TYPE_OPTIONS,
@@ -22,15 +23,29 @@ const INITIAL_DRAFT: DesignRequestDraft = {
   dynamicFields: [
     { id: 1, title: "", type: "TEXT", availableValues: [], weight: 1, isRequired: false },
   ],
-  requiredDocuments: [{ id: 1, title: "", isRequired: true }],
+  requiredDocuments: [],
+};
+
+const TYPE_OF_FIELDS_TO_DESIGN_FIELD: Record<number, DesignRequestFieldType> = {
+  1: "TEXT",
+  2: "NUMBER",
+  3: "DATE",
+  4: "TEXTAREA",
+  5: "DROPDOWN",
+  6: "BOOLEAN",
 };
 
 export default function DesignRequestFormPage() {
+  const params = useParams({ strict: false });
+  const requestFormId = typeof params.requestFormId === "string" ? Number(params.requestFormId) : undefined;
+  const isEditMode = Number.isFinite(requestFormId);
   const navigate = useNavigate({ from: "/admin/requests/design-form" });
+  const { data: requestFormsData } = useRequestFormsQuery();
   const [selectedStep, setSelectedStep] = useState(0);
   const [draft, setDraft] = useState<DesignRequestDraft>(INITIAL_DRAFT);
   const [nextFieldId, setNextFieldId] = useState(2);
-  const [nextDocumentId, setNextDocumentId] = useState(2);
+  const [nextDocumentId, setNextDocumentId] = useState(1);
+  const [isEditDraftInitialized, setIsEditDraftInitialized] = useState(false);
   const [isSelectFieldModalOpen, setIsSelectFieldModalOpen] = useState(false);
   const [isCreateFieldModalOpen, setIsCreateFieldModalOpen] = useState(false);
   const [selectedReadyFieldId, setSelectedReadyFieldId] = useState("");
@@ -41,6 +56,36 @@ export default function DesignRequestFormPage() {
     weight: 1,
     isRequired: false,
   });
+
+  useEffect(() => {
+    if (!isEditMode || isEditDraftInitialized || !requestFormsData) return;
+
+    const requestForm = requestFormsData.items.find((item) => item.id === requestFormId);
+    if (!requestForm) return;
+
+    const mappedDynamicFields = requestForm.fields.map((field) => ({
+      id: field.id,
+      title: field.label,
+      type: TYPE_OF_FIELDS_TO_DESIGN_FIELD[field.typeOfFields] ?? "TEXT",
+      availableValues: field.options ?? [],
+      weight: field.weight,
+      isRequired: field.isRequired,
+    }));
+
+    const nextMappedFieldId =
+      mappedDynamicFields.length > 0
+        ? Math.max(...mappedDynamicFields.map((field) => field.id)) + 1
+        : 1;
+
+    setDraft((prev) => ({
+      ...prev,
+      title: requestForm.title,
+      description: requestForm.description,
+      dynamicFields: mappedDynamicFields.length > 0 ? mappedDynamicFields : prev.dynamicFields,
+    }));
+    setNextFieldId(nextMappedFieldId);
+    setIsEditDraftInitialized(true);
+  }, [isEditMode, isEditDraftInitialized, requestFormId, requestFormsData]);
 
   const handleBack = () => {
     navigate({ to: "/admin/requests" });
@@ -142,6 +187,8 @@ export default function DesignRequestFormPage() {
   );
 
   const removeDynamicField = (id: number) => {
+    if (draft.dynamicFields.length <= 1) return;
+
     setDraft((prev) => ({
       ...prev,
       dynamicFields: prev.dynamicFields.filter((field) => field.id !== id),
@@ -186,7 +233,7 @@ export default function DesignRequestFormPage() {
 
   const canGoNext = useMemo(() => {
     if (selectedStep === 0) {
-      return draft.title.trim() !== "" && draft.description.trim() !== "";
+      return draft.title.trim() !== "";
     }
     if (selectedStep === 1) {
       return (
@@ -204,6 +251,35 @@ export default function DesignRequestFormPage() {
     }
     return true;
   }, [draft, selectedStep]);
+
+  const stepCompletion = useMemo(() => {
+    const basicInfoCompleted = draft.title.trim() !== "";
+    const dynamicFieldsCompleted =
+      draft.dynamicFields.length > 0 &&
+      draft.dynamicFields.every(
+        (field) =>
+          field.title.trim() !== "" &&
+          field.weight > 0 &&
+          (field.type !== "DROPDOWN" || field.availableValues.length > 0)
+      );
+    const requiredDocumentsCompleted =
+      draft.requiredDocuments.length > 0 &&
+      draft.requiredDocuments.every((doc) => doc.title.trim() !== "");
+
+    return [
+      basicInfoCompleted,
+      dynamicFieldsCompleted,
+      requiredDocumentsCompleted,
+      basicInfoCompleted && dynamicFieldsCompleted && requiredDocumentsCompleted,
+    ];
+  }, [draft]);
+
+  const maxReachableStep = useMemo(() => {
+    if (!stepCompletion[0]) return 0;
+    if (!stepCompletion[1]) return 1;
+    if (!stepCompletion[2]) return 2;
+    return 3;
+  }, [stepCompletion]);
 
   const canCreateField = useMemo(() => {
     const titleValid = newFieldDraft.title.trim() !== "";
@@ -279,7 +355,7 @@ export default function DesignRequestFormPage() {
     <div className="flex h-full min-h-0 w-full flex-col gap-6 text-left">
       <div className="flex w-full items-center justify-between">
         <h2 className="text-2xl font-semibold text-(--color-dark)">
-          Δημιουργία Φόρμας Αίτησης
+          {isEditMode ? "Επεξεργασία Φόρμας Αίτησης" : "Δημιουργία Φόρμας Αίτησης"}
         </h2>
         <CustomButton
           title="Επιστροφή"
@@ -308,6 +384,7 @@ export default function DesignRequestFormPage() {
               key={step.title}
               title={step.title}
               onClick={() => setSelectedStep(index)}
+              disabled={index > maxReachableStep}
               width="100%"
               backgroundColor={
                 selectedStep === index

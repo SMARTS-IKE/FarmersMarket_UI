@@ -11,11 +11,19 @@ export default function StepDynamicFields({
   onOpenAddFieldModal: () => void;
   onRemoveDynamicField: (id: number) => void;
 }) {
+  const canRemoveField = dynamicFields.length > 1;
+
   return (
     <div className="mt-4 flex flex-col gap-4">
       <div className="flex justify-end">
         <CustomButton title="Προσθήκη πεδίου" width="fit-content" onClick={onOpenAddFieldModal} />
       </div>
+
+      {!canRemoveField && (
+        <p className="text-sm text-(--color-text-muted)">
+          Απαιτείται τουλάχιστον ένα δυναμικό πεδίο.
+        </p>
+      )}
 
       {dynamicFields.map((field, index) => (
         <div
@@ -39,6 +47,7 @@ export default function StepDynamicFields({
               prefixIcon={<DeleteIcon fontSize="small" />}
               backgroundColor="var(--color-text-muted)"
               width={34}
+              disabled={!canRemoveField}
               onClick={() => onRemoveDynamicField(field.id)}
               sx={{
                 minWidth: 34,

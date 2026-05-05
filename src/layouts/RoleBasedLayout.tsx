@@ -1,6 +1,7 @@
 import { Outlet } from '@tanstack/react-router';
 import DefaultProtectedLayout from './DefaultProtectedLayout';
 import SystemAdminLayout from './SystemAdminLayout';
+import UserAccessLayout from './UserAccessLayout';
 import { useAuthStore } from '../store/authStore';
 import { USER_ROLE_MAPPING } from '../shared/mappings/users.mapping';
 
@@ -14,6 +15,10 @@ export default function RoleBasedLayout() {
 
   if (currentRole === USER_ROLE_MAPPING.ADMIN.toLowerCase()) {
     return <SystemAdminLayout />;
+  }
+
+  if (currentRole === USER_ROLE_MAPPING.USER.toLowerCase()) {
+    return <UserAccessLayout />;
   }
 
   return (

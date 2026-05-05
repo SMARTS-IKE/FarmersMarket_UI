@@ -21,7 +21,7 @@ export default function StepRequiredDocuments({
     <div className="mt-4 flex flex-col gap-4">
       <div className="flex justify-end">
         <CustomButton
-          title="Προσθήκη εγγράφου"
+          title="Προσθήκη αιτούμενου εγγράφου"
           width="fit-content"
           onClick={onAddRequiredDocument}
         />

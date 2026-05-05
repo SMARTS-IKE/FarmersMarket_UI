@@ -14,7 +14,9 @@ export function requireAuth() {
 export function redirectIfAuthed() {
   const token = useAuthStore.getState().token;
   if (token) {
-    throw redirect({ to: '/admin' });
+    const roles = useAuthStore.getState().user?.roles ?? [];
+    const isUser = roles[0] === 'User_Access';
+    throw redirect({ to: isUser ? '/users' : '/admin' });
   }
 }
 
@@ -22,6 +24,8 @@ export const indexRoute = createRoute({
   getParentRoute: () => rootRoute,
   path: '/',
   beforeLoad: () => {
-    throw redirect({ to: '/admin' });
+    const roles = useAuthStore.getState().user?.roles ?? [];
+    const isUser = roles[0] === 'User_Access';
+    throw redirect({ to: isUser ? '/users' : '/admin' });
   },
 });

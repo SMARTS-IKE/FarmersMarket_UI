@@ -12,15 +12,15 @@ export const STEPS = [
   },
   {
     title: "Βήμα 2: Δυναμικά Πεδία",
-    content: "Προσθέστε δυναμικά τα πεδία που θα συμπληρώνει ο χρήστης.",
+    content: "Προσθέστε δυναμικά τα πεδία που θα συμπληρώνει ο Πωλητής.",
   },
   {
     title: "Βήμα 3: Λίστα εγγράφων",
-    content: "Ορίστε τα απαραίτητα έγγραφα που θα πρέπει να ανεβαίνουν.",
+    content: "Ορίστε τα απαραίτητα έγγραφα που θα πρέπει να επισυνάψει ο Πωλητής.",
   },
   {
     title: "Βήμα 4: Επιβεβαίωση",
-    content: "Δείτε προεπισκόπηση της φόρμας πριν την υποβολή.",
+    content: "Προεπισκόπηση της διάταξης της φόρμας πριν την υποβολή.",
   },
 ] as const;
 
@@ -58,22 +58,13 @@ function formatDateTime(value: string): string {
 }
 
 export const designRequestColumns: ColumnDef<RequestSheet>[] = [
-  { key: "id", label: "#" },
   { key: "title", label: "Τίτλος" },
   { key: "description", label: "Περιγραφή" },
   {
-    key: "status",
-    label: "Κατάσταση",
-    render: (row) => {
-      const labels: Record<number, string> = {
-        0: "Σε Αναμονή",
-        1: "Εγκεκριμένο",
-        2: "Απορριφθέν",
-      };
-      return labels[row.status] ?? "Άγνωστο";
-    },
+    key: "createdAt",
+    label: "Ημερομηνία Δημιουργίας",
+    render: (row) => formatDateTime(row.createdAt),
   },
-  { key: "createdAt", label: "Ημερομηνία Δημιουργίας" },
 ];
 
 export const sellerRequestColumns: ColumnDef<SellerRequest>[] = [
@@ -113,3 +104,5 @@ export const sellerRequestColumns: ColumnDef<SellerRequest>[] = [
     render: (row) => formatDateTime(row.submittedAt),
   },
 ];
+
+export const SELLER_BASIC_FIELDS = ["Ονοματεπώνυμο", "Τίτλος Αγοράς"] as const;

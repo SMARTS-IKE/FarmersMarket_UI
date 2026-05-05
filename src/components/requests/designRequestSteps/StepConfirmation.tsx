@@ -65,12 +65,12 @@ export default function StepConfirmation({
       </div>
 
       <div className="flex flex-wrap justify-end gap-3">
-        <CustomButton
+        {/* <CustomButton
           title="Κάνε Αλλαγές"
           backgroundColor="var(--color-text-muted)"
           width="fit-content"
           onClick={onEdit}
-        />
+        /> */}
         <CustomButton title="Υποβολή" width="fit-content" onClick={onSubmit} />
       </div>
     </div>

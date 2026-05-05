@@ -30,7 +30,8 @@ export default function LoginPage() {
     try {
       const data = await login({ email, password });
       setAuth(data);
-      navigate({ to: '/admin' });
+      const role = useAuthStore.getState().role;
+      navigate({ to: role === 'User_Access' ? '/users' : '/admin' });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed');
     } finally {

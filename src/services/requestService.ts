@@ -1,5 +1,10 @@
 import { http } from '../lib/http';
-import type { SellerRequest, SellerRequestListResponse, SellerRequestSearchRequest } from '../models/request';
+import type {
+  RequestFormListResponse,
+  SellerRequest,
+  SellerRequestListResponse,
+  SellerRequestSearchRequest,
+} from '../models/request';
 
 export async function getSellerRequests(params: SellerRequestSearchRequest): Promise<SellerRequest[]> {
   const query = new URLSearchParams();
@@ -15,4 +20,8 @@ export async function getSellerRequests(params: SellerRequestSearchRequest): Pro
   }
 
   return response.items;
+}
+
+export async function getRequestForms(): Promise<RequestFormListResponse> {
+  return http.get<RequestFormListResponse>('/RequestForm');
 }
