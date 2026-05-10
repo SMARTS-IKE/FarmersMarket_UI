@@ -29,3 +29,7 @@ export async function assignUserRole(id: string, payload: AssignRoleRequest): Pr
 export async function removeUserRole(id: string, role: string): Promise<void> {
   await http.delete<void>(`/Users/${id}/roles/${encodeURIComponent(role)}`);
 }
+
+export async function reinitializeUserPassword(id: string): Promise<void> {
+  await http.post<void, null>(`/Users/${id}/reset-password`, null);
+}

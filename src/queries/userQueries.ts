@@ -1,7 +1,14 @@
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { queryClient } from '../lib/queryClient';
 import type { AppUser, AssignRoleRequest, UpdateUserRequest, UserListResult, UserSearchRequest } from '../models/user';
-import { assignUserRole, getUserById, getUsers, removeUserRole, updateUser } from '../services/userService';
+import {
+  assignUserRole,
+  getUserById,
+  getUsers,
+  reinitializeUserPassword,
+  removeUserRole,
+  updateUser,
+} from '../services/userService';
 
 export const userKeys = {
   all: ['users'] as const,
@@ -57,5 +64,11 @@ export function useRemoveUserRoleMutation(id: string) {
         queryClient.invalidateQueries({ queryKey: userKeys.all }),
       ]);
     },
+  });
+}
+
+export function useReinitializeUserPasswordMutation(id: string) {
+  return useMutation<void, Error>({
+    mutationFn: () => reinitializeUserPassword(id),
   });
 }

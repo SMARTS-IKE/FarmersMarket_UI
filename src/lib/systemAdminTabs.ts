@@ -1,10 +1,11 @@
-export interface SystemAdminTab {
+﻿export interface SystemAdminTab {
   to:
     | '/admin'
     | '/admin/users'
     | '/admin/sellers'
     | '/admin/markets'
     | '/admin/reports'
+    | '/admin/fees-payments'
     | '/admin/requests';
   label: string;
   title: string;
@@ -44,6 +45,12 @@ export const systemAdminTabs: SystemAdminTab[] = [
     to: '/admin/reports',
     label: 'Διαχείριση Αναφορών',
     title: 'Διαχείριση Αναφορών',
+    description: '',
+  },
+  {
+    to: '/admin/fees-payments',
+    label: 'Τέλη και Πληρωμές',
+    title: 'Τέλη και Πληρωμές',
     description: '',
   },
   {

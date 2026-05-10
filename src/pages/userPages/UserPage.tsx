@@ -1,15 +1,16 @@
 import { useEffect, useMemo, useState, type SyntheticEvent } from 'react';
 import { useBlocker, useNavigate, useParams } from '@tanstack/react-router';
 import { Alert, Snackbar } from '@mui/material';
-import CustomButton from '../../../shared/components/CustomButton';
-import CustomInputField from '../../../shared/components/CustomInputField';
+import CustomButton from '../../shared/components/CustomButton';
+import CustomInputField from '../../shared/components/CustomInputField';
 import {
   useAssignUserRoleMutation,
+  useReinitializeUserPasswordMutation,
   useRemoveUserRoleMutation,
   useUpdateUserMutation,
   useUserQuery,
-} from '../../../queries/userQueries';
-import { USER_ROLE_MAPPING_TITLES } from '../../../shared/mappings/users.mapping';
+} from '../../queries/userQueries';
+import { USER_ROLE_MAPPING_TITLES } from '../../shared/mappings/users.mapping';
 
 const ROLE_OPTIONS = USER_ROLE_MAPPING_TITLES ? Object.values(USER_ROLE_MAPPING_TITLES) : [];
 const ROLE_KEYS = USER_ROLE_MAPPING_TITLES ? Object.keys(USER_ROLE_MAPPING_TITLES) : [];
@@ -47,6 +48,7 @@ export default function UserPage() {
   const updateUserMutation = useUpdateUserMutation(userId);
   const assignRoleMutation = useAssignUserRoleMutation(userId);
   const removeRoleMutation = useRemoveUserRoleMutation(userId);
+  const reinitializePasswordMutation = useReinitializeUserPasswordMutation(userId);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [isActive, setIsActive] = useState(false);
@@ -81,6 +83,7 @@ export default function UserPage() {
 
   const isSavingUser = updateUserMutation.isPending;
   const isUpdatingRole = assignRoleMutation.isPending || removeRoleMutation.isPending;
+  const isReinitializingPassword = reinitializePasswordMutation.isPending;
   const rolesToAdd = selectedRoles.filter((role) => !initialSelectedRoles.includes(role));
   const rolesToRemove = initialSelectedRoles.filter((role) => !selectedRoles.includes(role));
   const hasRoleChanges = useMemo(() => {
@@ -173,6 +176,23 @@ export default function UserPage() {
     }
 
     navigate({ to: "/admin/users" });
+  };
+
+  const handleReinitializePassword = async () => {
+    setNotificationMessage('');
+    setIsSnackbarOpen(false);
+
+    try {
+      await reinitializePasswordMutation.mutateAsync();
+      showNotification('Ο κωδικός του χρήστη επαναρχικοποιήθηκε επιτυχώς.', 'success');
+    } catch (mutationError) {
+      showNotification(
+        mutationError instanceof Error
+          ? mutationError.message
+          : 'Η επαναρχικοποίηση κωδικού απέτυχε.',
+        'error'
+      );
+    }
   };
 
   const handleSnackbarClose = (_event?: Event | SyntheticEvent, reason?: string) => {
@@ -378,12 +398,20 @@ export default function UserPage() {
         </section>
 
         <div className="flex flex-wrap justify-end gap-3">
+          <CustomButton
+            title={isReinitializingPassword ? 'Επαναρχικοποίηση...' : 'Επαναρχικοποίηση Κωδικού'}
+            backgroundColor="var(--color-text-muted)"
+            onClick={handleReinitializePassword}
+            disabled={isReinitializingPassword}
+            width={220}
+          />
+
           {isNavigationLocked && (
             <CustomButton
               title="Ακύρωση"
               backgroundColor="transparent"
               onClick={handleCancel}
-              disabled={isSavingUser || isUpdatingRole}
+              disabled={isSavingUser || isUpdatingRole || isReinitializingPassword}
               width={120}
               sx={{
                 color: 'var(--color-dark)',
@@ -401,7 +429,7 @@ export default function UserPage() {
             <CustomButton
               title={isSavingUser || isUpdatingRole ? 'Αποθήκευση...' : 'Αποθήκευση'}
               onClick={handleSave}
-              disabled={isSavingUser || isUpdatingRole}
+              disabled={isSavingUser || isUpdatingRole || isReinitializingPassword}
               width={140}
             />
           )}

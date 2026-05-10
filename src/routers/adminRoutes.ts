@@ -2,13 +2,14 @@ import { createRoute } from '@tanstack/react-router';
 import RoleBasedLayout from '../layouts/RoleBasedLayout';
 import DashboardPage from '../pages/adminPages/AdminDashboardPage';
 import AdminUsersPage from '../pages/adminPages/users/AdminUsersPage';
-import UserPage from '../pages/adminPages/users/UserPage';
+import UserPage from '../pages/userPages/UserPage';
 import AdminSellersPage from '../pages/adminPages/sellers/AdminSellersPage';
 import SellerPage from '../pages/adminPages/sellers/SellerPage';
 import AdminMarketsPage from '../pages/adminPages/markets/AdminMarketsPage';
 import AdminMarketCreatePage from '../pages/adminPages/markets/AdminMarketCreatePage';
 import AdminMarketDetailPage from '../pages/adminPages/markets/AdminMarketDetailPage';
 import AdminReportsPage from '../pages/adminPages/AdminReportsPage';
+import AdminFeesPaymentsPage from '../pages/adminPages/FeesAndPayments/AdminFeesPaymentsPage';
 import AdminRequestsPage from '../pages/adminPages/requests/AdminRequestsPage';
 import DesignRequestFormPage from '../pages/adminPages/requests/DesignRequestFormPage';
 import { requireAuth, rootRoute } from './baseRoutes';
@@ -74,6 +75,12 @@ export const reportsRoute = createRoute({
   component: AdminReportsPage,
 });
 
+export const feesPaymentsRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/admin/fees-payments',
+  component: AdminFeesPaymentsPage,
+});
+
 export const requestsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/admin/requests',
@@ -96,6 +103,7 @@ export const adminRouteTree = protectedRoute.addChildren([
   dashboardRoute,
   usersRoute,
   userDetailRoute,
+  feesPaymentsRoute,
   sellersRoute,
   sellerDetailRoute,
   marketsRoute,
