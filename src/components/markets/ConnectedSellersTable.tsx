@@ -43,9 +43,11 @@ const LICENSE_STATUS_CONFIG: Record<string, { label: string; backgroundColor: st
   },
 };
 
+
 function createConnectedSellerColumns(
   onRemoveSeller?: (sellerId: number) => void
 ): ColumnDef<Record<string, unknown>>[] {
+
   return [
   { key: "firstName", label: "Όνομα" },
   { key: "lastName", label: "Επώνυμο" },
@@ -230,8 +232,10 @@ function normalizeConnectedSeller(
   const sellerDetails = sellerId !== null ? sellerDetailsById.get(sellerId) ?? null : null;
 
   const id =
-    readNumber(record, ["id", "marketSellerId", "sellerId"]) ??
-    readNumber(sellerRecord, ["id", "sellerId"]);
+    readNumber(record, ["id"]) ??
+    readNumber(record, ["sellerId"]) ??
+    readNumber(sellerRecord, ["id"]) ??
+    readNumber(sellerRecord, ["sellerId"]);
   if (id === null) return null;
 
   let firstName =
@@ -287,6 +291,7 @@ function normalizeConnectedSeller(
     spotLength,
     licenseStatus: licenseStatus.label,
     licenseStatusKey: licenseStatus.key,
+
     isActive: sellerIsActive,
   };
 
@@ -331,6 +336,7 @@ export default function ConnectedSellersTable({ sellers, onRemoveSeller }: Conne
         .filter((seller): seller is Record<string, unknown> => seller !== null),
     [sellers, sellerDetailsById]
   );
+
 
   const columns = useMemo(() => createConnectedSellerColumns(onRemoveSeller), [onRemoveSeller]);
 

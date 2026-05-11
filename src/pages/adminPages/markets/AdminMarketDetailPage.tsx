@@ -1,4 +1,3 @@
-import AddIcon from "@mui/icons-material/Add";
 import { Alert, Box, Snackbar, Tab, Tabs } from "@mui/material";
 import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
 import { useBlocker, useNavigate, useParams } from "@tanstack/react-router";
@@ -80,6 +79,24 @@ function readBoolean(record: Record<string, unknown>, keys: string[]): boolean |
   return null;
 }
 
+function resolveOccupiedSpots(market: Market): number {
+  const marketRecord = asRecord(market);
+  if (marketRecord) {
+    const explicitOccupiedSpots = readNumber(marketRecord, [
+      "occupiedSpots",
+      "occupied_spots",
+      "occupiedSlots",
+      "occupied_slots",
+    ]);
+
+    if (explicitOccupiedSpots !== null) {
+      return explicitOccupiedSpots;
+    }
+  }
+
+  return Array.isArray(market.marketSellers) ? market.marketSellers.length : 0;
+}
+
 function hasActiveLicense(seller: unknown): boolean {
   const sellerRecord = asRecord(seller);
   if (!sellerRecord) return false;
@@ -156,6 +173,9 @@ function extractConnectedSellerId(entry: unknown): number | null {
 }
 
 function mapMarketToFormValues(market: Market): MarketFormValues {
+  const supervisors = (market.supervisors ?? [])
+    .map((supervisor) => supervisor.userId)
+    .filter((userId): userId is string => Boolean(userId));
 
   const operatingDays = market.schedules
     .filter((schedule) => !schedule.isCancelled)
@@ -167,7 +187,7 @@ function mapMarketToFormValues(market: Market): MarketFormValues {
     .filter((entry) => entry.day);
 
   const availableSlots = market.totalSpots ?? 0;
-  const occupiedSpots = market.occupiedSpots ?? 0;
+  const occupiedSpots = resolveOccupiedSpots(market);
 
   return {
     name: market.name,
@@ -176,7 +196,7 @@ function mapMarketToFormValues(market: Market): MarketFormValues {
     operatingDays,
     availableSlots,
     occupiedSpots,
-    supervisors: [],
+    supervisors,
     area: "",
   };
 }
@@ -269,7 +289,7 @@ export default function AdminMarketDetailPage() {
     const mappedValues = mapMarketToFormValues(market);
     setFormValues(mappedValues);
     setInitialFormValues(mappedValues);
-    setConnectedSellers(market.sellers ?? []);
+    setConnectedSellers(market.marketSellers ?? []);
     setIsAddSellerModalOpen(false);
   }, [market]);
 
@@ -312,10 +332,6 @@ export default function AdminMarketDetailPage() {
     setInitialFormValues(values);
     setNavigationNotice("");
     setIsSnackbarOpen(false);
-  };
-
-  const handleOpenAddSellerModal = () => {
-    setIsAddSellerModalOpen(true);
   };
 
   const handleCloseAddSellerModal = () => {

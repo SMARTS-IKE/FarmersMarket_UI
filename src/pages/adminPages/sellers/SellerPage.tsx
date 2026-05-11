@@ -62,6 +62,12 @@ function extractSellerId(entry: unknown): number | null {
     (nestedSellerRecord ? readNumber(nestedSellerRecord, ["sellerId", "id"]) : null);
 }
 
+function getMarketSellers(market: Market): unknown[] {
+  const marketRecord = asRecord(market);
+  const sellers = marketRecord?.marketSellers ?? marketRecord?.sellers ?? market.marketSellers;
+  return Array.isArray(sellers) ? sellers : [];
+}
+
 export default function SellerPage() {
   const navigate = useNavigate();
   const params = useParams({ strict: false });
@@ -96,7 +102,7 @@ export default function SellerPage() {
     if (!seller) return [];
 
     return (marketsQueryResults?.items ?? []).filter((market) =>
-      market.sellers.some((marketSeller) => extractSellerId(marketSeller) === seller.id)
+      getMarketSellers(market).some((marketSeller) => extractSellerId(marketSeller) === seller.id)
     );
   }, [marketsQueryResults?.items, seller]);
 

@@ -37,7 +37,8 @@ export interface Market {
   notes: string;
   isActive: boolean;
   schedules: MarketSchedule[];
-  sellers: unknown[];
+  marketSellers: unknown[];
+  supervisors: MarketSupervisor[];
 }
 
 export interface MarketSchedule {
@@ -46,6 +47,13 @@ export interface MarketSchedule {
   exceptionDate: string | null;
   isCancelled: boolean;
   cancellationReason: string | null;
+}
+
+export interface MarketSupervisor {
+    userId: string;
+    email: string;
+    firstName: string;
+    lastName: string;
 }
 
 export interface MarketSearchRequest {

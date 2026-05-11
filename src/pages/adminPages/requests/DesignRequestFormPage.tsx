@@ -4,7 +4,7 @@ import { Box } from "@mui/material";
 import CustomButton from "../../../shared/components/CustomButton";
 import CreateFieldModal from "../../../components/requests/CreateFieldModal";
 import SelectReadyFieldModal from "../../../components/requests/SelectReadyFieldModal";
-import { useRequestFormsQuery } from "../../../queries/requestQueries";
+import { useRequestFormsQuery } from "../../../queries/formsQueries";
 import {
   ADD_NEW_FIELD_OPTION_VALUE,
   FIELD_TYPE_OPTIONS,

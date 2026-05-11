@@ -3,7 +3,7 @@ import DataTable from "../../shared/components/DataTable";
 import CustomButton from "../../shared/components/CustomButton";
 import { useNavigate } from "@tanstack/react-router";
 import type { RequestSheet } from "../../models/request";
-import { useRequestFormsQuery } from "../../queries/requestQueries";
+import { useRequestFormsQuery } from "../../queries/formsQueries";
 import { designRequestColumns } from "./request.utils";
 
 export default function DesignRequestSheet() {

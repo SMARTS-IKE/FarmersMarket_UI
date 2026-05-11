@@ -1,6 +1,5 @@
 import { http } from '../lib/http';
 import type {
-  RequestFormListResponse,
   SellerRequest,
   SellerRequestListResponse,
   SellerRequestSearchRequest,
@@ -20,8 +19,4 @@ export async function getSellerRequests(params: SellerRequestSearchRequest): Pro
   }
 
   return response.items;
-}
-
-export async function getRequestForms(): Promise<RequestFormListResponse> {
-  return http.get<RequestFormListResponse>('/RequestForm');
 }
