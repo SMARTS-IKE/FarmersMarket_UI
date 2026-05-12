@@ -54,6 +54,18 @@ interface DataTableProps<T> {
   onSearch?: (values: FilterValues) => void;
   /** Optional row click handler for selection-driven flows */
   onRowClick?: (row: T) => void;
+  /** Hide built-in pagination when data is already paged by the backend */
+  hidePagination?: boolean;
+  /** Controlled page index for server-side pagination (zero-based) */
+  page?: number;
+  /** Controlled rows per page for server-side pagination */
+  rowsPerPage?: number;
+  /** Total number of rows for server-side pagination */
+  totalCount?: number;
+  /** Controlled page change callback for server-side pagination */
+  onPageChange?: (page: number) => void;
+  /** Controlled rows-per-page change callback for server-side pagination */
+  onRowsPerPageChange?: (rowsPerPage: number) => void;
 }
 
 // ── Main DataTable component ─────────────────────────────────────
@@ -69,11 +81,26 @@ export default function DataTable<T extends object>({
   filters,
   onSearch,
   onRowClick,
+  hidePagination = false,
+  page,
+  rowsPerPage,
+  totalCount,
+  onPageChange,
+  onRowsPerPageChange,
 }: DataTableProps<T>) {
   const [filterText, setFilterText] = useState("");
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(defaultRowsPerPage);
+  const [internalPage, setInternalPage] = useState(0);
+  const [internalRowsPerPage, setInternalRowsPerPage] = useState(defaultRowsPerPage);
   const { setFilterSlot } = useLayoutSlot();
+
+  const isControlledPagination =
+    page !== undefined &&
+    rowsPerPage !== undefined &&
+    onPageChange !== undefined &&
+    onRowsPerPageChange !== undefined;
+
+  const currentPage = isControlledPagination ? page : internalPage;
+  const currentRowsPerPage = isControlledPagination ? rowsPerPage : internalRowsPerPage;
 
   useEffect(() => {
     if (filters && filters.length > 0 && onSearch) {
@@ -100,22 +127,41 @@ export default function DataTable<T extends object>({
   }, [rows, filterText, filterableCols]);
 
   const paginatedRows = useMemo(
-    () => filteredRows.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage),
-    [filteredRows, page, rowsPerPage]
+    () => (isControlledPagination
+      ? filteredRows
+      : filteredRows.slice(currentPage * currentRowsPerPage, currentPage * currentRowsPerPage + currentRowsPerPage)),
+    [filteredRows, isControlledPagination, currentPage, currentRowsPerPage]
   );
 
   const handleFilterChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFilterText(e.target.value);
-    setPage(0);
+    if (isControlledPagination) {
+      onPageChange(0);
+      return;
+    }
+
+    setInternalPage(0);
   };
 
   const handleChangePage = (_: unknown, newPage: number) => {
-    setPage(newPage);
+    if (isControlledPagination) {
+      onPageChange(newPage);
+      return;
+    }
+
+    setInternalPage(newPage);
   };
 
   const handleChangeRowsPerPage = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setRowsPerPage(parseInt(e.target.value, 10));
-    setPage(0);
+    const nextRowsPerPage = parseInt(e.target.value, 10);
+
+    if (isControlledPagination) {
+      onRowsPerPageChange(nextRowsPerPage);
+      return;
+    }
+
+    setInternalRowsPerPage(nextRowsPerPage);
+    setInternalPage(0);
   };
 
   const getCellContent = (row: T, col: ColumnDef<T>): React.ReactNode => {
@@ -197,27 +243,29 @@ export default function DataTable<T extends object>({
           </Table>
         </TableContainer>
 
-        <TablePagination
-          labelRowsPerPage="Αποτελέσματα ανά σελίδα:"
-          component="div"
-          count={filteredRows.length}
-          page={page}
-          onPageChange={handleChangePage}
-          rowsPerPage={rowsPerPage}
-          onRowsPerPageChange={handleChangeRowsPerPage}
-          rowsPerPageOptions={rowsPerPageOptions}
-          sx={{
-            minHeight: 35,
-            height: 35,
-            backgroundColor: "var(--color-dark)",
-            color: "var(--color-surface)",
-            overflow: "hidden",
-            "& .MuiTablePagination-toolbar": { minHeight: 35, height: 35, paddingTop: 0, paddingBottom: 0 },
-            "& .MuiSelect-icon": { color: "var(--color-surface)" },
-            "& .MuiIconButton-root": { color: "var(--color-surface)" },
-            "& .MuiIconButton-root.Mui-disabled": { color: "var(--color-text-muted)" },
-          }}
-        />
+        {!hidePagination && (
+          <TablePagination
+            labelRowsPerPage="Αποτελέσματα ανά σελίδα:"
+            component="div"
+            count={isControlledPagination ? (totalCount ?? filteredRows.length) : filteredRows.length}
+            page={currentPage}
+            onPageChange={handleChangePage}
+            rowsPerPage={currentRowsPerPage}
+            onRowsPerPageChange={handleChangeRowsPerPage}
+            rowsPerPageOptions={rowsPerPageOptions}
+            sx={{
+              minHeight: 35,
+              height: 35,
+              backgroundColor: "var(--color-dark)",
+              color: "var(--color-surface)",
+              overflow: "hidden",
+              "& .MuiTablePagination-toolbar": { minHeight: 35, height: 35, paddingTop: 0, paddingBottom: 0 },
+              "& .MuiSelect-icon": { color: "var(--color-surface)" },
+              "& .MuiIconButton-root": { color: "var(--color-surface)" },
+              "& .MuiIconButton-root.Mui-disabled": { color: "var(--color-text-muted)" },
+            }}
+          />
+        )}
       </Paper>
     </Box>
   );

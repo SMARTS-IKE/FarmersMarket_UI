@@ -13,6 +13,11 @@ import {
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import type { SxProps, Theme } from "@mui/material";
 import { useState } from "react";
+import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
+import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
+import { el } from "date-fns/locale";
+
+const GREECE_TIMEZONE = "Europe/Athens";
 
 export type InputFieldType = "TEXT" | "NUMBER" | "TEXTAREA" | "DROPDOWN" | "MULTI_SELECT" | "DATE";
 
@@ -82,6 +87,64 @@ function validate(
   return "";
 }
 
+function toDateInputValue(value: string | number | string[] | undefined): string {
+  if (value === undefined || Array.isArray(value) || value === "") return "";
+
+  const raw = String(value);
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
+
+  const greekFormatMatch = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
+  if (greekFormatMatch) {
+    const [, day, month, year] = greekFormatMatch;
+    return `${year}-${month}-${day}`;
+  }
+
+  const parsed = new Date(raw);
+  if (Number.isNaN(parsed.getTime())) return raw;
+
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: GREECE_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(parsed);
+
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+
+  if (!year || !month || !day) return raw;
+  return `${year}-${month}-${day}`;
+}
+
+function parseDateValue(value: string | number | string[] | undefined): Date | null {
+  if (value === undefined || Array.isArray(value) || value === "") return null;
+
+  const normalized = toDateInputValue(value);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return null;
+
+  const parsed = new Date(`${normalized}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return null;
+
+  return parsed;
+}
+
+function toIsoDateString(date: Date): string {
+  const parts = new Intl.DateTimeFormat("en-CA", {
+    timeZone: GREECE_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  const day = parts.find((part) => part.type === "day")?.value;
+
+  if (!year || !month || !day) return "";
+  return `${year}-${month}-${day}`;
+}
 export default function CustomInputField({
   type = "TEXT",
   label,
@@ -100,6 +163,10 @@ export default function CustomInputField({
   onBlur,
   sx,
 }: CustomInputFieldProps) {
+  const normalizedDateValue = type === "DATE"
+    ? toDateInputValue((value ?? defaultValue) as string)
+    : (value ?? defaultValue ?? "");
+
   const internalError =
     error ?? (validation && value !== undefined && !Array.isArray(value)
       ? validate(value, validation, type)
@@ -313,22 +380,68 @@ export default function CustomInputField({
     );
   }
 
+  if (type === "DATE") {
+    return (
+      <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={el}>
+        <DatePicker
+          label={label}
+          format="dd/MM/yyyy"
+          value={parseDateValue(value ?? defaultValue)}
+          disabled={disabled}
+          onChange={(newValue) => {
+            if (!newValue) {
+              onChange?.("");
+              return;
+            }
+
+            const isoDate = toIsoDateString(newValue);
+            if (isoDate) {
+              onChange?.(isoDate);
+            }
+          }}
+          slotProps={{
+            textField: {
+              variant: "standard",
+              placeholder,
+              error: !!internalError,
+              helperText: internalError,
+              onBlur,
+              sx: sharedSx,
+              slotProps: {
+                inputLabel: { shrink: true },
+                input: {
+                  startAdornment: prefixIcon ? (
+                    <InputAdornment position="start">{prefixIcon}</InputAdornment>
+                  ) : undefined,
+                },
+              },
+            } as any,
+          }}
+        />
+      </LocalizationProvider>
+    );
+  }
+
   return (
     <TextField
       variant="standard"
       label={label}
       placeholder={placeholder}
-      type={type === "NUMBER" ? "number" : type === "DATE" ? "date" : "text"}
-      value={value ?? defaultValue ?? ""}
+      type={type === "NUMBER" ? "number" : "text"}
+      value={normalizedDateValue}
       disabled={disabled}
       error={!!internalError}
       helperText={internalError}
-      onChange={(e) =>
-        onChange?.(type === "NUMBER" ? Number(e.target.value) : e.target.value)
-      }
+      onChange={(e) => {
+        if (type === "NUMBER") {
+          onChange?.(Number(e.target.value));
+        } else {
+          onChange?.(e.target.value);
+        }
+      }}
       onBlur={onBlur}
       slotProps={{
-        inputLabel: type === "DATE" ? { shrink: true } : undefined,
+        inputLabel: undefined,
         input: {
           startAdornment: prefixIcon ? (
             <InputAdornment position="start">{prefixIcon}</InputAdornment>

@@ -1,6 +1,7 @@
 import type { ColumnDef } from "@/shared/components/DataTable";
 import type {
   DesignRequestFieldType,
+  MarketPeriod,
   SellerRequest as SellerRequest,
   RequestSheet,
 } from "../../models/request";
@@ -64,6 +65,35 @@ export const designRequestColumns: ColumnDef<RequestSheet>[] = [
     key: "createdAt",
     label: "Ημερομηνία Δημιουργίας",
     render: (row) => formatDateTime(row.createdAt),
+  },
+];
+
+export const marketPeriodColumns: ColumnDef<MarketPeriod>[] = [
+  { key: "title", label: "Τίτλος Περιόδου" },
+  { key: "marketName", label: "Αγορά" },
+  {
+    key: "operationStart",
+    label: "Έναρξη Λειτουργίας",
+    render: (row) => formatDateTime(row.operationStart || row.startDate),
+  },
+  {
+    key: "operationEnd",
+    label: "Λήξη Λειτουργίας",
+    render: (row) => formatDateTime(row.operationEnd || row.endDate),
+  },
+  {
+    key: "status",
+    label: "Κατάσταση",
+    render: (row) => {
+      const labels: Record<MarketPeriod["status"], string> = {
+        draft: "Πρόχειρη",
+        scheduled: "Προγραμματισμένη",
+        active: "Ενεργή",
+        closed: "Κλειστή",
+      };
+
+      return labels[row.status];
+    },
   },
 ];
 

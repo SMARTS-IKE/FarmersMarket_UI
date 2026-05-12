@@ -12,6 +12,7 @@ import AdminReportsPage from '../pages/adminPages/AdminReportsPage';
 import AdminFeesPaymentsPage from '../pages/adminPages/FeesAndPayments/AdminFeesPaymentsPage';
 import AdminRequestsPage from '../pages/adminPages/requests/AdminRequestsPage';
 import DesignRequestFormPage from '../pages/adminPages/requests/DesignRequestFormPage';
+import CreateMarketPeriodPage from '../pages/adminPages/requests/CreateMarketPeriodPage';
 import { requireAuth, rootRoute } from './baseRoutes';
 
 export const protectedRoute = createRoute({
@@ -99,6 +100,18 @@ export const designRequestFormEditRoute = createRoute({
   component: DesignRequestFormPage,
 });
 
+export const createMarketPeriodRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/admin/requests/periods/new',
+  component: CreateMarketPeriodPage,
+});
+
+export const editMarketPeriodRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/admin/requests/periods/$periodId',
+  component: CreateMarketPeriodPage,
+});
+
 export const adminRouteTree = protectedRoute.addChildren([
   dashboardRoute,
   usersRoute,
@@ -113,4 +126,6 @@ export const adminRouteTree = protectedRoute.addChildren([
   requestsRoute,
   designRequestFormRoute,
   designRequestFormEditRoute,
+  createMarketPeriodRoute,
+  editMarketPeriodRoute,
 ]);

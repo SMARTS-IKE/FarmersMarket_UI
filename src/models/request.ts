@@ -1,5 +1,7 @@
 export type RequestStatus = 0 | 1 | 2;
 export type RequestType = 1 | 2 | 3;
+export type MarketPeriodStatus = "draft" | "scheduled" | "active" | "closed";
+export type LicenseCategoryType = 0 | 1 | 2;
 
 export interface RequestSheet {
   id: number;
@@ -28,6 +30,94 @@ export interface SellerRequestListResponse {
   totalCount: number;
   page: number;
   pageSize: number;
+}
+
+export interface MarketPeriod {
+  id: number;
+  title: string;
+  marketName: string;
+  startDate: string;
+  endDate: string;
+  status: MarketPeriodStatus;
+  marketId: number,
+  formId: number,
+  formTitle: string,
+  description: string | null,
+  licenseCategory: LicenseCategoryType,
+  submissionStart: string,
+  submissionEnd: string,
+  operationStart: string,
+  operationEnd: string,
+  availableSpots: number,
+  totalRequests: number,
+  lotteryEnabled: boolean,
+  lotteryDate: string | null,
+  createdAt: string,
+  updatedAt: string
+}
+
+
+export interface MarketPeriodSearchRequest {
+  market?: string;
+  status?: MarketPeriodStatus;
+  page: number;
+  pageSize: number;
+}
+
+export interface MarketPeriodListResponse {
+  items: MarketPeriod[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
+export interface CreateMarketPeriodRequest {
+  marketId: number;
+  title?: string;
+  description?: string;
+  licenseCategory: LicenseCategoryType;
+  submissionStart: string;
+  submissionEnd: string;
+  operationStart?: string | null;
+  operationEnd?: string | null;
+  availableSpots: number;
+  lotteryEnabled: boolean;
+  lotteryDate?: string | null;
+  formId?: number | null;
+}
+
+export type UpdateMarketPeriodRequest = CreateMarketPeriodRequest;
+
+export interface MarketPeriodDetail {
+  id: number;
+  marketId: number;
+  marketName?: string;
+  title: string;
+  description: string;
+  licenseCategory: LicenseCategoryType;
+  submissionStart: string;
+  submissionEnd: string;
+  operationStart: string;
+  operationEnd: string;
+  availableSpots: number;
+  lotteryEnabled: boolean;
+  lotteryDate: string;
+  formId: number | null;
+}
+
+export interface CreateMarketPeriodDraft {
+  marketId: number;
+  title: string;
+  description: string;
+  licenseCategory: LicenseCategoryType;
+  submissionStart: string;
+  submissionEnd: string;
+  operationStart: string;
+  operationEnd: string;
+  availableSpots: number;
+  lotteryEnabled: boolean;
+  lotteryDate: string;
+  formId: number | "";
 }
 
 export interface RequestFormField {

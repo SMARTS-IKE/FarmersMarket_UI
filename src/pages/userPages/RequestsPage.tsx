@@ -1,10 +1,10 @@
 import { useState } from "react";
 import { Tab, Tabs, Box } from "@mui/material";
-import DesignRequestSheet from "../../../components/requests/DesignRequestSheet";
-import MarketPeriods from "../../../components/requests/MarketPeriods";
-import SellerRequests from "../../../components/requests/SellerRequests";
+import DesignRequestSheet from "../../components/requests/DesignRequestSheet";
+import MarketPeriods from "../../components/requests/MarketPeriods";
+import SellerRequests from "../../components/requests/SellerRequests";
 
-export default function AdminRequestsPage() {
+export default function RequestsPage() {
   const [activeTab, setActiveTab] = useState(0);
 
   return (
