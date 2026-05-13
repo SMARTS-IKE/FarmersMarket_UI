@@ -4,6 +4,7 @@ import AdminDashboardPage from '../pages/adminPages/AdminDashboardPage';
 import AdminMarketsPage from '../pages/adminPages/markets/AdminMarketsPage';
 import AdminMarketDetailPage from '../pages/adminPages/markets/AdminMarketDetailPage';
 import UserRequestsPage from '../pages/adminPages/requests/UserRequestsPage';
+import UserMarketPeriodDetailsPage from '../pages/adminPages/requests/UserMarketPeriodDetailsPage';
 import { requireAuth, rootRoute } from './baseRoutes';
 
 export const userProtectedRoute = createRoute({
@@ -37,9 +38,16 @@ export const userRequestsRoute = createRoute({
   component: UserRequestsPage,
 });
 
+export const userMarketPeriodDetailsRoute = createRoute({
+  getParentRoute: () => userProtectedRoute,
+  path: '/users/requests/periods/$periodId',
+  component: UserMarketPeriodDetailsPage,
+});
+
 export const userRouteTree = userProtectedRoute.addChildren([
   userDashboardRoute,
   userMarketsRoute,
   userMarketDetailRoute,
   userRequestsRoute,
+  userMarketPeriodDetailsRoute,
 ]);
