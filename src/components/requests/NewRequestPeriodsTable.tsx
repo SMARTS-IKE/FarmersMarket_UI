@@ -31,6 +31,9 @@ export default function NewRequestPeriodsTable() {
     navigate({
       to: "/users/requests/periods/$periodId",
       params: { periodId: String(row.id) },
+      search: {
+        formId: row.formId > 0 ? row.formId : undefined,
+      },
     });
   };
 

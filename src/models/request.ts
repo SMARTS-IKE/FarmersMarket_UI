@@ -146,6 +146,21 @@ export interface RequestFormListResponse {
   pageSize: number;
 }
 
+export interface CreateRequestFormFieldRequest {
+  label: string;
+  typeOfFields: number;
+  isRequired: boolean;
+  weight: number;
+  order: number;
+  options: string[];
+}
+
+export interface CreateRequestFormRequest {
+  title: string;
+  description: string;
+  fields: CreateRequestFormFieldRequest[];
+}
+
 export type DesignRequestFieldType = "TEXT" | "NUMBER" | "DATE" | "TEXTAREA" | "DROPDOWN" | "BOOLEAN";
 
 export interface DesignRequestDynamicField {

@@ -60,7 +60,7 @@ export default function StepRequiredDocuments({
             <CustomButton
               title=""
               prefixIcon={<DeleteIcon fontSize="small" />}
-              backgroundColor="var(--color-text-muted)"
+              backgroundColor="var(--color-danger)"
               width={34}
               onClick={() => onRemoveRequiredDocument(requiredDocument.id)}
               sx={{

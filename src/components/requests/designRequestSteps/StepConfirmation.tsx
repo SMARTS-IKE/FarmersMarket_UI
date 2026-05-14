@@ -6,11 +6,13 @@ export default function StepConfirmation({
   fieldTypeOptions,
   onEdit,
   onSubmit,
+  isSubmitting = false,
 }: {
   draft: DesignRequestDraft;
   fieldTypeOptions: Array<{ label: string; value: DesignRequestFieldType }>;
   onEdit: () => void;
   onSubmit: () => void;
+  isSubmitting?: boolean;
 }) {
   return (
     <div className="mt-4 flex flex-col gap-5">
@@ -33,11 +35,11 @@ export default function StepConfirmation({
             {draft.dynamicFields.map((field) => (
               <li key={field.id}>
                 {field.title || "Χωρίς όνομα"}
-                {" - "}
+                {" - Τύπος πεδίου:  "}
                 {fieldTypeOptions.find((option) => option.value === field.type)?.label ?? field.type}
-                {", Weight: "}
+                {", Βαρύτητα: "}
                 {field.weight}
-                {", Υποχρεωτικό: "}
+                {", Υποχρεωτική συμπλήρωση: "}
                 {field.isRequired ? "Ναι" : "Όχι"}
                 {field.type === "DROPDOWN" &&
                   `, Τιμές: ${field.availableValues.join(", ") || "-"}`}
@@ -71,7 +73,7 @@ export default function StepConfirmation({
           width="fit-content"
           onClick={onEdit}
         /> */}
-        <CustomButton title="Υποβολή" width="fit-content" onClick={onSubmit} />
+        <CustomButton title="Υποβολή" width="fit-content" onClick={onSubmit} disabled={isSubmitting} />
       </div>
     </div>
   );

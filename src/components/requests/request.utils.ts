@@ -135,4 +135,13 @@ export const sellerRequestColumns: ColumnDef<SellerRequest>[] = [
   },
 ];
 
+export const TYPE_OF_FIELDS_TO_DESIGN_FIELD: Record<number, DesignRequestFieldType> = {
+  1: "TEXT",
+  2: "NUMBER",
+  3: "DATE",
+  4: "TEXTAREA",
+  5: "DROPDOWN",
+  6: "BOOLEAN",
+};
+
 export const SELLER_BASIC_FIELDS = ["Ονοματεπώνυμο", "Τίτλος Αγοράς"] as const;
