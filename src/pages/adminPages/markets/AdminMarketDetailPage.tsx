@@ -12,6 +12,7 @@ import {
   useRemoveMarketSellerMutation,
 } from "../../../queries/marketQueries";
 import ConnectedSellersTable from "../../../components/markets/ConnectedSellersTable";
+import AttendanceTable from "../../../components/markets/AttendanceTable";
 import { useSellersQuery } from "../../../queries/sellerQueries";
 
 const EMPTY_FORM_VALUES: MarketFormValues = {
@@ -23,6 +24,9 @@ const EMPTY_FORM_VALUES: MarketFormValues = {
   occupiedSpots: 0,
   supervisors: [],
   area: "",
+  latitude: null,
+  longitude: null,
+  radius: null,
 };
 
 const DAY_NUMBER_TO_NAME: Record<number, string> = {
@@ -198,6 +202,9 @@ function mapMarketToFormValues(market: Market): MarketFormValues {
     occupiedSpots,
     supervisors,
     area: "",
+    latitude: typeof market.latitude === "number" && Number.isFinite(market.latitude) ? market.latitude : null,
+    longitude: typeof market.longitude === "number" && Number.isFinite(market.longitude) ? market.longitude : null,
+    radius: null,
   };
 }
 
@@ -417,7 +424,7 @@ export default function AdminMarketDetailPage() {
   if (isError || !market) {
     return (
       <div className="flex flex-col gap-4 rounded-2xl border border-(--color-danger-border) bg-danger-subtle p-6 text-(--color-text-heading)">
-        <h6 className="text-sm font-semibold text-(--color-text-heading)">Επεξεργασία Αγοράς</h6>
+        <h6 className="text-sm font-semibold text-(--color-text-heading)">Διαχείριση Αγοράς</h6>
         <p className="text-sm text-(--color-danger)">{error?.message ?? "Η φόρτωση των στοιχείων αγοράς απέτυχε."}</p>
         <CustomButton
           title="Επιστροφή στη λίστα αγορών"
@@ -430,9 +437,9 @@ export default function AdminMarketDetailPage() {
   }
 
   return (
-    <div className="flex h-full w-full flex-col gap-6 text-left">
+    <div className="flex h-full w-full flex-col gap-2 text-left">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-semibold text-(--color-text-heading)">Επεξεργασία Αγοράς</h2>
+        <h2 className="font-semibold text-(--color-text-heading)">Διαχείριση Αγοράς</h2>
         <CustomButton
           title="Επιστροφή στη λίστα αγορών"
           backgroundColor="var(--color-text-muted)"
@@ -442,6 +449,10 @@ export default function AdminMarketDetailPage() {
       </div>
 
       <Box className="">
+        <h3 className="mb-4 text-lg  text-(--color-text-heading)">
+          {market.name || `Αγορά #${market.id}`}
+        </h3>
+
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
@@ -464,6 +475,7 @@ export default function AdminMarketDetailPage() {
         >
           <Tab label="Στοιχεία αγοράς" />
           <Tab label={`Συμμετέχοντες πωλητές (${connectedSellersCount})`} />
+          <Tab label="Παρουσίες" />
         </Tabs>
 
         {activeTab === 0 ? (
@@ -475,7 +487,7 @@ export default function AdminMarketDetailPage() {
             onCancel={hasUnsavedChanges ? handleCancel : undefined}
             submitLabel="Αποθήκευση"
           />
-        ) : (
+        ) : activeTab === 1 ? (
           <div className="flex flex-col gap-4">
             {/* <div className="flex bg-(--color-surface) p-4">
               <CustomButton
@@ -496,6 +508,8 @@ export default function AdminMarketDetailPage() {
               sellerOptions={availableSellerOptions}
             />
           </div>
+        ) : (
+          <AttendanceTable marketId={Number(marketId)} />
         )}
       </Box>
 

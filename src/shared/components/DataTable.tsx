@@ -66,6 +66,8 @@ interface DataTableProps<T> {
   onPageChange?: (page: number) => void;
   /** Controlled rows-per-page change callback for server-side pagination */
   onRowsPerPageChange?: (rowsPerPage: number) => void;
+  /** Optional content shown at the start of the pagination row */
+  paginationPrefix?: React.ReactNode;
 }
 
 // ── Main DataTable component ─────────────────────────────────────
@@ -87,6 +89,7 @@ export default function DataTable<T extends object>({
   totalCount,
   onPageChange,
   onRowsPerPageChange,
+  paginationPrefix,
 }: DataTableProps<T>) {
   const [filterText, setFilterText] = useState("");
   const [internalPage, setInternalPage] = useState(0);
@@ -244,27 +247,46 @@ export default function DataTable<T extends object>({
         </TableContainer>
 
         {!hidePagination && (
-          <TablePagination
-            labelRowsPerPage="Αποτελέσματα ανά σελίδα:"
-            component="div"
-            count={isControlledPagination ? (totalCount ?? filteredRows.length) : filteredRows.length}
-            page={currentPage}
-            onPageChange={handleChangePage}
-            rowsPerPage={currentRowsPerPage}
-            onRowsPerPageChange={handleChangeRowsPerPage}
-            rowsPerPageOptions={rowsPerPageOptions}
+          <Box
+            className="flex flex-wrap items-center justify-between gap-3 px-4"
             sx={{
               minHeight: 35,
-              height: 35,
               backgroundColor: "var(--color-dark)",
               color: "var(--color-surface)",
-              overflow: "hidden",
-              "& .MuiTablePagination-toolbar": { minHeight: 35, height: 35, paddingTop: 0, paddingBottom: 0 },
-              "& .MuiSelect-icon": { color: "var(--color-surface)" },
-              "& .MuiIconButton-root": { color: "var(--color-surface)" },
-              "& .MuiIconButton-root.Mui-disabled": { color: "var(--color-text-muted)" },
             }}
-          />
+          >
+            {paginationPrefix ? (
+              <Typography variant="body2" sx={{ fontWeight: 600, color: "inherit" }}>
+                {paginationPrefix}
+              </Typography>
+            ) : (
+              <Box />
+            )}
+
+            <TablePagination
+              labelRowsPerPage="Αποτελέσματα ανά σελίδα:"
+              component="div"
+              count={isControlledPagination ? (totalCount ?? filteredRows.length) : filteredRows.length}
+              page={currentPage}
+              onPageChange={handleChangePage}
+              rowsPerPage={currentRowsPerPage}
+              onRowsPerPageChange={handleChangeRowsPerPage}
+              rowsPerPageOptions={rowsPerPageOptions}
+              sx={{
+                minHeight: 35,
+                height: 35,
+                backgroundColor: "transparent",
+                color: "var(--color-surface)",
+                overflow: "hidden",
+                marginLeft: "auto",
+                "& .MuiTablePagination-toolbar": { minHeight: 35, height: 35, paddingTop: 0, paddingBottom: 0, paddingRight: 0 },
+                "& .MuiTablePagination-spacer": { display: "none" },
+                "& .MuiSelect-icon": { color: "var(--color-surface)" },
+                "& .MuiIconButton-root": { color: "var(--color-surface)" },
+                "& .MuiIconButton-root.Mui-disabled": { color: "var(--color-text-muted)" },
+              }}
+            />
+          </Box>
         )}
       </Paper>
     </Box>

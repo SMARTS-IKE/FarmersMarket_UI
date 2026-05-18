@@ -99,6 +99,14 @@ export default function AdminSellersPage() {
 
   return (
     <div className="flex h-full flex-col gap-6 text-left">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <h2 className="font-semibold text-(--color-text-heading)">Πωλητές</h2>
+        <CustomButton
+          title="Νέος πωλητής"
+          onClick={() => navigate({ to: "/admin/sellers/new" })}
+          width="fit-content"
+        />
+      </div>
 
       <DataTable<Seller>
           rows={sellers}

@@ -130,13 +130,6 @@ export default function MarketPeriods() {
         </div>
 
         <div className="flex flex-nowrap items-end justify-center gap-3">
-          <CustomInputField
-            type="NUMBER"
-            label="Μέγεθος Σελίδας"
-            value={draft.pageSize}
-            onChange={(value) => setDraft((prev) => ({ ...prev, pageSize: Number(value) || DEFAULT_FILTERS.pageSize }))}
-            width={180}
-          />
 
           <CustomButton
             title="Αναζήτηση"

@@ -18,3 +18,15 @@ export async function getSellers(params: SellerSearchRequest): Promise<SellerLis
 export async function getSellerById(id: string): Promise<Seller> {
   return http.get<Seller>(`/Sellers/${id}`);
 }
+
+export async function createLicense(
+  sellerId: string,
+  licenseData: {
+    licenseNumber: string;
+    licenseType: string;
+    issuedAt: string;
+    expiresAt: string;
+  }
+): Promise<void> {
+  return http.post<void>(`/Sellers/${sellerId}/licenses`, licenseData);
+}

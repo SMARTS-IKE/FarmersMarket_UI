@@ -1,6 +1,13 @@
 /** Maps to SellerType enum: 0 = Unknown, 1 = Παραγωγός, 2 = Μεταπωλητής */
 export type SellerType = 0 | 1 | "";
 
+export interface License {
+  id?: number;
+  number: string;
+  issuedAt: string;
+  expiresAt: string;
+}
+
 export interface SellerSearchRequest {
   name: string;
   afm: string;
@@ -20,6 +27,7 @@ export interface Seller {
   address: string | null;
   sellerType: SellerType;
   isActive: boolean;
+  licenses?: License[];
 }
 
 export interface SellerListResponse {

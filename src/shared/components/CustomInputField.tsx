@@ -189,6 +189,47 @@ export default function CustomInputField({
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [multiOpen, setMultiOpen] = useState(false);
 
+  const dropdownMenuProps = {
+    slotProps: {
+      paper: {
+        sx: {
+          mt: 0.5,
+          borderRadius: "14px",
+          border: "1px solid var(--color-border)",
+          boxShadow: "var(--shadow-lg)",
+          p: "4px",
+        },
+      },
+      list: {
+        sx: {
+          p: 0,
+        },
+      },
+    },
+  };
+
+  const dropdownMenuItemSx: SxProps<Theme> = {
+    width: "100%",
+    boxSizing: "border-box",
+    borderRadius: "8px",
+    my: 0,
+    mx: 0,
+    px: 2,
+    minHeight: 36,
+    fontWeight: 500,
+    "&.Mui-selected": {
+      backgroundColor: "#C4B5A0",
+      color: "#ffffff",
+      fontWeight: 700,
+    },
+    "&.Mui-selected:hover": {
+      backgroundColor: "#ECE5DC",
+    },
+    "&:hover": {
+      backgroundColor: "#F7F3EE",
+    },
+  };
+
   if (type === "MULTI_SELECT") {
     const multiValue = Array.isArray(value) ? value : [];
     return (
@@ -207,6 +248,7 @@ export default function CustomInputField({
           value={multiValue}
           onChange={(e) => onChange?.(e.target.value as string[])}
           onBlur={onBlur}
+          MenuProps={dropdownMenuProps}
           input={<Input />}
           IconComponent={() => null}
           endAdornment={
@@ -260,6 +302,7 @@ export default function CustomInputField({
               key={item.value}
               value={item.value as string}
               disabled={disabledDropdownValues.includes(item.value)}
+              sx={dropdownMenuItemSx}
             >
               {item.label}
             </MenuItem>
@@ -292,6 +335,7 @@ export default function CustomInputField({
           value={value ?? defaultValue ?? ""}
           onChange={(e) => onChange?.(e.target.value as string | number)}
           onBlur={onBlur}
+          MenuProps={dropdownMenuProps}
           IconComponent={() => null}
           endAdornment={
             <InputAdornment
@@ -327,7 +371,7 @@ export default function CustomInputField({
             ) : undefined
           }
         >
-          <MenuItem value="">
+          <MenuItem value="" sx={dropdownMenuItemSx}>
             <em>Επιλέξτε…</em>
           </MenuItem>
           {dropdownItems.map((item) => (
@@ -335,6 +379,7 @@ export default function CustomInputField({
               key={item.value}
               value={item.value}
               disabled={disabledDropdownValues.includes(item.value)}
+              sx={dropdownMenuItemSx}
             >
               {item.label}
             </MenuItem>

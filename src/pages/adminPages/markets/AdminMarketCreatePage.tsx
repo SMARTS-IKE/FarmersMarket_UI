@@ -12,6 +12,9 @@ const EMPTY_FORM_VALUES: MarketFormValues = {
   occupiedSpots: 0,
   supervisors: [],
   area: "",
+  latitude: null,
+  longitude: null,
+  radius: null,
 };
 
 export default function AdminMarketCreatePage() {

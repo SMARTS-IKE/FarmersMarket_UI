@@ -9,6 +9,7 @@ import { useMarketsQuery } from "../../../queries/marketQueries";
 import { useSellerQuery } from "../../../queries/sellerQueries";
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
 import { marketTypeLabel } from "../../../components/markets/market.utils";
+import { createLicense } from "../../../services/sellerService";
 
 const ALL_MARKETS_FILTERS: MarketSearchRequest = {
   name: "",
@@ -68,6 +69,39 @@ function getMarketSellers(market: Market): unknown[] {
   return Array.isArray(sellers) ? sellers : [];
 }
 
+function readString(record: Record<string, unknown>, keys: string[]): string {
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+  }
+  return "";
+}
+
+function getLatestLicense(licenses: unknown[]): { number: string; issuedAt: string; expiresAt: string } | null {
+  if (!Array.isArray(licenses) || licenses.length === 0) {
+    return null;
+  }
+
+  const licenseRecords = licenses
+    .map((lic) => asRecord(lic))
+    .filter((lic): lic is Record<string, unknown> => lic !== null);
+
+  if (licenseRecords.length === 0) {
+    return null;
+  }
+
+  // Assume the latest license is the last one or the one with the latest issuedAt date
+  const latest = licenseRecords[licenseRecords.length - 1];
+
+  return {
+    number: readString(latest, ["number", "licenseNumber"]),
+    issuedAt: readString(latest, ["issuedAt", "issued_at", "issuedDate"]),
+    expiresAt: readString(latest, ["expiresAt", "expires_at", "expiresDate"]),
+  };
+}
+
 export default function SellerPage() {
   const navigate = useNavigate();
   const params = useParams({ strict: false });
@@ -81,6 +115,9 @@ export default function SellerPage() {
   const [address, setAddress] = useState("");
   const [sellerType, setSellerType] = useState<string>("0");
   const [isActive, setIsActive] = useState(false);
+  const [licenseNumber, setLicenseNumber] = useState("");
+  const [licenseIssuedAt, setLicenseIssuedAt] = useState("");
+  const [licenseExpiresAt, setLicenseExpiresAt] = useState("");
   const [initialState, setInitialState] = useState({
     firstName: "",
     lastName: "",
@@ -90,10 +127,15 @@ export default function SellerPage() {
     address: "",
     sellerType: "",
     isActive: false,
+    licenseNumber: "",
+    licenseIssuedAt: "",
+    licenseExpiresAt: "",
   });
   const [navigationNotice, setNavigationNotice] = useState("");
   const [notificationSeverity, setNotificationSeverity] = useState<"success" | "warning">("warning");
   const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
+
+  const [isAddingLicense, setIsAddingLicense] = useState(false);
 
   const { data: seller, isLoading, isError, error } = useSellerQuery(sellerId);
   const { data: marketsQueryResults } = useMarketsQuery(ALL_MARKETS_FILTERS);
@@ -107,8 +149,20 @@ export default function SellerPage() {
   }, [marketsQueryResults?.items, seller]);
 
   const currentState = useMemo(
-    () => ({ firstName, lastName, afm, email, phone, address, sellerType, isActive }),
-    [firstName, lastName, afm, email, phone, address, sellerType, isActive]
+    () => ({
+      firstName,
+      lastName,
+      afm,
+      email,
+      phone,
+      address,
+      sellerType,
+      isActive,
+      licenseNumber,
+      licenseIssuedAt,
+      licenseExpiresAt,
+    }),
+    [firstName, lastName, afm, email, phone, address, sellerType, isActive, licenseNumber, licenseIssuedAt, licenseExpiresAt]
   );
   const hasUnsavedChanges = useMemo(
     () => JSON.stringify(currentState) !== JSON.stringify(initialState),
@@ -117,6 +171,8 @@ export default function SellerPage() {
 
   useEffect(() => {
     if (!seller) return;
+
+    const latestLicense = getLatestLicense(seller.licenses ?? []);
 
     const mappedState = {
       firstName: seller.firstName ?? "",
@@ -127,6 +183,9 @@ export default function SellerPage() {
       address: seller.address ?? "",
       sellerType: String(seller.sellerType),
       isActive: Boolean(seller.isActive),
+      licenseNumber: latestLicense?.number ?? "",
+      licenseIssuedAt: latestLicense?.issuedAt ?? "",
+      licenseExpiresAt: latestLicense?.expiresAt ?? "",
     };
 
     setFirstName(mappedState.firstName);
@@ -137,6 +196,9 @@ export default function SellerPage() {
     setAddress(mappedState.address);
     setSellerType(mappedState.sellerType);
     setIsActive(mappedState.isActive);
+    setLicenseNumber(mappedState.licenseNumber);
+    setLicenseIssuedAt(mappedState.licenseIssuedAt);
+    setLicenseExpiresAt(mappedState.licenseExpiresAt);
     setInitialState(mappedState);
     setNavigationNotice("");
     setIsSnackbarOpen(false);
@@ -184,6 +246,9 @@ export default function SellerPage() {
     setAddress(initialState.address);
     setSellerType(initialState.sellerType);
     setIsActive(initialState.isActive);
+    setLicenseNumber(initialState.licenseNumber);
+    setLicenseIssuedAt(initialState.licenseIssuedAt);
+    setLicenseExpiresAt(initialState.licenseExpiresAt);
     setNavigationNotice("");
     setIsSnackbarOpen(false);
   };
@@ -192,6 +257,36 @@ export default function SellerPage() {
     // TODO: wire update seller mutation when backend endpoint is available.
     setInitialState(currentState);
     showNotification("Οι αλλαγές αποθηκεύτηκαν.", "success");
+  };
+
+  const handleAddLicense = async () => {
+    if (!licenseNumber || !licenseIssuedAt || !licenseExpiresAt) {
+      showNotification("Παρακαλώ συμπληρώστε όλα τα πεδία της άδειας.", "warning");
+      return;
+    }
+
+    setIsAddingLicense(true);
+    try {
+      await createLicense(sellerId, {
+        licenseNumber,
+        licenseType: "", // Default empty for now, can be extended if backend supports
+        issuedAt: licenseIssuedAt,
+        expiresAt: licenseExpiresAt,
+      });
+
+      // Clear license fields after successful submission
+      setLicenseNumber("");
+      setLicenseIssuedAt("");
+      setLicenseExpiresAt("");
+      showNotification("Η άδεια προστέθηκε με επιτυχία.", "success");
+    } catch (err) {
+      showNotification(
+        (err instanceof Error ? err.message : "Ένα σφάλμα προέκυψε κατά την προσθήκη της άδειας."),
+        "warning"
+      );
+    } finally {
+      setIsAddingLicense(false);
+    }
   };
 
   const handleSnackbarClose = (_event?: Event | SyntheticEvent, reason?: string) => {
@@ -248,6 +343,45 @@ export default function SellerPage() {
           width="fit-content"
           onClick={handleBackToList}
         />
+      </div>
+
+      <div className="flex items-center gap-4">
+        <div className="flex flex-wrap gap-3">
+          <CustomButton
+            title="Ενεργός"
+            onClick={() => setIsActive(true)}
+            width={120}
+            backgroundColor={isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)"}
+            sx={{
+              minHeight: 32,
+              borderRadius: "0.75rem",
+              border: isActive ? "1px solid transparent" : "1px solid var(--color-text-muted)",
+              color: isActive ? "#ffffff" : "var(--color-text-muted)",
+              boxShadow: isActive ? "0 6px 16px rgba(74,63,53,0.18)" : "0 1px 2px rgba(60,40,10,0.08)",
+              "&:hover": {
+                backgroundColor: isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)",
+                filter: "none",
+              },
+            }}
+          />
+          <CustomButton
+            title="Ανενεργός"
+            onClick={() => setIsActive(false)}
+            width={120}
+            backgroundColor={!isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)"}
+            sx={{
+              minHeight: 32,
+              borderRadius: "0.75rem",
+              border: !isActive ? "1px solid transparent" : "1px solid var(--color-text-muted)",
+              color: !isActive ? "#ffffff" : "var(--color-text-muted)",
+              boxShadow: !isActive ? "0 6px 16px rgba(74,63,53,0.18)" : "0 1px 2px rgba(60,40,10,0.08)",
+              "&:hover": {
+                backgroundColor: !isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)",
+                filter: "none",
+              },
+            }}
+          />
+        </div>
       </div>
 
       <Box>
@@ -333,45 +467,42 @@ export default function SellerPage() {
               />
             </div>
 
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                <CustomButton
-                  title="Ενεργός"
-                  onClick={() => setIsActive(true)}
+            <div className="pt-6">
+              <h3 className="mb-4 text-lg font-semibold text-(--color-text-heading)">Άδεια</h3>
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <CustomInputField
+                  type="TEXT"
+                  label="Αριθμός"
+                  value={licenseNumber}
+                  onChange={(value) => setLicenseNumber(String(value))}
                   width="100%"
-                  backgroundColor={isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)"}
-                  sx={{
-                    minHeight: 44,
-                    borderRadius: "0.75rem",
-                    border: isActive ? "1px solid transparent" : "1px solid var(--color-text-muted)",
-                    color: isActive ? "#ffffff" : "var(--color-text-muted)",
-                    boxShadow: isActive ? "0 6px 16px rgba(74,63,53,0.18)" : "0 1px 2px rgba(60,40,10,0.08)",
-                    "&:hover": {
-                      backgroundColor: isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)",
-                      filter: "none",
-                    },
-                  }}
                 />
-                <CustomButton
-                  title="Ανενεργός"
-                  onClick={() => setIsActive(false)}
+                <CustomInputField
+                  type="DATE"
+                  label="Ημερομηνία Έκδοσης"
+                  value={licenseIssuedAt}
+                  onChange={(value) => setLicenseIssuedAt(String(value))}
                   width="100%"
-                  backgroundColor={!isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)"}
-                  sx={{
-                    minHeight: 44,
-                    borderRadius: "0.75rem",
-                    border: !isActive ? "1px solid transparent" : "1px solid var(--color-text-muted)",
-                    color: !isActive ? "#ffffff" : "var(--color-text-muted)",
-                    boxShadow: !isActive ? "0 6px 16px rgba(74,63,53,0.18)" : "0 1px 2px rgba(60,40,10,0.08)",
-                    "&:hover": {
-                      backgroundColor: !isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)",
-                      filter: "none",
-                    },
-                  }}
                 />
-              </div>
-              <div className="border-t-3 border-(--color-dark) pt-2 text-center text-sm font-medium text-(--color-text-heading)">
-                Κατάσταση
+                <CustomInputField
+                  type="DATE"
+                  label="Ημερομηνία Λήξης"
+                  value={licenseExpiresAt}
+                  onChange={(value) => setLicenseExpiresAt(String(value))}
+                  width="100%"
+                />
+                            {/* <div className="mt-4">
+                              <CustomButton
+                                title="Νέα άδεια"
+                                onClick={handleAddLicense}
+                                width="fit-content"
+                                sx={{
+                                  px: 3,
+                                  minHeight: 32,
+                                }}
+                                disabled={isAddingLicense}
+                              />
+                            </div> */}
               </div>
             </div>
 
@@ -382,8 +513,10 @@ export default function SellerPage() {
                     title="Ακύρωση"
                     backgroundColor="transparent"
                     onClick={handleCancel}
-                    width={120}
+                    width="fit-content"
                     sx={{
+                      px: 3,
+                      minHeight: 32,
                       color: "var(--color-dark)",
                       border: "1px solid var(--color-text-muted)",
                       "&:hover": {
@@ -396,7 +529,8 @@ export default function SellerPage() {
                   <CustomButton
                     title="Αποθήκευση"
                     onClick={handleSave}
-                    width={140}
+                    width="fit-content"
+                    sx={{ px: 4, minHeight: 32 }}
                   />
                 </>
               )}

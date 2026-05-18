@@ -1,10 +1,8 @@
 import { Box, Typography } from "@mui/material";
-import DeleteIcon from "@mui/icons-material/Delete";
-import AddIcon from "@mui/icons-material/Add";
 import type { MarketFormProps } from "../../models/market";
 import CustomInputField from "../../shared/components/CustomInputField";
 import CustomButton from "../../shared/components/CustomButton";
-import MapLocationPlaceholder from "../../shared/components/MapLocationPlaceholder";
+import MarketMapPicker from "../../shared/components/MarketMapPicker";
 import { DAYS } from "./market.utils";
 import { useUsersQuery } from "../../queries/userQueries";
 import { USER_ROLE_MAPPING } from "../../shared/mappings/users.mapping";
@@ -31,20 +29,9 @@ const toMinutes = (time: string) => {
   return hours * 60 + minutes;
 };
 
-const getDisabledDayValues = (
-  operatingDays: Array<{ day: string }>,
-  index: number
-) => {
-  if (index === 0) return [];
-
-  const previousDay = operatingDays[index - 1]?.day;
-  if (!previousDay || dayOrder[previousDay] === undefined) return [];
-
-  const previousIndex = dayOrder[previousDay];
-  return dayOptions
-    .filter((opt) => dayOrder[String(opt.value)] <= previousIndex)
-    .map((opt) => opt.value);
-};
+function sortDays(days: string[]): string[] {
+  return [...days].sort((left, right) => (dayOrder[left] ?? Number.MAX_SAFE_INTEGER) - (dayOrder[right] ?? Number.MAX_SAFE_INTEGER));
+}
 
 export default function MarketForm({
   mode,
@@ -76,35 +63,20 @@ export default function MarketForm({
     value: u.id,
   }));
 
-  const handleAddDay = () => {
-    onChange({
-      ...values,
-      operatingDays: [
-        ...values.operatingDays,
-        { day: "", openTime: sharedOpenTime, closeTime: sharedCloseTime },
-      ],
+  const selectedDayValues = values.operatingDays.map((entry) => entry.day).filter(Boolean);
+
+  const handleUpdateWorkingDays = (selectedValues: string[]) => {
+    const nextDays = sortDays(selectedValues);
+    const nextOperatingDays = nextDays.map((day) => {
+      const existingEntry = values.operatingDays.find((entry) => entry.day === day);
+      return {
+        day,
+        openTime: existingEntry?.openTime ?? sharedOpenTime,
+        closeTime: existingEntry?.closeTime ?? sharedCloseTime,
+      };
     });
-  };
 
-  const handleRemoveDay = (index: number) => {
-    onChange({
-      ...values,
-      operatingDays: values.operatingDays.filter((_, i) => i !== index),
-    });
-  };
-
-  const handleUpdateDay = (index: number, value: string) => {
-    const updated = [...values.operatingDays];
-    updated[index] = { ...updated[index], day: value };
-
-    for (let i = index + 1; i < updated.length; i += 1) {
-      const disabledValues = getDisabledDayValues(updated, i);
-      if (disabledValues.includes(updated[i].day)) {
-        updated[i] = { ...updated[i], day: "" };
-      }
-    }
-
-    onChange({ ...values, operatingDays: updated });
+    onChange({ ...values, operatingDays: nextOperatingDays });
   };
 
   const handleUpdateWorkingTime = (field: "openTime" | "closeTime", value: string) => {
@@ -171,14 +143,25 @@ export default function MarketForm({
       </Box>
 
       <Box className="mt-4 flex flex-col gap-4 lg:flex-row">
-        <Box className="flex-1">
-          <MapLocationPlaceholder height={260} />
-        </Box>
+        <MarketMapPicker
+          latitude={values.latitude ?? null}
+          longitude={values.longitude ?? null}
+          radius={values.radius ?? null}
+          disabled={isViewMode}
+          height={200}
+          onChange={(lat, lng) => onChange({ ...values, latitude: lat, longitude: lng })}
+          onRadiusChange={(r) => onChange({ ...values, radius: r })}
+        />
 
         <Box className="flex flex-1 flex-col gap-4 border p-4">
           {values.operatingDays.length > 0 && (
             <>
-              <Box className="flex flex-wrap items-start gap-3 rounded-lg p-2">
+              <div className="flex justify-center w-full">
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+                  Ώρες Λειτουργίας
+                </Typography>
+              </div>
+              <Box className="flex flex-wrap items-start justify-center gap-3 rounded-lg p-2">
                 <CustomInputField
                   type="DROPDOWN"
                   label="Έναρξη"
@@ -209,57 +192,29 @@ export default function MarketForm({
                 />
               </Box>
 
-              <Typography variant="caption" color="text.secondary">
-                Το ωράριο εφαρμόζεται σε όλες τις επιλεγμένες ημέρες.
-              </Typography>
-
             </>
           )}
 
-          <div className="flex items-center gap-4">
+          <div className="flex justify-center w-full mt-10">
             <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
               Ημέρες Λειτουργίας
             </Typography>
-            {!isViewMode && (
-              <CustomButton prefixIcon={<AddIcon />} onClick={handleAddDay} width={10} />
-            )}
           </div>
 
+          <CustomInputField
+            type="MULTI_SELECT"
+            label=""
+            value={selectedDayValues}
+            onChange={(v) => handleUpdateWorkingDays(Array.isArray(v) ? v.map(String) : [])}
+            dropdownItems={dayOptions}
+            disabled={isViewMode}
+            validation={{ required: true }}
+            width="100%"
+          />
+
           {values.operatingDays.length === 0 ? (
-            <p className="text-sm text-gray-500">Δεν έχουν προστεθεί ημέρες λειτουργίας.</p>
-          ) : (
-            <Box className="space-y-4">
-
-              {values.operatingDays.map((dayEntry, index) => (
-                <Box
-                  key={index}
-                  className="flex flex-wrap items-start justify-between gap-3 rounded-lg p-4"
-                >
-                  <CustomInputField
-                    type="DROPDOWN"
-                    label="Ημέρα"
-                    value={dayEntry.day}
-                    onChange={(v) => handleUpdateDay(index, String(v))}
-                    dropdownItems={dayOptions}
-                    disabledDropdownValues={getDisabledDayValues(values.operatingDays, index)}
-                    disabled={isViewMode}
-                    validation={{ required: true }}
-                    width={200}
-                  />
-
-                  {!isViewMode && (
-                    <CustomButton
-                      prefixIcon={<DeleteIcon />}
-                      backgroundColor="var(--color-danger)"
-                      onClick={() => handleRemoveDay(index)}
-                      sx={{ marginTop: "17px" }}
-                      width={10}
-                    />
-                  )}
-                </Box>
-              ))}
-            </Box>
-          )}
+            <p className="text-sm text-gray-500">Δεν έχουν επιλεγεί ημέρες λειτουργίας.</p>
+          ) : null}
         </Box>
       </Box>
 

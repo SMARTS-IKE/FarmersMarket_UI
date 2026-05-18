@@ -2,6 +2,7 @@ import { Link, Outlet, useLocation, useNavigate } from '@tanstack/react-router';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
+import logo02 from '../assets/logo-02.svg';
 import { getSystemAdminTab, systemAdminTabs } from '../lib/systemAdminTabs';
 import { useAuthStore } from '../store/authStore';
 import { LayoutSlotProvider, useLayoutSlot } from '../lib/layoutSlotContext';
@@ -30,10 +31,15 @@ function SystemAdminLayoutInner() {
   return (
     <div className="min-h-svh">
       <div className="flex min-h-svh w-full flex-col overflow-visible border border-(--color-border) bg-(--color-surface) shadow-[var(--shadow-lg)] md:overflow-hidden">
-        <header className="border-b border-(--color-text-muted) bg-(--color-bg-header-footer)/95 px-4 py-4 backdrop-blur md:px-6">
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <header className="border-b-2 border-(--color-secondary) bg-[#C4B5A0] px-4 md:px-6">
+          <div className="flex items-center justify-between gap-6">
+            {/* Logo */}
+            <div className="flex-shrink-0">
+              <img src={logo02} alt="Farmers Market logo" className="h-14 w-14 rounded-lg object-cover" />
+            </div>
 
-            <nav className="grid w-full grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:justify-center lg:flex-1" aria-label="System admin sections">
+            {/* Navigation */}
+            <nav className="flex flex-1 items-center justify-center " aria-label="System admin sections">
               {systemAdminTabs.map((tab) => {
                 const isActive = activeTab.to === tab.to;
 
@@ -41,10 +47,10 @@ function SystemAdminLayoutInner() {
                   <Link
                     key={tab.to}
                     to={tab.to}
-                    className={`flex min-h-8 min-w-40 items-center justify-center rounded-lg border  py-1 text-center text-sm font-semibold transition ${
+                    className={`w-[80px] xl:w-[200px] h-[88px] px-[10px] sm:px-[20px] md:px-[30px] lg:px-[50px] text-center text-xs sm:text-sm font-medium transition whitespace-normal flex flex-col-reverse items-center justify-center rounded border ${
                       isActive
-                        ? 'border-(--color-primary-border) bg-(--color-dark) text-(--color-primary-fg) shadow-[var(--shadow-sm)]'
-                        : 'border-(--color-border) bg-(--color-bg) text-(--color-text-heading) hover:border-(--color-primary-border) hover:bg-(--color-primary-subtle)'
+                        ? 'border-[#A69680] bg-(--color-text-muted) text-(--color-surface)'
+                        : 'border-0 text-[#5C4A3D] hover:text-[#3D2817] hover:bg-[#E8DCC8]'
                     }`}
                   >
                     {tab.label}
@@ -53,17 +59,18 @@ function SystemAdminLayoutInner() {
               })}
             </nav>
 
-            <div className="flex justify-end lg:justify-start">
+            {/* Logout Button */}
+            <div className="flex-shrink-0">
               <Tooltip title="Logout">
                 <IconButton
                   aria-label="logout"
                   onClick={handleLogout}
                   sx={{
-                    width: { xs: '100%', sm: 30 },
-                    height: 30,
-                    color: 'var(--color-dark)',
+                    width: 32,
+                    height: 32,
+                    color: '#3D2817',
                     '&:hover': {
-                      border: '1px solid var(--color-danger-hover)',
+                      backgroundColor: 'rgba(61, 40, 23, 0.1)',
                     },
                   }}
                 >

@@ -88,6 +88,9 @@ export interface MarketFormValues {
   supervisors: string[];
   area: string;
   occupiedSpots: number;
+  latitude: number | null;
+  longitude: number | null;
+  radius: number | null;
 }
 
 export interface MarketFormProps {
