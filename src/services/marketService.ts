@@ -1,5 +1,12 @@
 import { http } from '../lib/http';
-import { DAY_NAME_TO_NUMBER, type Market, type MarketApiRequest, type MarketListResponse, type MarketSearchRequest } from '../models/market';
+import {
+  DAY_NAME_TO_NUMBER,
+  type Market,
+  type MarketApiRequest,
+  type MarketListResponse,
+  type MarketSearchRequest,
+  type UpdateMarketRequest,
+} from '../models/market';
 
 function toApiRequest(params: MarketSearchRequest): MarketApiRequest {
   const req: MarketApiRequest = {
@@ -46,6 +53,10 @@ export async function getMarkets(params: MarketSearchRequest): Promise<MarketLis
 
 export async function getMarketById(id: string): Promise<Market> {
   return http.get<Market>(`/Markets/${id}`);
+}
+
+export async function updateMarket(id: string, payload: UpdateMarketRequest): Promise<void> {
+  await http.put<void, UpdateMarketRequest>(`/markets/${id}`, payload);
 }
 
 export async function addMarketSeller(

@@ -101,3 +101,27 @@ export interface MarketFormProps {
   onCancel?: () => void;
   submitLabel?: string;
 }
+
+export interface MarketExceptionToAddRequest {
+  exceptionDate: string;
+  isCancelled: boolean;
+  cancellationReason: string | null;
+}
+
+export interface UpdateMarketRequest {
+  name: string;
+  marketType: MarketType;
+  address: string;
+  area: string;
+  latitude: number;
+  longitude: number;
+  totalSpots: number;
+  openTime: string;
+  closeTime: string;
+  notes: string;
+  isActive: boolean;
+  formId: number;
+  supervisorsToAdd: string[];
+  supervisorsToRemove: string[];
+  exceptionsToAdd: MarketExceptionToAddRequest[];
+}

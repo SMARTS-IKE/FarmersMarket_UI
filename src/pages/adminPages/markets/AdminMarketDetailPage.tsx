@@ -4,12 +4,12 @@ import { useBlocker, useNavigate, useParams } from "@tanstack/react-router";
 import CustomButton from "../../../shared/components/CustomButton";
 import AddSellerModal from "../../../components/markets/AddSellerModal";
 import MarketForm from "../../../components/markets/MarketForm";
-import type { Market, MarketFormValues } from "../../../models/market";
+import type { Market, MarketFormValues, UpdateMarketRequest } from "../../../models/market";
 import {
   useAddMarketSellerMutation,
-  useAddMarketSupervisorMutation,
   useMarketQuery,
   useRemoveMarketSellerMutation,
+  useUpdateMarketMutation,
 } from "../../../queries/marketQueries";
 import ConnectedSellersTable from "../../../components/markets/ConnectedSellersTable";
 import AttendanceTable from "../../../components/markets/AttendanceTable";
@@ -177,6 +177,8 @@ function extractConnectedSellerId(entry: unknown): number | null {
 }
 
 function mapMarketToFormValues(market: Market): MarketFormValues {
+  const marketRecord = asRecord(market);
+
   const supervisors = (market.supervisors ?? [])
     .map((supervisor) => supervisor.userId)
     .filter((userId): userId is string => Boolean(userId));
@@ -201,10 +203,49 @@ function mapMarketToFormValues(market: Market): MarketFormValues {
     availableSlots,
     occupiedSpots,
     supervisors,
-    area: "",
+    area: (marketRecord ? readString(marketRecord, ["area", "region", "district"]) : "") || "",
     latitude: typeof market.latitude === "number" && Number.isFinite(market.latitude) ? market.latitude : null,
     longitude: typeof market.longitude === "number" && Number.isFinite(market.longitude) ? market.longitude : null,
     radius: null,
+  };
+}
+
+function toTimeWithSeconds(time: string): string {
+  if (!time) return "";
+  return time.length === 5 ? `${time}:00` : time;
+}
+
+function resolveFormId(market: Market): number {
+  const marketRecord = asRecord(market);
+  if (!marketRecord) return 0;
+  return readNumber(marketRecord, ["formId", "requestFormId"]) ?? 0;
+}
+
+function mapFormValuesToUpdatePayload(
+  values: MarketFormValues,
+  market: Market,
+  supervisorsToAdd: string[],
+  supervisorsToRemove: string[]
+): UpdateMarketRequest {
+  const openTime = values.operatingDays[0]?.openTime ?? "";
+  const closeTime = values.operatingDays[0]?.closeTime ?? "";
+
+  return {
+    name: values.name.trim(),
+    marketType: values.marketType,
+    address: values.address.trim(),
+    area: values.area.trim(),
+    latitude: values.latitude ?? 0,
+    longitude: values.longitude ?? 0,
+    totalSpots: values.availableSlots,
+    openTime: toTimeWithSeconds(openTime),
+    closeTime: toTimeWithSeconds(closeTime),
+    notes: market.notes ?? "",
+    isActive: Boolean(market.isActive),
+    formId: resolveFormId(market),
+    supervisorsToAdd,
+    supervisorsToRemove,
+    exceptionsToAdd: [],
   };
 }
 
@@ -215,7 +256,7 @@ export default function AdminMarketDetailPage() {
   const { data: market, isLoading, isError, error } = useMarketQuery(marketId);
   const addMarketSellerMutation = useAddMarketSellerMutation(marketId);
   const removeMarketSellerMutation = useRemoveMarketSellerMutation(marketId);
-  const addMarketSupervisorMutation = useAddMarketSupervisorMutation(marketId);
+  const updateMarketMutation = useUpdateMarketMutation(marketId);
   const { data: sellersQueryResults } = useSellersQuery({
     name: "",
     afm: "",
@@ -318,27 +359,31 @@ export default function AdminMarketDetailPage() {
     setIsSnackbarOpen(false);
   };
 
-  const handleSubmit = (values: MarketFormValues) => {
+  const handleSubmit = async (values: MarketFormValues) => {
+    if (!market) return;
+
     // Check if supervisors have changed
     const initialSupervisors = new Set(initialFormValues.supervisors || []);
     const newSupervisors = new Set(values.supervisors || []);
     
-    // Find newly added supervisors
-    const addedSupervisors = Array.from(newSupervisors).filter(
+    const supervisorsToAdd = Array.from(newSupervisors).filter(
       (supervisor) => !initialSupervisors.has(supervisor)
     );
+    const supervisorsToRemove = Array.from(initialSupervisors).filter(
+      (supervisor) => !newSupervisors.has(supervisor)
+    );
 
-    // Call mutation for each newly added supervisor
-    if (addedSupervisors.length > 0) {
-      for (const userId of addedSupervisors) {
-        addMarketSupervisorMutation.mutate(userId);
-      }
+    try {
+      const updatePayload = mapFormValuesToUpdatePayload(values, market, supervisorsToAdd, supervisorsToRemove);
+      await updateMarketMutation.mutateAsync(updatePayload);
+
+      setInitialFormValues(values);
+      setNavigationNotice("");
+      setIsSnackbarOpen(false);
+    } catch (submitError) {
+      const message = submitError instanceof Error ? submitError.message : "Η ενημέρωση της αγοράς απέτυχε.";
+      showNavigationNotice(message);
     }
-
-    // TODO: wire update market mutation once backend endpoint is available
-    setInitialFormValues(values);
-    setNavigationNotice("");
-    setIsSnackbarOpen(false);
   };
 
   const handleCloseAddSellerModal = () => {
