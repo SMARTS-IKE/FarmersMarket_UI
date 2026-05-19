@@ -52,6 +52,7 @@ export const systemAdminTabs: SystemAdminTab[] = [
     label: 'Τέλη και Πληρωμές',
     title: 'Τέλη και Πληρωμές',
     description: '',
+    hasList: true,
   },
   {
     to: '/admin/requests',

@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import DataTable from "../../shared/components/DataTable";
-import CustomButton from "../../shared/components/CustomButton";
 import { useNavigate } from "@tanstack/react-router";
 import type { RequestSheet } from "../../models/request";
 import { useRequestFormsQuery } from "../../queries/formsQueries";
@@ -32,14 +31,6 @@ export default function DesignRequestSheet() {
 
   return (
     <div className="flex w-full flex-col gap-4">
-      <div className="flex w-full justify-end">
-        <CustomButton
-          title="Δημιουργία Φόρμας Αίτησης"
-          width="fit-content"
-          onClick={handleCreateForm}
-        />
-      </div>
-
       <DataTable<RequestSheet>
         rows={rows}
         columns={designRequestColumns}

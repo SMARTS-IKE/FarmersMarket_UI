@@ -50,8 +50,18 @@ interface DataTableProps<T> {
   showFilter?: boolean;
   /** Declarative filter bar above the table */
   filters?: FilterDef[];
+  /** Initial values for declarative filters */
+  initialFilterValues?: FilterValues;
   /** Called when the user clicks the Search button; receives filter title→value map */
   onSearch?: (values: FilterValues) => void;
+  /** Optional callback to clear all declarative filters */
+  onClearFilters?: () => void;
+  /** Optional clear button label shown on declarative filter bar */
+  clearFiltersButtonTitle?: string;
+  /** Optional clear button background color shown on declarative filter bar */
+  clearFiltersButtonBackgroundColor?: string;
+  /** Optional clear button prefix icon shown on declarative filter bar */
+  clearFiltersPrefixIcon?: React.ReactNode;
   /** Optional row click handler for selection-driven flows */
   onRowClick?: (row: T) => void;
   /** Hide built-in pagination when data is already paged by the backend */
@@ -81,7 +91,12 @@ export default function DataTable<T extends object>({
   defaultRowsPerPage = 10,
   showFilter = true,
   filters,
+  initialFilterValues,
   onSearch,
+  onClearFilters,
+  clearFiltersButtonTitle,
+  clearFiltersButtonBackgroundColor,
+  clearFiltersPrefixIcon,
   onRowClick,
   hidePagination = false,
   page,
@@ -107,11 +122,21 @@ export default function DataTable<T extends object>({
 
   useEffect(() => {
     if (filters && filters.length > 0 && onSearch) {
-      setFilterSlot(<TableFilterBar filters={filters} onSearch={onSearch} />);
+      setFilterSlot(
+        <TableFilterBar
+          filters={filters}
+          onSearch={onSearch}
+          onClear={onClearFilters}
+          clearButtonTitle={clearFiltersButtonTitle}
+          clearButtonBackgroundColor={clearFiltersButtonBackgroundColor}
+          clearButtonPrefixIcon={clearFiltersPrefixIcon}
+          initialValues={initialFilterValues}
+        />
+      );
     }
     return () => setFilterSlot(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, onSearch]);
+  }, [filters, onSearch, onClearFilters, clearFiltersButtonTitle, clearFiltersButtonBackgroundColor, clearFiltersPrefixIcon, initialFilterValues]);
 
   const filterableCols = useMemo(
     () => columns.filter((c) => c.filterable !== false),

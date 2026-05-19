@@ -266,7 +266,7 @@ export default function CustomInputField({
                   width: 28,
                   height: 28,
                   borderRadius: "4px",
-                  backgroundColor: backgroundColor ?? "var(--color-dark)",
+                  backgroundColor: backgroundColor ?? "var(--color-text)",
                   "& svg": {
                     transition: "transform 200ms",
                     transform: multiOpen ? "rotate(180deg)" : "rotate(0deg)",
@@ -352,7 +352,7 @@ export default function CustomInputField({
                   width: 28,
                   height: 28,
                   borderRadius: "4px",
-                  backgroundColor: backgroundColor ?? "var(--color-dark)",
+                  backgroundColor: backgroundColor ?? "var(--color-text)",
                   "& svg": {
                     transition: "transform 200ms",
                     transform: dropdownOpen ? "rotate(180deg)" : "rotate(0deg)",

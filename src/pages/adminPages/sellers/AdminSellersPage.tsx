@@ -5,6 +5,7 @@ import type { Seller, SellerSearchRequest, SellerType } from "../../../models/se
 import { useSellersQuery } from "../../../queries/sellerQueries";
 import CustomButton from "../../../shared/components/CustomButton";
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 
 const SELLER_STATUS_CONFIG = {
   active: {
@@ -72,12 +73,15 @@ const tableFilters: FilterDef[] = [
 
 export default function AdminSellersPage() {
   const navigate = useNavigate();
-  const [filters, setFilters] = useState<SellerSearchRequest>({
+  const initialFilters: SellerSearchRequest = {
     name: "",
     afm: "",
     sellerType: "",
     page: 1,
     pageSize: 25,
+  };
+  const [filters, setFilters] = useState<SellerSearchRequest>({
+    ...initialFilters,
   });
 
   const { data: sellersQueryResults } = useSellersQuery(filters);
@@ -93,6 +97,10 @@ export default function AdminSellersPage() {
     }));
   };
 
+  const handleClearFilters = () => {
+    setFilters(initialFilters);
+  };
+
   const handleRowClick = (seller: Seller) => {
     navigate({ to: "/admin/sellers/$sellerId", params: { sellerId: String(seller.id) } });
   };
@@ -100,7 +108,6 @@ export default function AdminSellersPage() {
   return (
     <div className="flex h-full flex-col gap-6 text-left">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-semibold text-(--color-text-heading)">Πωλητές</h2>
         <CustomButton
           title="Νέος πωλητής"
           onClick={() => navigate({ to: "/admin/sellers/new" })}
@@ -115,6 +122,10 @@ export default function AdminSellersPage() {
           showFilter={false}
           filters={tableFilters}
           onSearch={handleSearch}
+          onClearFilters={handleClearFilters}
+          clearFiltersButtonTitle="Καθαρισμός"
+          clearFiltersButtonBackgroundColor="var(--color-text-muted)"
+          clearFiltersPrefixIcon={<RestartAltIcon />}
           onRowClick={handleRowClick}
         />
     </div>

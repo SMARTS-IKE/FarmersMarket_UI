@@ -4,6 +4,7 @@ import DataTable, { ColumnDef, FilterDef, FilterValues } from "../../../shared/c
 import type { AppUser, UserSearchRequest } from "../../../models/user";
 import { useUsersQuery } from "../../../queries/userQueries";
 import { USER_ROLE_MAPPING_TITLES } from "../../../shared/mappings/users.mapping";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 
 const userRoleValues = Object.entries(USER_ROLE_MAPPING_TITLES).map(([key, value]) => ({
   label: value,
@@ -38,15 +39,17 @@ const tableFilters: FilterDef[] = [
   },
 ];
 
+const INITIAL_FILTERS: UserSearchRequest = {
+  name: "",
+  email: "",
+  role: "",
+  page: 1,
+  pageSize: 25,
+};
+
 export default function AdminUsersPage() {
   const navigate = useNavigate();
-  const [filters, setFilters] = useState<UserSearchRequest>({
-    name: "",
-    email: "",
-    role: "",
-    page: 1,
-    pageSize: 25,
-  });
+  const [filters, setFilters] = useState<UserSearchRequest>(INITIAL_FILTERS);
 
   const { data } = useUsersQuery(filters);
   const rawUsers = Array.isArray(data)
@@ -71,6 +74,10 @@ export default function AdminUsersPage() {
     }));
   };
 
+  const handleClearFilters = () => {
+    setFilters(INITIAL_FILTERS);
+  };
+
   const handleRowClick = (user: AppUser) => {
     navigate({
       to: "/admin/users/$id",
@@ -88,7 +95,12 @@ export default function AdminUsersPage() {
         rowKey="id"
         showFilter={false}
         filters={tableFilters}
+        initialFilterValues={INITIAL_FILTERS}
         onSearch={handleSearch}
+        onClearFilters={handleClearFilters}
+        clearFiltersButtonTitle="Καθαρισμός"
+        clearFiltersButtonBackgroundColor="var(--color-text-muted)"
+        clearFiltersPrefixIcon={<RestartAltIcon />}
         onRowClick={handleRowClick}
       />
     </div>

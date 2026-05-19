@@ -3,6 +3,9 @@ import { useNavigate, Link } from '@tanstack/react-router';
 import { login } from '../../services/authService';
 import { consumeAuthNotification } from '../../lib/authNotifications';
 import { useAuthStore } from '../../store/authStore';
+import PersonIcon from '@mui/icons-material/Person';
+import EmailOutlinedIcon from '@mui/icons-material/EmailOutlined';
+import LockOutlinedIcon from '@mui/icons-material/LockOutlined';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -41,7 +44,15 @@ export default function LoginPage() {
 
   return (
     <>
-      <p className="text-sm text-(--color-text-muted) text-center mb-6">Είσοδος στο λογαριασμό σας</p>
+      <div className="relative mb-7">
+        <div className="absolute -top-12 left-1/2 -translate-x-1/2 rounded-full bg-[#f7f6f5] p-3 shadow-[0_4px_10px_rgba(60,50,40,0.15)]">
+          <PersonIcon sx={{ color: '#6d5a4a', fontSize: 28 }} />
+        </div>
+        <div className="pt-5 text-center">
+          <h2 className="text-2xl font-semibold text-[#5a4a3d]">Είσοδος Χρήστη</h2>
+          <div className="mx-auto mt-2 h-px w-44 bg-[#8e7866]" />
+        </div>
+      </div>
 
       <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
         {successMessage && (
@@ -63,51 +74,66 @@ export default function LoginPage() {
         )}
 
         <div className="flex flex-col gap-1">
-          <label htmlFor="email" className="text-sm font-semibold text-(--color-text-heading)">
-            Διεύθυνση email
-          </label>
-          <input
-            id="email"
-            type="email"
-            autoComplete="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="you@example.com"
-            className="w-full px-4 py-3 text-[15px] rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text-heading) placeholder:text-(--color-text-muted) outline-none transition focus:border-(--color-primary) focus:ring-3 focus:ring-(--color-primary-subtle)"
-          />
+          <div className="flex items-center gap-2 rounded-[10px] border border-[#9c9084] bg-[#ece9e6] px-3 py-2.5">
+            <EmailOutlinedIcon sx={{ color: '#8f8479', fontSize: 20 }} />
+            <input
+              id="email"
+              type="email"
+              autoComplete="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Email"
+              className="w-full bg-transparent text-[15px] text-[#4f4338] placeholder:text-[#9f968f] outline-none"
+            />
+          </div>
         </div>
 
         <div className="flex flex-col gap-1">
-          <label htmlFor="password" className="text-sm font-semibold text-(--color-text-heading)">
-            Κωδικός πρόσβασης
-          </label>
-          <input
-            id="password"
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="••••••••"
-            className="w-full px-4 py-3 text-[15px] rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text-heading) placeholder:text-(--color-text-muted) outline-none transition focus:border-(--color-primary) focus:ring-3 focus:ring-(--color-primary-subtle)"
-          />
+          <div className="flex items-center gap-2 rounded-[10px] border border-[#9c9084] bg-[#ece9e6] px-3 py-2.5">
+            <LockOutlinedIcon sx={{ color: '#8f8479', fontSize: 20 }} />
+            <input
+              id="password"
+              type="password"
+              autoComplete="current-password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Κωδικός"
+              className="w-full bg-transparent text-[15px] text-[#4f4338] placeholder:text-[#9f968f] outline-none"
+            />
+          </div>
         </div>
+
+        {/* <div className="mt-1 flex items-center justify-between gap-3 text-[13px] text-[#6f6359]">
+          <label className="inline-flex items-center gap-2">
+            <input type="checkbox" className="h-4 w-4 border-[#8f8479] accent-[#7a4f1e]" />
+            Να με θυμάσαι
+          </label>
+          <label className="inline-flex items-center gap-2">
+            <input type="checkbox" className="h-4 w-4 border-[#8f8479] accent-[#7a4f1e]" />
+            Ξέχασα τον κωδικό μου
+          </label>
+        </div> */}
 
         <button
           type="submit"
           disabled={loading}
-          className="mt-2 w-full py-3 px-4 text-[15px] font-semibold rounded-lg bg-(--color-primary) text-(--color-primary-fg) transition hover:bg-(--color-primary-hover) active:bg-(--color-primary-active) disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+          className="mt-3 w-full rounded-xl bg-[#8a5a22] px-4 py-2.5 text-[22px] font-semibold text-[#f7f1eb] transition hover:bg-[#7b4f1d] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? 'Είσοδος…' : 'Είσοδος'}
         </button>
       </form>
 
-      <p className="text-center text-sm text-(--color-text-muted) mt-6">
+      <p className="mt-3 text-center text-sm text-[#6f655c]">
         Δεν έχετε λογαριασμό;{' '}
-        <Link to="/auth/register" className="text-(--color-primary) hover:underline font-medium">
+        <Link to="/auth/register" className="font-semibold text-[#6f3f16] hover:underline">
           Εγγραφή
         </Link>
+      </p>
+
+      <p className="mt-10 text-center text-3xl font-semibold leading-tight text-[#f5f2ef] drop-shadow-[0_2px_3px_rgba(0,0,0,0.2)] lg:hidden">
+        Καλώς ήρθατε στην εφαρμογή<br />διαχείρισης λαϊκών αγορών
       </p>
     </>
   );

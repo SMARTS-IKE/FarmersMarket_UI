@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { Box } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import CustomButton from "./CustomButton";
@@ -26,14 +26,31 @@ export type FilterValues = Record<string, string | number | undefined>;
 interface TableFilterBarProps {
   filters: FilterDef[];
   onSearch: (values: FilterValues) => void;
+  onClear?: () => void;
+  clearButtonTitle?: string;
+  clearButtonBackgroundColor?: string;
+  clearButtonPrefixIcon?: React.ReactNode;
+  initialValues?: FilterValues;
 }
 
-export default function TableFilterBar({ filters, onSearch }: TableFilterBarProps) {
+export default function TableFilterBar({
+  filters,
+  onSearch,
+  onClear,
+  clearButtonTitle = "Καθαρισμός",
+  clearButtonBackgroundColor = "var(--color-text-muted)",
+  clearButtonPrefixIcon,
+  initialValues,
+}: TableFilterBarProps) {
   const initial = useMemo(
-    () => Object.fromEntries(filters.map((f) => [f.title, ""])) as FilterValues,
-    [filters]
+    () => Object.fromEntries(filters.map((f) => [f.title, initialValues?.[f.title] ?? ""])) as FilterValues,
+    [filters, initialValues]
   );
   const [values, setValues] = useState<FilterValues>(initial);
+
+  useEffect(() => {
+    setValues(initial);
+  }, [initial]);
 
   const handleChange = (title: string, value: string | number) => {
     setValues((prev) => ({ ...prev, [title]: value }));
@@ -41,6 +58,11 @@ export default function TableFilterBar({ filters, onSearch }: TableFilterBarProp
 
   const handleSearch = () => {
     onSearch(values);
+  };
+
+  const handleClear = () => {
+    setValues(initial);
+    onClear?.();
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -99,6 +121,16 @@ export default function TableFilterBar({ filters, onSearch }: TableFilterBarProp
         onClick={handleSearch}
         width={140}
       />
+
+      {onClear && (
+        <CustomButton
+          title={clearButtonTitle}
+          prefixIcon={clearButtonPrefixIcon}
+          backgroundColor={clearButtonBackgroundColor}
+          onClick={handleClear}
+          width={140}
+        />
+      )}
     </Box>
   );
 }

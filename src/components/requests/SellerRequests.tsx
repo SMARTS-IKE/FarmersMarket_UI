@@ -1,8 +1,8 @@
 import { useMemo, useState } from "react";
-import DataTable from "../../shared/components/DataTable";
-import CustomInputField from "../../shared/components/CustomInputField";
+import DataTable, { FilterDef, FilterValues } from "../../shared/components/DataTable";
 import type { RequestStatus, SellerRequest, SellerRequestSearchRequest } from "../../models/request";
 import type { SellerSearchRequest } from "../../models/seller";
+import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import { useSellerRequestsQuery } from "../../queries/requestQueries";
 import { useSellersQuery } from "../../queries/sellerQueries";
 import { sellerRequestColumns } from "./request.utils";
@@ -16,8 +16,10 @@ const SELLER_FILTERS: SellerSearchRequest = {
 };
 
 export default function FetchedSellerRequests() {
-  const [selectedSellerId, setSelectedSellerId] = useState<number | "">("");
-  const [selectedStatus, setSelectedStatus] = useState<RequestStatus | "">("");
+  const [filters, setFilters] = useState<SellerRequestSearchRequest>({
+    sellerId: undefined,
+    status: undefined,
+  });
 
   const { data: sellersData } = useSellersQuery(SELLER_FILTERS);
   const allSellers = sellersData?.items ?? [];
@@ -40,42 +42,57 @@ export default function FetchedSellerRequests() {
     []
   );
 
-  const requestFilters = useMemo<SellerRequestSearchRequest>(
-    () => ({
-      sellerId: selectedSellerId === "" ? undefined : selectedSellerId,
-      status: selectedStatus === "" ? undefined : selectedStatus,
-    }),
-    [selectedSellerId, selectedStatus]
+  const tableFilters: FilterDef[] = useMemo(
+    () => [
+      {
+        title: "sellerId",
+        label: "Πωλητής",
+        type: "DROPDOWN",
+        dataItems: sellerDropdownItems,
+      },
+      {
+        title: "status",
+        label: "Κατάσταση",
+        type: "DROPDOWN",
+        dataItems: statusDropdownItems,
+      },
+    ],
+    [sellerDropdownItems, statusDropdownItems]
   );
 
-  const { data: sellerRequests = [] } = useSellerRequestsQuery(requestFilters);
+  const { data: sellerRequests = [] } = useSellerRequestsQuery(filters);
+
+  const handleSearch = (values: FilterValues) => {
+    setFilters({
+      sellerId: values["sellerId"] === "" || values["sellerId"] === undefined
+        ? undefined
+        : Number(values["sellerId"]),
+      status: values["status"] === "" || values["status"] === undefined
+        ? undefined
+        : (Number(values["status"]) as RequestStatus),
+    });
+  };
+
+  const handleClearFilters = () => {
+    setFilters({
+      sellerId: undefined,
+      status: undefined,
+    });
+  };
 
   return (
     <div className="flex w-full flex-col gap-4">
-      <div className="flex w-full flex-wrap items-center justify-center gap-3">
-        <CustomInputField
-          type="DROPDOWN"
-          label="Πωλητής"
-          value={selectedSellerId}
-          onChange={(v) => setSelectedSellerId(v === "" ? "" : Number(v))}
-          dropdownItems={sellerDropdownItems}
-          width={260}
-        />
-        <CustomInputField
-          type="DROPDOWN"
-          label="Κατάσταση"
-          value={selectedStatus}
-          onChange={(v) => setSelectedStatus(v === "" ? "" : Number(v) as RequestStatus)}
-          dropdownItems={statusDropdownItems}
-          width={260}
-        />
-      </div>
-
       <DataTable<SellerRequest>
         rows={sellerRequests}
         columns={sellerRequestColumns}
         rowKey="id"
         showFilter={false}
+        filters={tableFilters}
+        onSearch={handleSearch}
+        onClearFilters={handleClearFilters}
+        clearFiltersButtonTitle="Καθαρισμός"
+        clearFiltersPrefixIcon={<RestartAltIcon />}
+        clearFiltersButtonBackgroundColor="var(--color-text-muted)"
       />
     </div>
   );

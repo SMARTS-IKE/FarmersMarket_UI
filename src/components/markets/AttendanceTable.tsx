@@ -1,19 +1,21 @@
-import SearchIcon from "@mui/icons-material/Search";
-import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import type { AttendanceRecord, AttendanceSearchRequest } from "../../models/attendance";
 import type { SellerSearchRequest } from "../../models/seller";
 import { useAttendanceQuery } from "../../queries/attendanceQueries";
 import { useSellersQuery } from "../../queries/sellerQueries";
-import CustomButton from "../../shared/components/CustomButton";
-import CustomInputField from "../../shared/components/CustomInputField";
-import DataTable, { type ColumnDef } from "../../shared/components/DataTable";
+import DataTable, { type ColumnDef, FilterDef, FilterValues } from "../../shared/components/DataTable";
 
 interface AttendanceTableProps {
   marketId: number;
 };
 
 type AttendanceFilters = Omit<AttendanceSearchRequest, "pageSize">;
+
+const INITIAL_FILTER_VALUES = {
+  sellerId: "",
+  dateFrom: "",
+  dateTo: "",
+};
 
 const DEFAULT_SELLER_FILTERS: SellerSearchRequest = {
   name: "",
@@ -71,7 +73,6 @@ const attendanceColumns: ColumnDef<AttendanceRecord>[] = [
 ];
 
 export default function AttendanceTable({ marketId }: AttendanceTableProps) {
-  const [draft, setDraft] = useState<AttendanceFilters>(() => buildInitialFilters(marketId));
   const [filters, setFilters] = useState<AttendanceFilters>(() => buildInitialFilters(marketId));
   const [pageSize, setPageSize] = useState(10);
 
@@ -85,13 +86,6 @@ export default function AttendanceTable({ marketId }: AttendanceTableProps) {
 
   const { data: sellersData } = useSellersQuery(DEFAULT_SELLER_FILTERS);
   const { data: attendanceData, isLoading, isError, error } = useAttendanceQuery(attendanceQueryParams);
-
-  useEffect(() => {
-    const next = buildInitialFilters(marketId);
-    setDraft(next);
-    setFilters(next);
-    setPageSize(10);
-  }, [marketId]);
 
   const sellerOptions = useMemo(
     () => [
@@ -107,65 +101,43 @@ export default function AttendanceTable({ marketId }: AttendanceTableProps) {
   const rows = attendanceData?.items ?? [];
   const totalCount = attendanceData?.totalCount ?? 0;
 
-  const handleSearch = () => {
-    setFilters({ ...draft, page: 1 });
+  const tableFilters: FilterDef[] = useMemo(() => [
+    {
+      title: "sellerId",
+      label: "Πωλητής",
+      type: "DROPDOWN",
+      dataItems: sellerOptions,
+    },
+    {
+      title: "dateFrom",
+      label: "Από",
+      type: "DATE",
+    },
+    {
+      title: "dateTo",
+      label: "Έως",
+      type: "DATE",
+    },
+  ], [sellerOptions]);
+
+  const handleSearch = (values: FilterValues) => {
+    setFilters({
+      sellerId: values["sellerId"] === "" || values["sellerId"] === undefined ? "" : Number(values["sellerId"]),
+      marketId,
+      dateFrom: String(values["dateFrom"] ?? ""),
+      dateTo: String(values["dateTo"] ?? ""),
+      page: 1,
+    });
   };
 
   const handleReset = () => {
     const next = buildInitialFilters(marketId);
-    setDraft(next);
     setFilters(next);
     setPageSize(10);
   };
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="flex flex-wrap items-end justify-center gap-3">
-        <CustomInputField
-          type="DROPDOWN"
-          label="Πωλητής"
-          value={draft.sellerId === "" ? "" : String(draft.sellerId)}
-          onChange={(value) =>
-            setDraft((prev) => ({
-              ...prev,
-              sellerId: value === "" ? "" : Number(value),
-            }))
-          }
-          dropdownItems={sellerOptions}
-          width={220}
-        />
-
-        <CustomInputField
-          type="DATE"
-          label="Από"
-          value={draft.dateFrom}
-          onChange={(value) => setDraft((prev) => ({ ...prev, dateFrom: String(value) }))}
-          width={180}
-        />
-
-        <CustomInputField
-          type="DATE"
-          label="Έως"
-          value={draft.dateTo}
-          onChange={(value) => setDraft((prev) => ({ ...prev, dateTo: String(value) }))}
-          width={180}
-        />
-
-        <CustomButton
-          title="Αναζήτηση"
-          prefixIcon={<SearchIcon />}
-          width={130}
-          onClick={handleSearch}
-        />
-        <CustomButton
-          title="Καθαρισμός"
-          prefixIcon={<RestartAltIcon />}
-          backgroundColor="var(--color-text-muted)"
-          width={130}
-          onClick={handleReset}
-        />
-      </div>
-
       {isError ? (
         <div className="rounded-lg border border-(--color-danger-border) bg-danger-subtle p-3 text-sm text-(--color-danger)">
           {error?.message ?? "Η φόρτωση παρουσιών απέτυχε."}
@@ -176,6 +148,13 @@ export default function AttendanceTable({ marketId }: AttendanceTableProps) {
           columns={attendanceColumns}
           rowKey="id"
           showFilter={false}
+          filters={tableFilters}
+          initialFilterValues={INITIAL_FILTER_VALUES}
+          onSearch={handleSearch}
+          onClearFilters={handleReset}
+          clearFiltersButtonTitle="Καθαρισμός"
+          clearFiltersButtonBackgroundColor="var(--color-text-muted)"
+          clearFiltersPrefixIcon={<RestartAltIcon />}
           paginationPrefix={`Συνολικές Παρουσίες: ${totalCount}`}
           page={Math.max((attendanceData?.page ?? filters.page) - 1, 0)}
           rowsPerPage={attendanceData?.pageSize ?? pageSize}

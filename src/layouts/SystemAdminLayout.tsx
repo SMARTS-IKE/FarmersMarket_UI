@@ -2,6 +2,7 @@ import { Link, Outlet, useLocation, useNavigate } from '@tanstack/react-router';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
+import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import logo02 from '../assets/logo-02.svg';
 import { getSystemAdminTab, systemAdminTabs } from '../lib/systemAdminTabs';
 import { useAuthStore } from '../store/authStore';
@@ -22,6 +23,7 @@ function SystemAdminLayoutInner() {
   const activeTab = getSystemAdminTab(location.pathname);
   const isList = !!activeTab.hasList && location.pathname === activeTab.to;
   const { filterSlot } = useLayoutSlot();
+  const connectedUserName = user?.name ?? email ?? 'Δεν υπάρχει διαθέσιμο email';
 
   function handleLogout() {
     clearAuth();
@@ -31,15 +33,15 @@ function SystemAdminLayoutInner() {
   return (
     <div className="min-h-svh">
       <div className="flex min-h-svh w-full flex-col overflow-visible border border-(--color-border) bg-(--color-surface) shadow-[var(--shadow-lg)] md:overflow-hidden">
-        <header className="border-b-2 border-(--color-secondary) bg-[#C4B5A0] px-4 md:px-6">
-          <div className="flex items-center justify-between gap-6">
+        <header className="min-h-[85px] border-b-2 border-(--color-secondary) bg-[#C4B5A0] px-4 md:px-6">
+          <div className="relative flex items-center justify-between gap-6">
             {/* Logo */}
-            <div className="flex-shrink-0">
-              <img src={logo02} alt="Farmers Market logo" className="h-14 w-14 rounded-lg object-cover" />
+            <div className="flex-shrink-0 w-[310px] flex justify-center">
+              <img src={logo02} alt="Farmers Market logo" className="h-[80px] w-[150px] rounded-lg object-cover" />
             </div>
 
             {/* Navigation */}
-            <nav className="flex flex-1 items-center justify-center " aria-label="System admin sections">
+            <nav className="absolute left-1/2 flex -translate-x-1/2 items-center justify-center" aria-label="System admin sections">
               {systemAdminTabs.map((tab) => {
                 const isActive = activeTab.to === tab.to;
 
@@ -97,15 +99,15 @@ function SystemAdminLayoutInner() {
 
           <main className={`bg-(--color-surface) p-5 md:p-7${isList ? ' lg:col-span-3' : ''}`}>
             {isList && (
-              <div className="hidden lg:flex justify-between items-start mb-4 gap-4">
+              <div className="hidden lg:flex justify-between items-end mb-4 gap-4">
                 {/* Left column content */}
                 <div className="flex flex-col gap-2 md:gap-4">
                   <div>
-                    <p className="text-xs uppercase text-center font-bold text-(--color-text)">
+                    <p className="text-lg max-w-[300px] uppercase text-center font-bold text-(--color-text)">
                       ΠΛΑΤΦΟΡΜΑ ΔΙΑΧΕΙΡΙΣΗΣ ΛΑΪΚΩΝ ΑΓΟΡΩΝ
                     </p>
                   </div>
-                  <span className="mt-1 text-2xl pb-2 text-subtle text-center md:mt-4">
+                  <span className="mt-1 text-4xl pb-2 text-subtle text-center md:mt-4">
                     {activeTab.title}
                   </span>
                 </div>
@@ -116,11 +118,15 @@ function SystemAdminLayoutInner() {
                   </div>
                 )}
                 {/* Right column content */}
-                <div className="flex flex-col gap-2 rounded-[10px] border border-(--color-dark) bg-(--color-surface) px-4 py-3 text-center font-bold shadow-[var(--shadow)] md:gap-4 md:p-5">
-                  <div className="text-xs text-(--color-dark)">
-                    ΣΥΝΔΕΔΕΜΕΝΟΣ ΧΡΗΣΤΗΣ
+                <div className="flex w-full max-w-[280px] flex-col overflow-hidden rounded-2xl border-2 border-[#7B6654] bg-[#FFFDF8] text-center shadow-[var(--shadow)]">
+                  <div className="border-b border-[#C9B9A9] px-4 py-2 text-sm font-medium text-[#5C4A3D]">
+                    Συνδεδεμένος Χρήστης
                   </div>
-                  <div className="text-sm py-1 bg-(--color-dark) text-(--color-light)">{user?.email || email || 'Δεν υπάρχει διαθέσιμο email'}</div>
+                  <div className="flex items-center justify-center bg-[#A69486] px-4 py-2 text-center text-[#FFF9F4]">
+                    <div className="truncate text-center text-sm font-semibold">
+                      {connectedUserName}
+                    </div>
+                  </div>
                 </div>
               </div>
             )}
@@ -128,11 +134,19 @@ function SystemAdminLayoutInner() {
           </main>
 
           <aside className={`bg-(--color-bg-subtle) px-4 py-3 md:p-6${isList ? ' lg:hidden' : ''}`}>
-            <div className="flex flex-col gap-2 rounded-[10px] border border-(--color-border) bg-(--color-surface) px-4 py-3 text-center font-bold shadow-[var(--shadow)] md:gap-4 md:p-5">
-              <div className="text-xs  text-(--color-text-muted)">
-                ΣΥΝΔΕΔΕΜΕΝΟΣ ΧΡΗΣΤΗΣ
+            <div className="flex w-full flex-col overflow-hidden rounded-2xl border-2 border-[#7B6654] bg-[#FFFDF8] text-center shadow-[var(--shadow)] md:max-w-[280px]">
+              <div className="border-b border-[#C9B9A9] px-4 py-2 text-sm font-medium text-[#5C4A3D]">
+                Συνδεδεμένος Χρήστης
               </div>
-              <div className="text-sm py-1 bg-(--color-bg-subtle) text-(--color-text-muted)">{user?.email || email || 'Δεν υπάρχει διαθέσιμο email'}</div>
+              <div className="relative flex items-center justify-center bg-[#A69486] px-4 py-2 text-[#FFF9F4]">
+                <EditRoundedIcon
+                  sx={{ fontSize: 18, color: '#FFF9F4' }}
+                  className="absolute left-4"
+                />
+                <div className="truncate text-center text-sm font-semibold">
+                  {connectedUserName}
+                </div>
+              </div>
             </div>
           </aside>
         </div>
