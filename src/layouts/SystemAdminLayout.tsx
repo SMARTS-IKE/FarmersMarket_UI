@@ -117,7 +117,7 @@ function SystemAdminLayoutInner() {
             </div>
           </aside>
 
-          <main className={`bg-(--color-surface) p-5 md:p-7${isList ? ' lg:col-span-3' : ''}`}>
+          <main className={`flex h-full min-h-0 flex-col bg-(--color-surface) p-5 md:p-7${isList ? ' lg:col-span-3' : ''}`}>
             {isList && (
               <div className="hidden lg:flex justify-between items-end mb-4 gap-4">
                 {/* Left column content */}
@@ -141,7 +141,9 @@ function SystemAdminLayoutInner() {
                 <ConnectedUserCard connectedUserName={connectedUserName} className="max-w-[280px]" />
               </div>
             )}
+            <div className="flex flex-1 min-h-0 flex-col">
               <Outlet />
+            </div>
           </main>
 
           <aside className={`bg-(--color-bg-subtle) px-4 py-3 md:p-6${isList ? ' lg:hidden' : ''}`}>

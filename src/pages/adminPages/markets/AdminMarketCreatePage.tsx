@@ -31,7 +31,7 @@ export default function AdminMarketCreatePage() {
   };
 
   return (
-    <div className="flex h-full w-full flex-col gap-6 text-left">
+    <div className="flex h-full min-h-0 w-full flex-col gap-6 text-left">
       <MarketForm
         mode="create"
         values={formValues}

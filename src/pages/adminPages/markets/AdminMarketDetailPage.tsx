@@ -437,7 +437,7 @@ export default function AdminMarketDetailPage() {
   }
 
   return (
-    <div className="flex h-full w-full flex-col gap-2 text-left">
+    <div className="flex h-full min-h-0 w-full flex-col gap-2 text-left">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-semibold text-(--color-text-heading)">Διαχείριση Αγοράς</h2>
         <CustomButton
@@ -448,7 +448,7 @@ export default function AdminMarketDetailPage() {
         />
       </div>
 
-      <Box className="">
+      <Box className="flex flex-1 min-h-0 flex-col">
         <h3 className="mb-4 text-lg  text-(--color-text-heading)">
           {market.name || `Αγορά #${market.id}`}
         </h3>

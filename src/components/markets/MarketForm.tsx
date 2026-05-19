@@ -98,7 +98,7 @@ export default function MarketForm({
   };
 
   return (
-    <Box className="mb-4 flex max-h-[75vh] flex-col gap-6 overflow-y-auto md:max-h-[75vh]">
+    <Box className="mb-4 flex h-full min-h-0 flex-col gap-6 overflow-y-auto">
       <Box className="flex w-full flex-wrap justify-between">
         <CustomInputField
           type="TEXT"

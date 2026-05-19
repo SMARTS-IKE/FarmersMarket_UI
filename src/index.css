@@ -124,9 +124,16 @@ body {
   margin: 0;
 }
 
+html,
+body,
+#root {
+  height: 100%;
+}
+
 #root {
   width: 100%;
   min-height: 100svh;
+  height: 100svh;
   box-sizing: border-box;
 }
 
