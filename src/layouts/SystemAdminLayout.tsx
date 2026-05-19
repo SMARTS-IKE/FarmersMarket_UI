@@ -2,11 +2,31 @@ import { Link, Outlet, useLocation, useNavigate } from '@tanstack/react-router';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
-import EditRoundedIcon from '@mui/icons-material/EditRounded';
 import logo02 from '../assets/logo-02.svg';
 import { getSystemAdminTab, systemAdminTabs } from '../lib/systemAdminTabs';
 import { useAuthStore } from '../store/authStore';
 import { LayoutSlotProvider, useLayoutSlot } from '../lib/layoutSlotContext';
+
+function ConnectedUserCard({
+  connectedUserName,
+  className = '',
+}: {
+  connectedUserName: string;
+  className?: string;
+}) {
+  return (
+    <div className={`flex w-full flex-col overflow-hidden rounded-2xl border-2 border-[#7B6654] bg-[#FFFDF8] text-center shadow-[var(--shadow)] ${className}`}>
+      <div className="border-b border-[#C9B9A9] px-4 py-2 text-sm font-medium text-[#5C4A3D]">
+        Συνδεδεμένος Χρήστης
+      </div>
+      <div className="flex items-center justify-center bg-[#A69486] px-4 py-2 text-center text-[#FFF9F4]">
+        <div className="truncate text-center text-sm font-semibold">
+          {connectedUserName}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function SystemAdminLayout() {
   return (
@@ -118,36 +138,14 @@ function SystemAdminLayoutInner() {
                   </div>
                 )}
                 {/* Right column content */}
-                <div className="flex w-full max-w-[280px] flex-col overflow-hidden rounded-2xl border-2 border-[#7B6654] bg-[#FFFDF8] text-center shadow-[var(--shadow)]">
-                  <div className="border-b border-[#C9B9A9] px-4 py-2 text-sm font-medium text-[#5C4A3D]">
-                    Συνδεδεμένος Χρήστης
-                  </div>
-                  <div className="flex items-center justify-center bg-[#A69486] px-4 py-2 text-center text-[#FFF9F4]">
-                    <div className="truncate text-center text-sm font-semibold">
-                      {connectedUserName}
-                    </div>
-                  </div>
-                </div>
+                <ConnectedUserCard connectedUserName={connectedUserName} className="max-w-[280px]" />
               </div>
             )}
               <Outlet />
           </main>
 
           <aside className={`bg-(--color-bg-subtle) px-4 py-3 md:p-6${isList ? ' lg:hidden' : ''}`}>
-            <div className="flex w-full flex-col overflow-hidden rounded-2xl border-2 border-[#7B6654] bg-[#FFFDF8] text-center shadow-[var(--shadow)] md:max-w-[280px]">
-              <div className="border-b border-[#C9B9A9] px-4 py-2 text-sm font-medium text-[#5C4A3D]">
-                Συνδεδεμένος Χρήστης
-              </div>
-              <div className="relative flex items-center justify-center bg-[#A69486] px-4 py-2 text-[#FFF9F4]">
-                <EditRoundedIcon
-                  sx={{ fontSize: 18, color: '#FFF9F4' }}
-                  className="absolute left-4"
-                />
-                <div className="truncate text-center text-sm font-semibold">
-                  {connectedUserName}
-                </div>
-              </div>
-            </div>
+            <ConnectedUserCard connectedUserName={connectedUserName} className="md:max-w-[280px]" />
           </aside>
         </div>
       </div>
