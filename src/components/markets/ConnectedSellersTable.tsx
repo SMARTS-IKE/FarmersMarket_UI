@@ -13,32 +13,32 @@ interface ConnectedSellersTableProps {
 const LICENSE_STATUS_CONFIG: Record<string, { label: string; backgroundColor: string; color: string }> = {
   active: {
     label: "Ενεργή",
-    backgroundColor: "#dcfce7",
+    backgroundColor: "transparent",
     color: "#166534",
   },
   pending: {
     label: "Σε εκκρεμότητα",
-    backgroundColor: "#fef3c7",
+    backgroundColor: "transparent",
     color: "#92400e",
   },
   expired: {
     label: "Έληξε",
-    backgroundColor: "#fee2e2",
+    backgroundColor: "transparent",
     color: "#991b1b",
   },
   revoked: {
     label: "Ανακλημένη",
-    backgroundColor: "#fee2e2",
+    backgroundColor: "transparent",
     color: "#991b1b",
   },
   inactive: {
     label: "Ανενεργή",
-    backgroundColor: "#e5e7eb",
+    backgroundColor: "transparent",
     color: "#374151",
   },
   unknown: {
     label: "Άγνωστη",
-    backgroundColor: "#e5e7eb",
+    backgroundColor: "transparent",
     color: "#374151",
   },
 };
@@ -81,18 +81,14 @@ function createConnectedSellerColumns(
       const statusConfig = LICENSE_STATUS_CONFIG[statusKey] ?? LICENSE_STATUS_CONFIG.unknown;
 
       return (
-        <CustomButton
-          title={statusConfig.label}
-          backgroundColor={statusConfig.backgroundColor}
-          width={120}
-          sx={{
+        <span
+          style={{
             color: statusConfig.color,
             fontWeight: 700,
-            boxShadow: "none",
-            borderRadius: 100,
-            pointerEvents: "none",
           }}
-        />
+        >
+          {statusConfig.label}
+        </span>
       );
     },
   },

@@ -225,3 +225,38 @@ p {
 .border-light            { border-color: var(--color-light); }
 .border-base             { border-color: var(--color-border); }
 .border-subtle           { border-color: var(--color-border-subtle); }
+
+/* ─── Global Tabs Styling (matches requested design) ───────────── */
+.MuiTabs-root {
+  background-color: #c7b9a4;
+  min-height: 34px !important;
+  padding: 0 4px;
+}
+
+.MuiTabs-indicator {
+  display: none;
+}
+
+.MuiTabs-root .MuiTabs-flexContainer {
+  min-height: 34px !important;
+}
+
+.MuiTabs-root .MuiTab-root {
+  min-height: 34px !important;
+  padding: 4px 20px !important;
+  color: var(--color-text-heading);
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  opacity: 1;
+}
+
+.MuiTab-root:hover {
+  background-color: rgba(255, 255, 255, 0.2);
+}
+
+.MuiTab-root.Mui-selected {
+  background-color: #9a8a76;
+  color: var(--color-surface);
+  font-weight: 700;
+}

@@ -10,12 +10,12 @@ import RestartAltIcon from "@mui/icons-material/RestartAlt";
 const SELLER_STATUS_CONFIG = {
   active: {
     label: "Ενεργός",
-    backgroundColor: "#dcfce7",
+    backgroundColor: "transparent",
     color: "#166534",
   },
   inactive: {
     label: "Ανενεργός",
-    backgroundColor: "#fee2e2",
+    backgroundColor: "transparent",
     color: "#991b1b",
   },
 } as const;
@@ -30,7 +30,7 @@ const columns: ColumnDef<Seller>[] = [
     key: "sellerType",
     label: "Τύπος Πωλητή",
     filterable: false,
-    render: (row) => SELLER_TYPE_LABELS[row.sellerType] ?? row.sellerType,
+    render: (row) => SELLER_TYPE_LABELS[Number(row.sellerType)] ?? row.sellerType,
   },
   {
     key: "status",
@@ -40,18 +40,14 @@ const columns: ColumnDef<Seller>[] = [
       const statusConfig = row.isActive ? SELLER_STATUS_CONFIG.active : SELLER_STATUS_CONFIG.inactive;
 
       return (
-        <CustomButton
-          title={statusConfig.label}
-          backgroundColor={statusConfig.backgroundColor}
-          width={120}
-          sx={{
+        <span
+          style={{
             color: statusConfig.color,
             fontWeight: 700,
-            boxShadow: "none",
-            borderRadius: 100,
-            pointerEvents: "none",
           }}
-        />
+        >
+          {statusConfig.label}
+        </span>
       );
     },
   },

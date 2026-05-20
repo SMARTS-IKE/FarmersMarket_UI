@@ -300,15 +300,16 @@ export default function UserPage() {
                     onClick={() => setIsActive(true)}
                     width="100%"
                     disabled={isSavingUser || isUpdatingRole}
-                    backgroundColor={isActive ? 'var(--color-dark)' : 'rgba(255,255,255,0.85)'}
+                    backgroundColor="transparent"
                     sx={{
                       minHeight: 44,
-                      borderRadius: '0.75rem',
-                      border: isActive ? '1px solid transparent' : '1px solid var(--color-text-muted)',
-                      color: isActive ? '#ffffff' : 'var(--color-text-muted)',
-                      boxShadow: isActive ? '0 6px 16px rgba(74,63,53,0.18)' : '0 1px 2px rgba(60,40,10,0.08)',
+                      borderRadius: 0,
+                      border: 'none',
+                      color: isActive ? 'var(--color-dark)' : 'var(--color-text-muted)',
+                      boxShadow: 'none',
+                      textDecoration: isActive ? 'underline' : 'none',
                       '&:hover': {
-                        backgroundColor: isActive ? 'var(--color-dark)' : 'rgba(255,255,255,0.85)',
+                        backgroundColor: 'transparent',
                         filter: 'none',
                       },
                     }}
@@ -318,15 +319,16 @@ export default function UserPage() {
                     onClick={() => setIsActive(false)}
                     width="100%"
                     disabled={isSavingUser || isUpdatingRole}
-                    backgroundColor={!isActive ? 'var(--color-dark)' : 'rgba(255,255,255,0.85)'}
+                    backgroundColor="transparent"
                     sx={{
                       minHeight: 44,
-                      borderRadius: '0.75rem',
-                      border: !isActive ? '1px solid transparent' : '1px solid var(--color-text-muted)',
-                      color: !isActive ? '#ffffff' : 'var(--color-text-muted)',
-                      boxShadow: !isActive ? '0 6px 16px rgba(74,63,53,0.18)' : '0 1px 2px rgba(60,40,10,0.08)',
+                      borderRadius: 0,
+                      border: 'none',
+                      color: !isActive ? 'var(--color-dark)' : 'var(--color-text-muted)',
+                      boxShadow: 'none',
+                      textDecoration: !isActive ? 'underline' : 'none',
                       '&:hover': {
-                        backgroundColor: !isActive ? 'var(--color-dark)' : 'rgba(255,255,255,0.85)',
+                        backgroundColor: 'transparent',
                         filter: 'none',
                       },
                     }}

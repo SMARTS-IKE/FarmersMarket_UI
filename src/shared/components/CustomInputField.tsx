@@ -177,12 +177,27 @@ export default function CustomInputField({
     "& .MuiFormLabel-root.Mui-focused": { color: "var(--color-dark)" },
   };
 
+  const placeholderSx: SxProps<Theme> = {
+    "& .MuiInputBase-input::placeholder": {
+      fontWeight: 500,
+      opacity: 1,
+    },
+  };
+
+  const labelSx: SxProps<Theme> = {
+    "& .MuiInputLabel-root, & .MuiFormLabel-root": {
+      fontWeight: 600,
+    },
+  };
+
   const sharedSx: SxProps<Theme> = {
     width,
     ...(backgroundColor && {
       "& .MuiInputBase-root": { backgroundColor },
     }),
     ...focusSx,
+    ...placeholderSx,
+    ...labelSx,
     ...sx,
   };
 
@@ -323,6 +338,7 @@ export default function CustomInputField({
           width,
           "& .MuiInput-underline:after": { borderBottomColor: "var(--color-dark)" },
           "& .MuiFormLabel-root.Mui-focused": { color: "var(--color-dark)" },
+          ...labelSx,
           ...sx,
         }}
       >
@@ -416,6 +432,8 @@ export default function CustomInputField({
             ...(backgroundColor && {
               "& .MuiInputBase-root": { backgroundColor },
             }),
+            ...placeholderSx,
+            ...labelSx,
             "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-dark)" },
             "& .MuiFormLabel-root.Mui-focused": { color: "var(--color-dark)" },
             ...sx,

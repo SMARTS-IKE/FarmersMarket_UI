@@ -5,6 +5,7 @@ import CustomButton from "../../../shared/components/CustomButton";
 import DesignRequestSheet from "../../../components/requests/DesignRequestSheet";
 import MarketPeriods from "../../../components/requests/MarketPeriods";
 import SellerRequests from "../../../components/requests/SellerRequests";
+import LayoutTabsSlot from "../../../shared/components/LayoutTabsSlot";
 
 export default function AdminRequestsPage() {
   const [activeTab, setActiveTab] = useState(0);
@@ -26,35 +27,23 @@ export default function AdminRequestsPage() {
         </div>
       )}
 
-      <Box>
-        <Tabs
-          value={activeTab}
-          onChange={(_, v) => setActiveTab(v)}
-          variant="fullWidth"
-          textColor="inherit"
-          sx={{
-            width: "100%",
-            marginBottom: 3,
-            borderBottom: "1px solid var(--color-border)",
-            "& .MuiTab-root": {
-              flex: 1,
-              textTransform: "none",
-              fontWeight: 600,
-              color: "var(--color-text-muted)",
-            },
-            "& .MuiTab-root.Mui-selected": {
-              color: "var(--color-dark)",
-            },
-            "& .MuiTabs-indicator": {
-              backgroundColor: "var(--color-dark)",
-            },
-          }}
-        >
-          <Tab label="Λίστα αιτήσεων πωλητών" />
-          <Tab label="Φόρμες αιτήσεων" />
-          <Tab label="Περίοδοι Αιτήσεων" />
-        </Tabs>
-      </Box>
+      <LayoutTabsSlot>
+        <Box>
+          <Tabs
+            value={activeTab}
+            onChange={(_, v) => setActiveTab(v)}
+            variant="fullWidth"
+            textColor="inherit"
+            sx={{
+              width: "100%",
+            }}
+          >
+            <Tab label="Λίστα αιτήσεων πωλητών" />
+            <Tab label="Φόρμες αιτήσεων" />
+            <Tab label="Περίοδοι Αιτήσεων" />
+          </Tabs>
+        </Box>
+      </LayoutTabsSlot>
 
       {activeTab === 0 && <SellerRequests />}
       {activeTab === 1 && <DesignRequestSheet />}

@@ -6,6 +6,17 @@ import { useUsersQuery } from "../../../queries/userQueries";
 import { USER_ROLE_MAPPING_TITLES } from "../../../shared/mappings/users.mapping";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 
+const USER_STATUS_CONFIG = {
+  active: {
+    label: "Ενεργός",
+    color: "#166534",
+  },
+  inactive: {
+    label: "Ανενεργός",
+    color: "#991b1b",
+  },
+} as const;
+
 const userRoleValues = Object.entries(USER_ROLE_MAPPING_TITLES).map(([key, value]) => ({
   label: value,
   value: key,
@@ -19,7 +30,20 @@ const columns: ColumnDef<AppUser>[] = [
   {
     key: "isActive",
     label: "Κατάσταση",
-    render: (row) => (row.isActive ? "Ενεργός" : "Ανενεργός"),
+    render: (row) => {
+      const statusConfig = row.isActive ? USER_STATUS_CONFIG.active : USER_STATUS_CONFIG.inactive;
+
+      return (
+        <span
+          style={{
+            color: statusConfig.color,
+            fontWeight: 700,
+          }}
+        >
+          {statusConfig.label}
+        </span>
+      );
+    },
   },
   {
     key: "roles",
@@ -95,7 +119,7 @@ export default function AdminUsersPage() {
         rowKey="id"
         showFilter={false}
         filters={tableFilters}
-        initialFilterValues={INITIAL_FILTERS}
+        initialFilterValues={INITIAL_FILTERS as unknown as FilterValues}
         onSearch={handleSearch}
         onClearFilters={handleClearFilters}
         clearFiltersButtonTitle="Καθαρισμός"

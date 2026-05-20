@@ -20,7 +20,7 @@ function UserAccessLayoutInner() {
   const { user, email, clearAuth } = useAuthStore();
   const activeTab = getUserTab(location.pathname);
   const isList = !!activeTab.hasList && location.pathname === activeTab.to;
-  const { filterSlot } = useLayoutSlot();
+  const { filterSlot, tabSlot } = useLayoutSlot();
 
   function handleLogout() {
     clearAuth();
@@ -100,9 +100,12 @@ function UserAccessLayoutInner() {
                     {activeTab.title}
                   </span>
                 </div>
-                {filterSlot && (
-                  <div className="flex min-w-0 flex-1 items-end justify-center overflow-x-auto">
-                    {filterSlot}
+                {(tabSlot || filterSlot) && (
+                  <div className="flex min-w-0 flex-1 flex-col items-stretch justify-end gap-2 overflow-x-auto">
+                    {tabSlot && <div className="w-full">{tabSlot}</div>}
+                    {filterSlot && (
+                      <div className="flex min-w-0 items-end justify-center overflow-x-auto">{filterSlot}</div>
+                    )}
                   </div>
                 )}
                 <div className="flex flex-col gap-2 rounded-[10px] border border-(--color-dark) bg-(--color-surface) px-4 py-3 text-center font-bold shadow-[var(--shadow)] md:gap-4 md:p-5">

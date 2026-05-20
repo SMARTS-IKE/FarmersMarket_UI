@@ -504,18 +504,6 @@ export default function AdminMarketDetailPage() {
           variant="fullWidth"
           sx={{
             marginBottom: 3,
-            borderBottom: "1px solid var(--color-border)",
-            "& .MuiTab-root": {
-              textTransform: "none",
-              fontWeight: 600,
-              color: "var(--color-text-muted)",
-            },
-            "& .MuiTab-root.Mui-selected": {
-              color: "var(--color-dark)",
-            },
-            "& .MuiTabs-indicator": {
-              backgroundColor: "var(--color-dark)",
-            },
           }}
         >
           <Tab label="Στοιχεία αγοράς" />

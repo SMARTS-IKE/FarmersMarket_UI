@@ -42,7 +42,7 @@ function SystemAdminLayoutInner() {
   const { user, email, clearAuth } = useAuthStore();
   const activeTab = getSystemAdminTab(location.pathname);
   const isList = !!activeTab.hasList && location.pathname === activeTab.to;
-  const { filterSlot } = useLayoutSlot();
+  const { filterSlot, tabSlot } = useLayoutSlot();
   const connectedUserName = user?.name ?? email ?? 'Δεν υπάρχει διαθέσιμο email';
 
   function handleLogout() {
@@ -132,9 +132,14 @@ function SystemAdminLayoutInner() {
                   </span>
                 </div>
                 {/* Filter slot */}
-                {filterSlot && (
-                  <div className="flex flex-1 min-w-0 items-end justify-center overflow-x-auto">
-                    {filterSlot}
+                {(tabSlot || filterSlot) && (
+                  <div className="flex flex-1 min-w-0 flex-col items-stretch justify-end gap-2 overflow-x-auto">
+                    {tabSlot && (
+                      <div className="w-full">{tabSlot}</div>
+                    )}
+                    {filterSlot && (
+                      <div className="flex min-w-0 items-end justify-center overflow-x-auto">{filterSlot}</div>
+                    )}
                   </div>
                 )}
                 {/* Right column content */}

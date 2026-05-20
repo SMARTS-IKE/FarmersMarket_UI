@@ -5,20 +5,11 @@ import type { FeeRule, FeeRuleSearchRequest } from "../../../models/fee";
 import { useFeesQuery } from "../../../queries/feesQueries";
 import { useMarketsQuery } from "../../../queries/marketQueries";
 import { SELLER_TYPE_LABELS } from "../../../lib/feeUtils";
+import LayoutTabsSlot from "../../../shared/components/LayoutTabsSlot";
 import type { Market } from "../../../models/market";
 
 const columns: ColumnDef<FeeRule>[] = [
-  { key: "name", label: "Όνομα" },
-  { key: "description", label: "Περιγραφή" },
-  {
-    key: "marketId",
-    label: "Αγορά",
-    filterable: false,
-    render: (row) => {
-      // Market name will be displayed if available from context
-      return row.marketId.toString();
-    },
-  },
+  { key: "marketName", label: "Αγορά" },
   {
     key: "sellerType",
     label: "Τύπος Πωλητή",
@@ -112,34 +103,22 @@ export default function AdminFeesPaymentsPage() {
 
   return (
     <div className="flex h-full w-full flex-col gap-6 text-left">
-      <Box>
-        <Tabs
-          value={activeTab}
-          onChange={(_, v) => setActiveTab(v)}
-          variant="fullWidth"
-          textColor="inherit"
-          sx={{
-            width: "100%",
-            marginBottom: 3,
-            borderBottom: "1px solid var(--color-border)",
-            "& .MuiTab-root": {
-              flex: 1,
-              textTransform: "none",
-              fontWeight: 600,
-              color: "var(--color-text-muted)",
-            },
-            "& .MuiTab-root.Mui-selected": {
-              color: "var(--color-dark)",
-            },
-            "& .MuiTabs-indicator": {
-              backgroundColor: "var(--color-dark)",
-            },
-          }}
-        >
-          <Tab label="Λίστα Τελών" />
-          <Tab label="Πληρωμές" />
-        </Tabs>
-      </Box>
+      <LayoutTabsSlot>
+        <Box>
+          <Tabs
+            value={activeTab}
+            onChange={(_, v) => setActiveTab(v)}
+            variant="fullWidth"
+            textColor="inherit"
+            sx={{
+              width: "100%",
+            }}
+          >
+            <Tab label="Λίστα Τελών" />
+            <Tab label="Πληρωμές" />
+          </Tabs>
+        </Box>
+      </LayoutTabsSlot>
 
       {activeTab === 0 && (
         <div className="flex flex-col gap-4">

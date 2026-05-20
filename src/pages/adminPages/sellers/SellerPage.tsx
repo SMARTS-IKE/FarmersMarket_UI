@@ -9,7 +9,6 @@ import { useMarketsQuery } from "../../../queries/marketQueries";
 import { useSellerQuery } from "../../../queries/sellerQueries";
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
 import { marketTypeLabel } from "../../../components/markets/market.utils";
-import { createLicense } from "../../../services/sellerService";
 
 const ALL_MARKETS_FILTERS: MarketSearchRequest = {
   name: "",
@@ -135,8 +134,6 @@ export default function SellerPage() {
   const [notificationSeverity, setNotificationSeverity] = useState<"success" | "warning">("warning");
   const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
 
-  const [isAddingLicense, setIsAddingLicense] = useState(false);
-
   const { data: seller, isLoading, isError, error } = useSellerQuery(sellerId);
   const { data: marketsQueryResults } = useMarketsQuery(ALL_MARKETS_FILTERS);
 
@@ -259,36 +256,6 @@ export default function SellerPage() {
     showNotification("Οι αλλαγές αποθηκεύτηκαν.", "success");
   };
 
-  const handleAddLicense = async () => {
-    if (!licenseNumber || !licenseIssuedAt || !licenseExpiresAt) {
-      showNotification("Παρακαλώ συμπληρώστε όλα τα πεδία της άδειας.", "warning");
-      return;
-    }
-
-    setIsAddingLicense(true);
-    try {
-      await createLicense(sellerId, {
-        licenseNumber,
-        licenseType: "", // Default empty for now, can be extended if backend supports
-        issuedAt: licenseIssuedAt,
-        expiresAt: licenseExpiresAt,
-      });
-
-      // Clear license fields after successful submission
-      setLicenseNumber("");
-      setLicenseIssuedAt("");
-      setLicenseExpiresAt("");
-      showNotification("Η άδεια προστέθηκε με επιτυχία.", "success");
-    } catch (err) {
-      showNotification(
-        (err instanceof Error ? err.message : "Ένα σφάλμα προέκυψε κατά την προσθήκη της άδειας."),
-        "warning"
-      );
-    } finally {
-      setIsAddingLicense(false);
-    }
-  };
-
   const handleSnackbarClose = (_event?: Event | SyntheticEvent, reason?: string) => {
     if (reason === "clickaway") return;
     setIsSnackbarOpen(false);
@@ -345,7 +312,7 @@ export default function SellerPage() {
         />
       </div>
 
-      <div className="flex items-center gap-4">
+      <div className="flex flex-wrap items-start gap-4">
         <div className="flex flex-wrap gap-3">
           <CustomButton
             title="Ενεργός"
@@ -382,34 +349,23 @@ export default function SellerPage() {
             }}
           />
         </div>
+
+        <Box className="min-w-[320px] flex-1 self-start">
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            variant="fullWidth"
+            sx={{
+              marginBottom: 0,
+            }}
+          >
+            <Tab label="Στοιχεία πωλητή" />
+            <Tab label={`Συνδεδεμένες αγορές (${connectedMarkets.length})`} />
+          </Tabs>
+        </Box>
       </div>
 
-      <Box>
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
-          variant="fullWidth"
-          sx={{
-            marginBottom: 3,
-            borderBottom: "1px solid var(--color-border)",
-            "& .MuiTab-root": {
-              textTransform: "none",
-              fontWeight: 600,
-              color: "var(--color-text-muted)",
-            },
-            "& .MuiTab-root.Mui-selected": {
-              color: "var(--color-dark)",
-            },
-            "& .MuiTabs-indicator": {
-              backgroundColor: "var(--color-dark)",
-            },
-          }}
-        >
-          <Tab label="Στοιχεία πωλητή" />
-          <Tab label={`Συνδεδεμένες αγορές (${connectedMarkets.length})`} />
-        </Tabs>
-
-        {activeTab === 0 ? (
+      {activeTab === 0 ? (
           <div className="flex flex-col gap-6">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <CustomInputField
@@ -544,7 +500,6 @@ export default function SellerPage() {
             showFilter={false}
           />
         )}
-      </Box>
 
       <Snackbar
         open={isSnackbarOpen && Boolean(navigationNotice)}
