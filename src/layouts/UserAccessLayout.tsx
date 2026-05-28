@@ -81,7 +81,7 @@ function UserAccessLayoutInner() {
                   ΠΛΑΤΦΟΡΜΑ ΔΙΑΧΕΙΡΙΣΗΣ ΛΑΪΚΩΝ ΑΓΟΡΩΝ
                 </p>
               </div>
-              <span className="mt-1 pb-2 text-center text-2xl text-subtle md:mt-4">
+              <span className={`mt-1 pb-2 text-center text-2xl md:mt-4`}>
                 {activeTab.title}
               </span>
             </div>
@@ -101,8 +101,8 @@ function UserAccessLayoutInner() {
                   </span>
                 </div>
                 {(tabSlot || filterSlot) && (
-                  <div className="flex min-w-0 flex-1 flex-col items-stretch justify-end gap-2 overflow-x-auto">
-                    {tabSlot && <div className="w-full">{tabSlot}</div>}
+                  <div className="flex min-w-0 flex-1 flex-col items-stretch justify-center gap-2 overflow-x-auto">
+                    {tabSlot && <div className="flex w-full justify-center">{tabSlot}</div>}
                     {filterSlot && (
                       <div className="flex min-w-0 items-end justify-center overflow-x-auto">{filterSlot}</div>
                     )}

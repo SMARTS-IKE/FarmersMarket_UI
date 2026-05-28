@@ -104,7 +104,7 @@ export default function AdminFeesPaymentsPage() {
   return (
     <div className="flex h-full w-full flex-col gap-6 text-left">
       <LayoutTabsSlot>
-        <Box>
+        <Box sx={{height: '100%', display: 'flex', justifyContent: 'center'}}>
           <Tabs
             value={activeTab}
             onChange={(_, v) => setActiveTab(v)}

@@ -2,7 +2,9 @@ import { Link, Outlet, useLocation, useNavigate } from '@tanstack/react-router';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
+import UserCircleIcon from '@mui/icons-material/AccountCircleOutlined';
 import logo02 from '../assets/logo-02.svg';
+import logo03 from '../assets/logo-03.svg';
 import { getSystemAdminTab, systemAdminTabs } from '../lib/systemAdminTabs';
 import { useAuthStore } from '../store/authStore';
 import { LayoutSlotProvider, useLayoutSlot } from '../lib/layoutSlotContext';
@@ -53,15 +55,13 @@ function SystemAdminLayoutInner() {
   return (
     <div className="min-h-svh">
       <div className="flex min-h-svh w-full flex-col overflow-visible border border-(--color-border) bg-(--color-surface) shadow-[var(--shadow-lg)] md:overflow-hidden">
-        <header className="min-h-[85px] border-b-2 border-(--color-secondary) bg-[#C4B5A0] px-4 md:px-6">
-          <div className="relative flex items-center justify-between gap-6">
-            {/* Logo */}
-            <div className="flex-shrink-0 w-[310px] flex justify-center">
-              <img src={logo02} alt="Farmers Market logo" className="h-[80px] w-[150px] rounded-lg object-cover" />
+        <header className="border-b-4 border-[#ef4123] bg-[#C4B5A0] px-4 md:px-6">
+          <div className="grid grid-cols-[15%_70%_15%] items-center gap-2 py-2 xl:py-0">
+            <div className="flex min-w-0 justify-start pl-6">
+              <img src={logo02} alt="Farmers Market logo" className="h-auto max-h-[70px] w-full max-w-[180px] rounded-lg object-contain xl:max-h-[88px]" />
             </div>
 
-            {/* Navigation */}
-            <nav className="absolute left-1/2 flex -translate-x-1/2 items-center justify-center" aria-label="System admin sections">
+            <nav className="flex min-w-0 flex-wrap items-stretch justify-center gap-2" aria-label="System admin sections">
               {systemAdminTabs.map((tab) => {
                 const isActive = activeTab.to === tab.to;
 
@@ -69,7 +69,7 @@ function SystemAdminLayoutInner() {
                   <Link
                     key={tab.to}
                     to={tab.to}
-                    className={`w-[80px] xl:w-[200px] h-[88px] px-[10px] sm:px-[20px] md:px-[30px] lg:px-[50px] text-center text-xs sm:text-sm font-medium transition whitespace-normal flex flex-col-reverse items-center justify-center rounded border ${
+                    className={`flex min-h-[64px] min-w-[120px] flex-1 items-center justify-center rounded border px-3 py-2 text-center text-xs font-medium whitespace-normal transition sm:min-w-[160px] sm:text-sm xl:min-h-[88px] xl:flex-col-reverse ${
                       isActive
                         ? 'border-[#A69680] bg-(--color-text-muted) text-(--color-surface)'
                         : 'border-0 text-[#5C4A3D] hover:text-[#3D2817] hover:bg-[#E8DCC8]'
@@ -81,9 +81,24 @@ function SystemAdminLayoutInner() {
               })}
             </nav>
 
-            {/* Logout Button */}
-            <div className="flex-shrink-0">
-              <Tooltip title="Logout">
+            <div className="flex justify-end pr-6">
+              <Tooltip title="Διαχείριση λογαριασμού">
+                <IconButton
+                  aria-label="account_circle"
+                  onClick={() => null}
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    color: '#3D2817',
+                    '&:hover': {
+                      backgroundColor: 'rgba(61, 40, 23, 0.1)',
+                    },
+                  }}
+                >
+                  <UserCircleIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Αποσύνδεση">
                 <IconButton
                   aria-label="logout"
                   onClick={handleLogout}
@@ -108,10 +123,10 @@ function SystemAdminLayoutInner() {
             <div className="flex flex-col gap-2 md:gap-4">
               <div>
                 <p className="text-xs uppercase text-center font-bold text-(--color-text)">
-                 ΠΛΑΤΦΟΡΜΑ ΔΙΑΧΕΙΡΙΣΗΣ ΛΑΪΚΩΝ ΑΓΟΡΩΝ
+                  ΠΛΑΤΦΟΡΜΑ ΔΙΑΧΕΙΡΙΣΗΣ ΛΑΪΚΩΝ ΑΓΟΡΩΝ
                 </p>
               </div>
-              <span className="mt-1 pb-2 text-2xl text-subtle text-center md:mt-4">
+              <span style={{color: "white"}}   className="mt-1 pb-2 text-2xl text-subtle text-center md:mt-4">
                 {activeTab.title}
               </span>
             </div>
@@ -127,7 +142,7 @@ function SystemAdminLayoutInner() {
                       ΠΛΑΤΦΟΡΜΑ ΔΙΑΧΕΙΡΙΣΗΣ ΛΑΪΚΩΝ ΑΓΟΡΩΝ
                     </p>
                   </div>
-                  <span className="mt-1 text-4xl pb-2 text-subtle text-center md:mt-4">
+                  <span className="mt-1 text-4xl pb-2 text-subtle text-center md:mt-4 text-[#ef4123]">
                     {activeTab.title}
                   </span>
                 </div>
@@ -143,7 +158,12 @@ function SystemAdminLayoutInner() {
                   </div>
                 )}
                 {/* Right column content */}
-                <ConnectedUserCard connectedUserName={connectedUserName} className="max-w-[280px]" />
+                <div className="flex self-stretch flex-col items-center justify-end">
+                  <ConnectedUserCard connectedUserName={connectedUserName} className="max-w-fit" />
+                  {!isList && (
+                    <img src={logo03} alt="Farmers Market emblem" className="mt-4 h-auto w-full max-w-full object-contain" />
+                  )}
+                </div>
               </div>
             )}
             <div className="flex flex-1 min-h-0 flex-col">
@@ -152,7 +172,12 @@ function SystemAdminLayoutInner() {
           </main>
 
           <aside className={`bg-(--color-bg-subtle) px-4 py-3 md:p-6${isList ? ' lg:hidden' : ''}`}>
-            <ConnectedUserCard connectedUserName={connectedUserName} className="md:max-w-[280px]" />
+            <div className="flex h-full w-full flex-col items-center">
+              <ConnectedUserCard connectedUserName={connectedUserName} className="max-w-fit" />
+              {!isList && (
+                <img src={logo03} alt="Farmers Market emblem" className="mt-auto h-auto w-full max-w-full object-contain" />
+              )}
+            </div> 
           </aside>
         </div>
       </div>

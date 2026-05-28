@@ -218,7 +218,7 @@ export default function MarketForm({
         </Box>
       </Box>
 
-      <Box className="flex flex-col gap-4 md:flex-row md:justify-between">
+      <Box className="flex flex-col gap-4 mt-6 md:flex-row md:justify-between">
         <CustomInputField
           type="NUMBER"
           label="Σύνολο Θέσεων"

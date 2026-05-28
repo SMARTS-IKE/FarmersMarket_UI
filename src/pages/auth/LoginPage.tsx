@@ -35,15 +35,15 @@ export default function LoginPage() {
       setAuth(data);
       const role = useAuthStore.getState().role;
       navigate({ to: role === 'User_Access' ? '/users' : '/admin' });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed');
+    } catch {
+      setError('Λάθος στοιχεία εισόδου.\nΔοκιμάστε ξανά');
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <>
+    <div>
       <div className="relative mb-7">
         <div className="absolute -top-12 left-1/2 -translate-x-1/2 rounded-full bg-[#f7f6f5] p-3 shadow-[0_4px_10px_rgba(60,50,40,0.15)]">
           <PersonIcon sx={{ color: '#6d5a4a', fontSize: 28 }} />
@@ -66,7 +66,7 @@ export default function LoginPage() {
 
         {error && (
           <div
-            className="bg-danger-subtle border border-(--color-danger-border) text-danger rounded-lg px-4 py-3 text-sm"
+            className="bg-danger-subtle border border-(--color-danger-border) text-danger rounded-lg px-4 py-3 text-center whitespace-pre-line text-sm"
             role="alert"
           >
             {error}
@@ -105,21 +105,20 @@ export default function LoginPage() {
           </div>
         </div>
 
-        {/* <div className="mt-1 flex items-center justify-between gap-3 text-[13px] text-[#6f6359]">
+        <div className="mt-1 flex items-center justify-between gap-3 text-[13px] text-[#6f6359]">
           <label className="inline-flex items-center gap-2">
             <input type="checkbox" className="h-4 w-4 border-[#8f8479] accent-[#7a4f1e]" />
             Να με θυμάσαι
           </label>
-          <label className="inline-flex items-center gap-2">
-            <input type="checkbox" className="h-4 w-4 border-[#8f8479] accent-[#7a4f1e]" />
+          <a href="#" className="font-medium text-[#6f3f16] hover:underline">
             Ξέχασα τον κωδικό μου
-          </label>
-        </div> */}
+          </a>
+        </div>
 
         <button
           type="submit"
           disabled={loading}
-          className="mt-3 w-full rounded-xl bg-[#8a5a22] px-4 py-2.5 text-[22px] font-semibold text-[#f7f1eb] transition hover:bg-[#7b4f1d] disabled:cursor-not-allowed disabled:opacity-60"
+          className="my-2 mx-auto w-3/4 rounded-xl bg-[#8a5a22] px-4 py-1.5 text-[16px] font-semibold text-[#f7f1eb] transition hover:bg-[#7b4f1d] disabled:cursor-not-allowed disabled:opacity-60"
         >
           {loading ? 'Είσοδος…' : 'Είσοδος'}
         </button>
@@ -131,10 +130,6 @@ export default function LoginPage() {
           Εγγραφή
         </Link>
       </p>
-
-      <p className="mt-10 text-center text-3xl font-semibold leading-tight text-[#f5f2ef] drop-shadow-[0_2px_3px_rgba(0,0,0,0.2)] lg:hidden">
-        Καλώς ήρθατε στην εφαρμογή<br />διαχείρισης λαϊκών αγορών
-      </p>
-    </>
+    </div>
   );
 }

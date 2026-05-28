@@ -1,6 +1,7 @@
 import { Outlet } from '@tanstack/react-router';
 import logo01 from '../assets/logo-01.svg';
 import loginBgImage from '../assets/loginBg.png';
+import loginPageSideGraphic from '../assets/login_page_side_graphic.svg';
 
 export default function AuthLayout() {
   return (
@@ -31,10 +32,18 @@ export default function AuthLayout() {
           </div>
         </section>
 
-        <section className="flex min-h-svh items-center justify-center bg-[#a8a4a0] p-5 sm:p-8">
-          <div className="w-full max-w-sm rounded-[26px] border border-[#b7b1a9] bg-[#d8d5d2] px-7 py-8 shadow-[0_16px_40px_rgba(66,55,45,0.22)]">
-            <Outlet />
+        <section className="relative flex min-h-svh items-start justify-center overflow-hidden bg-[#a8a4a0] px-5 pt-32 pb-5 sm:px-8 sm:pt-36 sm:pb-8">
+          <div className="relative z-10 mx-auto flex w-full max-w-sm flex-col items-center px-5 sm:px-0">
+            <div className="w-full rounded-[26px] border border-[#b7b1a9] bg-[#d8d5d2] px-7 py-8 shadow-[0_16px_40px_rgba(66,55,45,0.22)]">
+              <Outlet />
+            </div>
           </div>
+
+          <img
+            src={loginPageSideGraphic}
+            alt="Login side graphic"
+            className="pointer-events-none absolute bottom-[-1.25rem] right-[-1.25rem] hidden w-[calc(100%+1.25rem)] max-w-none sm:bottom-[-2rem] sm:right-[-2rem] sm:w-[calc(100%+2rem)] lg:block"
+          />
         </section>
       </div>
     </div>

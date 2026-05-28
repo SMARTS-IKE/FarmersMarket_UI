@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { RestartAlt } from "@mui/icons-material";
 import type { AttendanceRecord, AttendanceSearchRequest } from "../../models/attendance";
 import type { SellerSearchRequest } from "../../models/seller";
 import { useAttendanceQuery } from "../../queries/attendanceQueries";
@@ -154,7 +155,7 @@ export default function AttendanceTable({ marketId }: AttendanceTableProps) {
           onClearFilters={handleReset}
           clearFiltersButtonTitle="Καθαρισμός"
           clearFiltersButtonBackgroundColor="var(--color-text-muted)"
-          clearFiltersPrefixIcon={<RestartAltIcon />}
+          clearFiltersPrefixIcon={<RestartAlt />}
           paginationPrefix={`Συνολικές Παρουσίες: ${totalCount}`}
           page={Math.max((attendanceData?.page ?? filters.page) - 1, 0)}
           rowsPerPage={attendanceData?.pageSize ?? pageSize}

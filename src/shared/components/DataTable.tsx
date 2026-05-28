@@ -82,8 +82,8 @@ interface DataTableProps<T> {
 
 // ── Main DataTable component ─────────────────────────────────────
 export default function DataTable<T extends object>({
-  rows,
-  columns,
+  rows = [],
+  columns = [],
   rowKey,
   title,
   filterPlaceholder = "Αναζήτηση…",

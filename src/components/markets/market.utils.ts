@@ -44,7 +44,7 @@ export const columns: ColumnDef<Market>[] = [
   {
     key: "schedules",
     label: "Ημέρες Λειτουργίας",
-    render: (row) => row.schedules
+    render: (row) => (row.schedules ?? [])
       .filter((schedule) => !schedule.isCancelled)
       .map((schedule) => dayNumberToGreekLabel[schedule.day] ?? String(schedule.day))
       .join(", "),

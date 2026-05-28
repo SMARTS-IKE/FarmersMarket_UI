@@ -179,11 +179,11 @@ function extractConnectedSellerId(entry: unknown): number | null {
 function mapMarketToFormValues(market: Market): MarketFormValues {
   const marketRecord = asRecord(market);
 
-  const supervisors = (market.supervisors ?? [])
+  const supervisors = (Array.isArray(market.supervisors) ? market.supervisors : [])
     .map((supervisor) => supervisor.userId)
     .filter((userId): userId is string => Boolean(userId));
 
-  const operatingDays = market.schedules
+  const operatingDays = (Array.isArray(market.schedules) ? market.schedules : [])
     .filter((schedule) => !schedule.isCancelled)
     .map((schedule) => ({
       day: DAY_NUMBER_TO_NAME[schedule.day] ?? "",
@@ -502,8 +502,10 @@ export default function AdminMarketDetailPage() {
           value={activeTab}
           onChange={handleTabChange}
           variant="fullWidth"
+          textColor="inherit"
           sx={{
-            marginBottom: 3,
+            marginBottom: 6,
+            width: "100%",
           }}
         >
           <Tab label="Στοιχεία αγοράς" />
