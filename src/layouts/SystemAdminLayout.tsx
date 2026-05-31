@@ -122,11 +122,11 @@ function SystemAdminLayoutInner() {
           <aside className={`bg-(--color-bg-subtle) px-3 py-3 md:flex md:flex-col md:justify-between${isList ? ' lg:hidden' : ''}`}>
             <div className="flex flex-col gap-2 md:gap-4">
               <div>
-                <p className="text-xs uppercase text-center font-bold text-(--color-text)">
+                <p className="text-lg uppercase text-center font-bold text-(--color-text)">
                   ΠΛΑΤΦΟΡΜΑ ΔΙΑΧΕΙΡΙΣΗΣ ΛΑΪΚΩΝ ΑΓΟΡΩΝ
                 </p>
               </div>
-              <span style={{color: "white"}}   className="mt-1 pb-2 text-2xl text-subtle text-center md:mt-4">
+              <span  className="mt-1 pb-2 text-3xl text-center md:mt-4 text-light border-b">
                 {activeTab.title}
               </span>
             </div>
@@ -142,7 +142,7 @@ function SystemAdminLayoutInner() {
                       ΠΛΑΤΦΟΡΜΑ ΔΙΑΧΕΙΡΙΣΗΣ ΛΑΪΚΩΝ ΑΓΟΡΩΝ
                     </p>
                   </div>
-                  <span className="mt-1 text-4xl pb-2 text-subtle text-center md:mt-4 text-[#ef4123]">
+                  <span  style={{color: '#ef4123'}} className="mt-1 text-3xl pb-2 border-b  text-center md:mt-4 text-[#5C4A3D]">
                     {activeTab.title}
                   </span>
                 </div>

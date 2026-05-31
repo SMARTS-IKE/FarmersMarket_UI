@@ -441,10 +441,10 @@ export default function DesignRequestFormPage() {
           sx={{
             flex: 1,
             minHeight: 0,
-            border: "1px solid var(--color-border)",
+           
             borderRadius: "10px",
             p: 3,
-            backgroundColor: "var(--color-light)",
+            backgroundColor: "var(--color-white)",
             display: "flex",
             flexDirection: "column",
           }}
