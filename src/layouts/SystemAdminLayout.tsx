@@ -56,12 +56,12 @@ function SystemAdminLayoutInner() {
     <div className="min-h-svh">
       <div className="flex min-h-svh w-full flex-col overflow-visible border border-(--color-border) bg-(--color-surface) shadow-[var(--shadow-lg)] md:overflow-hidden">
         <header className="border-b-4 border-[#ef4123] bg-[#C4B5A0] px-4 md:px-6">
-          <div className="grid grid-cols-[15%_70%_15%] items-center gap-2 py-2 xl:py-0">
-            <div className="flex min-w-0 justify-start pl-6">
+          <div className="grid grid-cols-[22%_56%_22%] items-stretch gap-2 py-2 xl:py-0">
+            <div className="flex min-w-0 items-center justify-start pl-6">
               <img src={logo02} alt="Farmers Market logo" className="h-auto max-h-[70px] w-full max-w-[180px] rounded-lg object-contain xl:max-h-[88px]" />
             </div>
 
-            <nav className="flex min-w-0 flex-wrap items-stretch justify-center gap-2" aria-label="System admin sections">
+            <nav className="flex min-w-0 flex-wrap items-stretch justify-center gap-0.5" aria-label="System admin sections">
               {systemAdminTabs.map((tab) => {
                 const isActive = activeTab.to === tab.to;
 
@@ -69,7 +69,7 @@ function SystemAdminLayoutInner() {
                   <Link
                     key={tab.to}
                     to={tab.to}
-                    className={`flex min-h-[64px] min-w-[120px] flex-1 items-center justify-center rounded border px-3 py-2 text-center text-xs font-medium whitespace-normal transition sm:min-w-[160px] sm:text-sm xl:min-h-[88px] xl:flex-col-reverse ${
+                    className={`flex h-full min-w-[76px] flex-1 items-center justify-center rounded border px-0.5 py-0.5 text-center text-[10px] leading-tight font-medium whitespace-normal transition sm:min-w-[102px] sm:text-[11px] xl:flex-col-reverse ${
                       isActive
                         ? 'border-[#A69680] bg-(--color-text-muted) text-(--color-surface)'
                         : 'border-0 text-[#5C4A3D] hover:text-[#3D2817] hover:bg-[#E8DCC8]'
@@ -81,7 +81,7 @@ function SystemAdminLayoutInner() {
               })}
             </nav>
 
-            <div className="flex justify-end pr-6">
+            <div className="flex items-center justify-end pr-6">
               <Tooltip title="Διαχείριση λογαριασμού">
                 <IconButton
                   aria-label="account_circle"
