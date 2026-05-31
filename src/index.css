@@ -230,7 +230,7 @@ p {
 .MuiTabs-root {
   background-color: #c7b9a4;
   min-height: 34px !important;
-  padding: 0 4px;
+  padding: 0;
 }
 
 .MuiTabs-indicator {
