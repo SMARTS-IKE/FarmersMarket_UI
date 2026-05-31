@@ -2,7 +2,6 @@ import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import DataTable, { FilterDef, FilterValues } from "../../../shared/components/DataTable";
 import CustomButton from "../../../shared/components/CustomButton";
-import AddIcon from "@mui/icons-material/Add";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import type { Market, MarketSearchRequest } from "../../../models/market";
 import { useMarketsQuery } from "../../../queries/marketQueries";
@@ -44,6 +43,7 @@ export default function AdminMarketsPage() {
       title: "operatingDays",
       label: "Ημέρα Λειτουργίας",
       type: "DROPDOWN",
+      width: 180,
       dataItems: DAYS,
     },
   ], []);

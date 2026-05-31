@@ -17,6 +17,8 @@ export interface FilterDef {
   /** Display label shown above the input */
   label: string;
   type: FilterType;
+  /** Optional custom width for this filter input */
+  width?: number | string;
   /** Required for DROPDOWN type */
   dataItems?: DropdownItem[];
 }
@@ -84,7 +86,7 @@ export default function TableFilterBar({
               value={values[filter.title] ?? ""}
               dropdownItems={filter.dataItems}
               onChange={(val) => handleChange(filter.title, val)}
-              width={160}
+              width={filter.width ?? 160}
             />
           );
         }
@@ -97,7 +99,7 @@ export default function TableFilterBar({
               label={filter.label}
               value={values[filter.title] ?? ""}
               onChange={(val) => handleChange(filter.title, val)}
-              width={160}
+              width={filter.width ?? 160}
             />
           );
         }
@@ -110,7 +112,7 @@ export default function TableFilterBar({
             label={filter.label}
             value={values[filter.title] ?? ""}
             onChange={(val) => handleChange(filter.title, val)}
-            width={160}
+            width={filter.width ?? 160}
           />
         );
       })}

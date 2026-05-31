@@ -179,6 +179,7 @@ export default function CustomInputField({
 
   const placeholderSx: SxProps<Theme> = {
     "& .MuiInputBase-input::placeholder": {
+      fontSize: "0.65rem",
       fontWeight: 500,
       opacity: 1,
     },
