@@ -61,7 +61,7 @@ function SystemAdminLayoutInner() {
               <img src={logo02} alt="Farmers Market logo" className="h-auto max-h-[70px] w-full max-w-[180px] rounded-lg object-contain xl:max-h-[88px]" />
             </div>
 
-            <nav className="flex min-w-0 flex-wrap items-stretch justify-center gap-0.5" aria-label="System admin sections">
+            <nav className="flex min-w-0 flex-wrap items-stretch justify-center gap-2" aria-label="System admin sections">
               {systemAdminTabs.map((tab) => {
                 const isActive = activeTab.to === tab.to;
 
@@ -69,7 +69,7 @@ function SystemAdminLayoutInner() {
                   <Link
                     key={tab.to}
                     to={tab.to}
-                    className={`flex h-full min-w-[76px] flex-1 items-center justify-center rounded border px-0.5 py-0.5 text-center text-[10px] leading-tight font-medium whitespace-normal transition sm:min-w-[102px] sm:text-[11px] xl:flex-col-reverse ${
+                    className={`flex h-full min-w-[100px] max-w-[128px] flex-1 items-center justify-center rounded border px-0.5 py-0.5 text-center text-[10px] leading-tight font-medium whitespace-normal transition sm:min-w-[12px] sm:text-[14px] xl:flex-col-reverse ${
                       isActive
                         ? 'border-[#A69680] bg-(--color-text-muted) text-(--color-surface)'
                         : 'border-0 text-[#5C4A3D] hover:text-[#3D2817] hover:bg-[#E8DCC8]'
@@ -158,7 +158,7 @@ function SystemAdminLayoutInner() {
                   </div>
                 )}
                 {/* Right column content */}
-                <div className="flex self-stretch flex-col items-center justify-end">
+                <div className="flex self-stretch flex-col items-center justify-start">
                   <ConnectedUserCard connectedUserName={connectedUserName} className="max-w-fit" />
                   {!isList && (
                     <img src={logo03} alt="Farmers Market emblem" className="mt-4 h-auto w-full max-w-full object-contain" />

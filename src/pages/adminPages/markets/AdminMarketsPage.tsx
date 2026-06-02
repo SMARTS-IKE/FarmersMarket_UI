@@ -74,7 +74,7 @@ export default function AdminMarketsPage() {
 
   return (
     <div className="flex h-full w-full flex-col gap-6 text-left">
-      <div className="flex">
+      <div className="flex justify-end">
         <CustomButton
           title="Δημιουργία νέας Αγοράς"
           width={'fit-content'}

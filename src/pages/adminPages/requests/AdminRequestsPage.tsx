@@ -18,7 +18,7 @@ export default function AdminRequestsPage() {
   return (
     <div className="flex h-full w-full flex-col gap-6 text-left">
       {activeTab === 1 && (
-        <div className="flex w-full justify-start">
+        <div className="flex w-full justify-end">
           <CustomButton
             title="Δημιουργία Φόρμας Αίτησης"
             width="fit-content"

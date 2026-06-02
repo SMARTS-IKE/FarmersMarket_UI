@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState, type SyntheticEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import { useBlocker, useNavigate, useParams } from '@tanstack/react-router';
 import { Alert, Snackbar } from '@mui/material';
 import CustomButton from '../../shared/components/CustomButton';
 import CustomInputField from '../../shared/components/CustomInputField';
+import { setAuthNotification } from '../../lib/authNotifications';
 import {
   useAssignUserRoleMutation,
   useReinitializeUserPasswordMutation,
@@ -14,31 +15,6 @@ import { USER_ROLE_MAPPING_TITLES } from '../../shared/mappings/users.mapping';
 
 const ROLE_OPTIONS = USER_ROLE_MAPPING_TITLES ? Object.values(USER_ROLE_MAPPING_TITLES) : [];
 const ROLE_KEYS = USER_ROLE_MAPPING_TITLES ? Object.keys(USER_ROLE_MAPPING_TITLES) : [];
-
-const editableFieldSx = {
-  '& .MuiInputBase-root': {
-    justifyContent: 'center',
-  },
-  '& .MuiInputBase-input': {
-    textAlign: 'center',
-    color: 'var(--color-text-heading)',
-  },
-  '& .MuiInputLabel-root': {
-    left: '50%',
-    transform: 'translateX(-50%)',
-    transformOrigin: 'center',
-    color: 'var(--color-text-heading)',
-    fontWeight: 500,
-    width: 'max-content',
-  },
-  '& .MuiInputLabel-shrink': {
-    transform: 'translate(-50%, 1.5px) scale(0.75)',
-  },
-  '& .MuiInput-underline:before, & .MuiInput-underline:after': {
-    borderBottomColor: 'var(--color-dark)',
-    borderBottomWidth: '3px',
-  },
-};
 
 export default function UserPage() {
   const navigate = useNavigate();
@@ -61,6 +37,7 @@ export default function UserPage() {
   const [notificationMessage, setNotificationMessage] = useState('');
   const [notificationSeverity, setNotificationSeverity] = useState<'success' | 'warning' | 'error'>('warning');
   const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
+  const allowProgrammaticNavigationRef = useRef(false);
 
   useEffect(() => {
     if (!user) return;
@@ -77,6 +54,7 @@ export default function UserPage() {
     setInitialIsActive(nextIsActive);
     setInitialSelectedRoles(nextRoles);
     setIsNavigationLocked(false);
+    allowProgrammaticNavigationRef.current = false;
     setNotificationMessage('');
     setIsSnackbarOpen(false);
   }, [user]);
@@ -97,6 +75,10 @@ export default function UserPage() {
     lastName !== initialLastName ||
     isActive !== initialIsActive;
   const hasPendingChanges = hasUserChanges || hasRoleChanges;
+  const currentRoleKey = selectedRoles[0] ?? initialSelectedRoles[0] ?? '';
+  const currentRoleTitle = currentRoleKey
+    ? USER_ROLE_MAPPING_TITLES[currentRoleKey as keyof typeof USER_ROLE_MAPPING_TITLES] ?? currentRoleKey
+    : '—';
 
   const showNotification = (message: string, severity: 'success' | 'warning' | 'error' = 'warning') => {
     setNotificationMessage(message);
@@ -112,6 +94,7 @@ export default function UserPage() {
 
   useBlocker({
     shouldBlockFn: () => {
+      if (allowProgrammaticNavigationRef.current) return false;
       if (!isNavigationLocked) return false;
       showNotification('Έχετε μη αποθηκευμένες αλλαγές. Αποθηκεύστε ή ακυρώστε για να συνεχίσετε.', 'warning');
       return true;
@@ -142,7 +125,12 @@ export default function UserPage() {
       setInitialIsActive(isActive);
       setInitialSelectedRoles(selectedRoles);
       setIsNavigationLocked(false);
-      showNotification('Οι αλλαγές χρήστη και ρόλων αποθηκεύτηκαν.', 'success');
+      setAuthNotification({
+        type: 'success',
+        message: 'Οι αλλαγές χρήστη και ρόλων αποθηκεύτηκαν.',
+      });
+      allowProgrammaticNavigationRef.current = true;
+      navigate({ to: '/admin/users' });
     } catch (mutationError) {
       showNotification(mutationError instanceof Error ? mutationError.message : 'Η αποθήκευση απέτυχε.', 'error');
     }
@@ -164,8 +152,8 @@ export default function UserPage() {
 
     setSelectedRoles((current) =>
       current.includes(role)
-        ? current.filter((currentRole) => currentRole !== role)
-        : [...current, role]
+        ? []
+        : [role]
     );
   }
 
@@ -243,9 +231,7 @@ export default function UserPage() {
     <div className="min-h-full p-6 text-left text-(--color-text-heading) md:px-10">
       <div className="mx-auto flex max-w-6xl flex-col gap-8">
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <div>
-            <h1 className="m-0 text-4xl font-semibold tracking-[-0.04em]">{firstName || '—'} {lastName || ''}</h1>
-          </div>
+          <h2 className="font-semibold text-(--color-text-heading)">{firstName || '—'} {lastName || ''}</h2>
           <div className="flex flex-wrap items-center gap-3">
             <CustomButton
                       title="Επιστροφή στη λίστα χρηστών"
@@ -255,8 +241,8 @@ export default function UserPage() {
           </div>
         </div>
 
-        <section className="grid content-start gap-10">
-          <div className="mx-auto grid w-full max-w-3xl gap-8 md:grid-cols-2 mb-10">
+        <section className="grid w-full content-start gap-10">
+          <div className="grid w-full gap-8 mb-10 md:grid-cols-2">
               <div className="md:col-span-2">
                 <CustomInputField
                   type="TEXT"
@@ -264,14 +250,6 @@ export default function UserPage() {
                   value={user.email || '—'}
                   disabled
                   width="100%"
-                  sx={{
-                    ...editableFieldSx,
-                    '& .MuiInputBase-input.Mui-disabled': {
-                      WebkitTextFillColor: 'var(--color-text-muted)',
-                      textAlign: 'center',
-                      opacity: 1,
-                    },
-                  }}
                 />
               </div>
               <CustomInputField
@@ -280,7 +258,6 @@ export default function UserPage() {
                 value={firstName}
                 onChange={(value) => setFirstName(String(value))}
                 width="100%"
-                sx={editableFieldSx}
               />
               <CustomInputField
                 type="TEXT"
@@ -288,125 +265,104 @@ export default function UserPage() {
                 value={lastName}
                 onChange={(value) => setLastName(String(value))}
                 width="100%"
-                sx={editableFieldSx}
               />
           </div>
 
-          <div className="grid gap-16 xl:grid-cols-1 xl:items-start">
-            <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <CustomButton
-                    title="Ενεργός"
-                    onClick={() => setIsActive(true)}
-                    width="100%"
-                    disabled={isSavingUser || isUpdatingRole}
-                    backgroundColor="transparent"
-                    sx={{
-                      minHeight: 44,
-                      borderRadius: 0,
-                      border: 'none',
-                      color: isActive ? 'var(--color-dark)' : 'var(--color-text-muted)',
-                      boxShadow: 'none',
-                      textDecoration: isActive ? 'underline' : 'none',
-                      '&:hover': {
-                        backgroundColor: 'transparent',
-                        filter: 'none',
-                      },
-                    }}
-                  />
-                  <CustomButton
-                    title="Ανενεργός"
-                    onClick={() => setIsActive(false)}
-                    width="100%"
-                    disabled={isSavingUser || isUpdatingRole}
-                    backgroundColor="transparent"
-                    sx={{
-                      minHeight: 44,
-                      borderRadius: 0,
-                      border: 'none',
-                      color: !isActive ? 'var(--color-dark)' : 'var(--color-text-muted)',
-                      boxShadow: 'none',
-                      textDecoration: !isActive ? 'underline' : 'none',
-                      '&:hover': {
-                        backgroundColor: 'transparent',
-                        filter: 'none',
-                      },
-                    }}
-                  />
-                </div>
-                <div className="border-t-3 border-(--color-dark) pt-2 text-center text-sm font-medium text-(--color-text-heading)">
-                  Κατάσταση
-                </div>
-
-                {/* <div className="rounded-[22px] border border-dashed border-(--color-border) bg-white/55 p-5 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
-                  <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                    <div className="grid h-28 w-28 shrink-0 place-items-center rounded-full border-4 border-white bg-[radial-gradient(circle_at_30%_30%,#ffffff_0%,#e7ddc5_72%)] text-3xl font-semibold text-(--color-text-muted) shadow-[0_8px_24px_rgba(60,40,10,0.10)]">
-                      {getInitials(firstName, lastName)}
-                    </div>
-                    <div className="flex-1 space-y-3">
-                      <div className="inline-flex rounded-xl bg-(--color-text) px-4 py-2 text-sm font-medium text-white">
-                        Προφίλ χρήστη
-                      </div>
-                      <p className="text-sm leading-6 text-(--color-text-muted)">
-                        Δημιουργία: {formatDate(user.createAt)}
-                      </p>
-                      <p className="text-sm leading-6 text-(--color-text-muted)">
-                        Τρέχουσα κατάσταση: {renderStatus(isActive)}
-                      </p>
-                    </div>
-                  </div>
-                </div>
-                <div className="border-t-3 border-(--color-dark) pt-2 text-center text-sm font-medium text-(--color-text-heading)">
-                  Επιλεγμένο προφίλ
-                </div> */}
-            </div>
-
-            <div className="grid content-start gap-4">
-              <div className="grid grid-cols-2 gap-4">
-              {[
-                ...ROLE_KEYS.map((role, index) => ({ label: role, active: selectedRoles.includes(role), index })),
-              ].map((role) => (
+          <div className="grid w-full gap-6 md:grid-cols-2 md:items-start">
+            <div className="grid content-start gap-4 w-full max-w-sm md:justify-self-start">
+              <div className="w-full text-left text-sm font-medium text-(--color-text-heading)">Ρόλος</div>
+              <div className="grid grid-cols-1 gap-4">
                 <CustomButton
-                  key={role.label}
-                  title={ROLE_OPTIONS[role.index] || ''}
+                  key={currentRoleKey || 'current-role'}
+                  title={currentRoleTitle}
                   width="100%"
-                  onClick={() => handleRoleToggle(role.label)}
+                  onClick={() => null}
                   disabled={false}
-                  backgroundColor={role.active ? 'var(--color-dark)' : 'rgba(255,255,255,0.85)'}
+                  backgroundColor="var(--color-dark)"
                   sx={{
                     minHeight: 44,
                     height: '100%',
                     borderRadius: '0.75rem',
-                    border: role.active ? '1px solid transparent' : '1px solid var(--color-text-muted)',
-                    color: role.active ? '#ffffff' : 'var(--color-text)',
+                    border: '1px solid transparent',
+                    color: '#ffffff',
+                    boxShadow: '0 1px 2px rgba(60,40,10,0.08)',
+                    fontSize: '0.875rem',
+                    lineHeight: 1.2,
+                    whiteSpace: 'normal',
+                    paddingInline: '0.75rem',
+                    cursor: 'default',
+                    pointerEvents: 'none',
+                    '&:hover': {
+                      backgroundColor: 'var(--color-dark)',
+                      filter: 'none',
+                    },
+                  }}
+                />
+              </div>
+            </div>
+
+            <div className="grid content-start gap-4 w-full max-w-sm md:justify-self-end">
+              <div className="w-full text-left text-sm font-medium text-(--color-text-heading)">Κατάσταση</div>
+              <div className="grid grid-cols-1 gap-4">
+                <CustomButton
+                  title="Ενεργός"
+                  onClick={() => setIsActive(true)}
+                  width="100%"
+                  disabled={isSavingUser || isUpdatingRole || isReinitializingPassword}
+                  backgroundColor={isActive ? 'var(--color-dark)' : 'rgba(255,255,255,0.85)'}
+                  sx={{
+                    minHeight: 44,
+                    height: '100%',
+                    borderRadius: '0.75rem',
+                    border: isActive ? '1px solid transparent' : '1px solid var(--color-text-muted)',
+                    color: isActive ? '#ffffff' : 'var(--color-text)',
                     boxShadow: '0 1px 2px rgba(60,40,10,0.08)',
                     fontSize: '0.875rem',
                     lineHeight: 1.2,
                     whiteSpace: 'normal',
                     paddingInline: '0.75rem',
                     '&:hover': {
-                      backgroundColor: role.active ? 'var(--color-text)' : 'rgba(255,255,255,0.85)',
+                      backgroundColor: isActive ? 'var(--color-text)' : 'rgba(255,255,255,0.85)',
                       filter: 'none',
                     },
                   }}
                 />
-              ))}
-              </div>
-              <div className="border-t-3 border-(--color-dark) pt-2 text-center text-sm font-medium text-(--color-text-heading)">
-                Ρόλος
+                <CustomButton
+                  title="Ανενεργός"
+                  onClick={() => setIsActive(false)}
+                  width="100%"
+                  disabled={isSavingUser || isUpdatingRole || isReinitializingPassword}
+                  backgroundColor={!isActive ? 'var(--color-dark)' : 'rgba(255,255,255,0.85)'}
+                  sx={{
+                    minHeight: 44,
+                    height: '100%',
+                    borderRadius: '0.75rem',
+                    border: !isActive ? '1px solid transparent' : '1px solid var(--color-text-muted)',
+                    color: !isActive ? '#ffffff' : 'var(--color-text)',
+                    boxShadow: '0 1px 2px rgba(60,40,10,0.08)',
+                    fontSize: '0.875rem',
+                    lineHeight: 1.2,
+                    whiteSpace: 'normal',
+                    paddingInline: '0.75rem',
+                    '&:hover': {
+                      backgroundColor: !isActive ? 'var(--color-text)' : 'rgba(255,255,255,0.85)',
+                      filter: 'none',
+                    },
+                  }}
+                />
               </div>
             </div>
           </div>
         </section>
 
         <div className="flex flex-wrap justify-end gap-3">
-          <CustomButton
+          {/* <CustomButton
             title={isReinitializingPassword ? 'Επαναρχικοποίηση...' : 'Επαναρχικοποίηση Κωδικού'}
             backgroundColor="var(--color-text-muted)"
             onClick={handleReinitializePassword}
             disabled={isReinitializingPassword}
             width={220}
-          />
+          /> */}
 
           {isNavigationLocked && (
             <CustomButton

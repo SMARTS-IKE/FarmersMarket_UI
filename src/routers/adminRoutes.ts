@@ -2,6 +2,7 @@ import { createRoute } from '@tanstack/react-router';
 import RoleBasedLayout from '../layouts/RoleBasedLayout';
 import DashboardPage from '../pages/adminPages/AdminDashboardPage';
 import AdminUsersPage from '../pages/adminPages/users/AdminUsersPage';
+import UserCreation from '../pages/adminPages/users/UserCreation';
 import UserPage from '../pages/userPages/UserPage';
 import AdminSellersPage from '../pages/adminPages/sellers/AdminSellersPage';
 import AdminSellerCreatePage from '../pages/adminPages/sellers/AdminSellerCreatePage';
@@ -33,6 +34,12 @@ export const usersRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/admin/users',
   component: AdminUsersPage,
+});
+
+export const userCreateRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/admin/users/new',
+  component: UserCreation,
 });
 
 export const userDetailRoute = createRoute({
@@ -122,6 +129,7 @@ export const editMarketPeriodRoute = createRoute({
 export const adminRouteTree = protectedRoute.addChildren([
   dashboardRoute,
   usersRoute,
+  userCreateRoute,
   userDetailRoute,
   feesPaymentsRoute,
   sellersRoute,

@@ -1,10 +1,13 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { Alert, Snackbar } from "@mui/material";
 import DataTable, { ColumnDef, FilterDef, FilterValues } from "../../../shared/components/DataTable";
 import type { AppUser, UserSearchRequest } from "../../../models/user";
 import { useUsersQuery } from "../../../queries/userQueries";
 import { USER_ROLE_MAPPING_TITLES } from "../../../shared/mappings/users.mapping";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
+import CustomButton from "../../../shared/components/CustomButton";
+import { consumeAuthNotification } from "../../../lib/authNotifications";
 
 const USER_STATUS_CONFIG = {
   active: {
@@ -74,6 +77,18 @@ const INITIAL_FILTERS: UserSearchRequest = {
 export default function AdminUsersPage() {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<UserSearchRequest>(INITIAL_FILTERS);
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [notificationSeverity, setNotificationSeverity] = useState<"success" | "error">("success");
+  const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
+
+  useEffect(() => {
+    const nextNotification = consumeAuthNotification();
+    if (!nextNotification) return;
+
+    setNotificationMessage(nextNotification.message);
+    setNotificationSeverity(nextNotification.type);
+    setIsSnackbarOpen(true);
+  }, []);
 
   const { data } = useUsersQuery(filters);
   const rawUsers = Array.isArray(data)
@@ -109,9 +124,20 @@ export default function AdminUsersPage() {
     });
   };
 
+  const handleSnackbarClose = (_event?: Event, reason?: string) => {
+    if (reason === "clickaway") return;
+    setIsSnackbarOpen(false);
+  };
+
   return (
     <div className="flex h-full flex-col gap-6 text-left">
-  
+      <div className="flex flex-wrap items-center justify-end gap-3">
+        <CustomButton
+          title="Νέος χρήστης"
+          onClick={() => navigate({ to: "/admin/users/new" })}
+          width="fit-content"
+        />
+      </div>
 
       <DataTable<AppUser>
         rows={users}
@@ -127,6 +153,17 @@ export default function AdminUsersPage() {
         clearFiltersPrefixIcon={<RestartAltIcon />}
         onRowClick={handleRowClick}
       />
+
+      <Snackbar
+        open={isSnackbarOpen && Boolean(notificationMessage)}
+        autoHideDuration={4500}
+        onClose={handleSnackbarClose}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
+      >
+        <Alert onClose={handleSnackbarClose} severity={notificationSeverity} variant="filled" sx={{ width: "100%" }}>
+          {notificationMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

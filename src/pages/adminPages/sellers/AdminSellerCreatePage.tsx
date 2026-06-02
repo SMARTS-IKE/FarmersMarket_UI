@@ -17,12 +17,78 @@ export default function AdminSellerCreatePage() {
   const [licenseNumber, setLicenseNumber] = useState("");
   const [licenseIssuedAt, setLicenseIssuedAt] = useState("");
   const [licenseExpiresAt, setLicenseExpiresAt] = useState("");
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+
+  const firstNameTrimmed = firstName.trim();
+  const lastNameTrimmed = lastName.trim();
+  const afmTrimmed = afm.trim();
+  const sellerTypeValue = String(sellerType ?? "");
+
+  const firstNameError = submitAttempted
+    ? !firstNameTrimmed
+      ? "Το πεδίο είναι υποχρεωτικό."
+      : firstNameTrimmed.length < 2
+        ? "Ελάχιστος αριθμός χαρακτήρων: 2."
+        : ""
+    : "";
+
+  const lastNameError = submitAttempted
+    ? !lastNameTrimmed
+      ? "Το πεδίο είναι υποχρεωτικό."
+      : lastNameTrimmed.length < 2
+        ? "Ελάχιστος αριθμός χαρακτήρων: 2."
+        : ""
+    : "";
+
+  const sellerTypeError = submitAttempted && !sellerTypeValue
+    ? "Το πεδίο είναι υποχρεωτικό."
+    : "";
+
+  const afmError = submitAttempted
+    ? !afmTrimmed
+      ? "Το πεδίο είναι υποχρεωτικό."
+      : afmTrimmed.length < 9
+        ? "Ελάχιστος αριθμός χαρακτήρων: 9."
+        : ""
+    : "";
+
+    const licenseNumberError = submitAttempted
+    ? !licenseNumber
+      ? "Το πεδίο είναι υποχρεωτικό."
+      : ""
+    : "";
+
+  const licenseIssuedAtError = submitAttempted
+    ? !licenseIssuedAt
+      ? "Το πεδίο είναι υποχρεωτικό."
+      : ""
+    : "";
+
+  const licenseExpiresAtError = submitAttempted
+    ? !licenseExpiresAt
+      ? "Το πεδίο είναι υποχρεωτικό."
+      : ""
+    : "";
 
   const handleCancel = () => {
     navigate({ to: "/admin/sellers" });
   };
 
   const handleSubmit = () => {
+    setSubmitAttempted(true);
+
+    const hasFirstNameError = !firstNameTrimmed || firstNameTrimmed.length < 2;
+    const hasLastNameError = !lastNameTrimmed || lastNameTrimmed.length < 2;
+    const hasSellerTypeError = !sellerTypeValue;
+    const hasAfmError = !afmTrimmed || afmTrimmed.length < 9;
+    const hasLicenseNumberError = !licenseNumber;
+    const hasLicenseIssuedAtError = !licenseIssuedAt;
+    const hasLicenseExpiresAtError = !licenseExpiresAt;
+
+    if (hasFirstNameError || hasLastNameError || hasSellerTypeError || hasAfmError || hasLicenseNumberError || hasLicenseIssuedAtError || hasLicenseExpiresAtError) {
+      return;
+    }
+
     // TODO: wire create seller mutation when backend endpoint is available
     navigate({ to: "/admin/sellers" });
   };
@@ -43,23 +109,23 @@ export default function AdminSellerCreatePage() {
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <CustomInputField
             type="TEXT"
-            label="Όνομα"
+            label="Όνομα *"
             value={firstName}
             onChange={(value) => setFirstName(String(value))}
             width="100%"
-            validation={{ required: true, minLength: 2 }}
+            error={firstNameError}
           />
           <CustomInputField
             type="TEXT"
-            label="Επώνυμο"
+            label="Επώνυμο *"
             value={lastName}
             onChange={(value) => setLastName(String(value))}
             width="100%"
-            validation={{ required: true, minLength: 2 }}
+            error={lastNameError}
           />
           <CustomInputField
             type="DROPDOWN"
-            label="Τύπος Πωλητή"
+            label="Τύπος Πωλητή *"
             value={String(sellerType)}
             onChange={(value) => setSellerType(String(value))}
             width="100%"
@@ -67,15 +133,15 @@ export default function AdminSellerCreatePage() {
               { label: SELLER_TYPE_LABELS[1] ?? "Παραγωγός", value: "1" },
               { label: SELLER_TYPE_LABELS[2] ?? "Επαγγελματίας", value: "2" },
             ]}
-            validation={{ required: true }}
+            error={sellerTypeError}
           />
           <CustomInputField
             type="TEXT"
-            label="ΑΦΜ"
+            label="ΑΦΜ *"
             value={afm}
             onChange={(value) => setAfm(String(value))}
             width="100%"
-            validation={{ required: true, minLength: 9 }}
+            error={afmError}
           />
           <CustomInputField
             type="TEXT"
@@ -106,29 +172,32 @@ export default function AdminSellerCreatePage() {
             <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
               <CustomInputField
                 type="TEXT"
-                label="Αριθμός"
+                label="Αριθμός *"
                 value={licenseNumber}
                 onChange={(value) => setLicenseNumber(String(value))}
                 width="100%"
+                error={licenseNumberError}
               />
               <CustomInputField
                 type="DATE"
-                label="Ημερομηνία Έκδοσης"
+                label="Ημερομηνία Έκδοσης *"
                 value={licenseIssuedAt}
                 onChange={(value) => setLicenseIssuedAt(String(value))}
                 width="100%"
+                error={licenseIssuedAtError}
               />
               <CustomInputField
                 type="DATE"
-                label="Ημερομηνία Λήξης"
+                label="Ημερομηνία Λήξης *"
                 value={licenseExpiresAt}
                 onChange={(value) => setLicenseExpiresAt(String(value))}
                 width="100%"
+                error={licenseExpiresAtError}
               />
             </div>
           </div>
 
-          <div className="flex flex-wrap gap-3 pt-4">
+          <div className="flex flex-wrap justify-end gap-3 pt-4">
             <CustomButton
               title="Δημιουργία"
               onClick={handleSubmit}
