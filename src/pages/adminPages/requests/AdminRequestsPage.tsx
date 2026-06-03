@@ -28,7 +28,7 @@ export default function AdminRequestsPage() {
       )}
 
       <LayoutTabsSlot>
-        <Box className="flex h-full">
+        <Box className="flex h-full items-center">
           <Tabs
             value={activeTab}
             onChange={(_, v) => setActiveTab(v)}
