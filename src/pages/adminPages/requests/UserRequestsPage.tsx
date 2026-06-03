@@ -10,14 +10,14 @@ export default function UserRequestsPage() {
   return (
     <div className="flex h-full w-full flex-col gap-6 text-left">
       <LayoutTabsSlot>
-        <Box>
+        <Box className="flex h-full">
           <Tabs
             value={activeTab}
             onChange={(_, nextValue) => setActiveTab(nextValue)}
             variant="fullWidth"
             textColor="inherit"
             sx={{
-              width: "100%",
+              width: "100%"
             }}
           >
             <Tab label="Οι αιτήσεις μου" />

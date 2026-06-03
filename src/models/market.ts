@@ -23,6 +23,21 @@ export interface MarketApiRequest {
   PageSize: number;
 }
 
+export interface MarketCurrentHistory {
+  id: number;
+  fromDate: string;
+  toDate: string | null;
+  isActive: boolean;
+  capacity: number;
+  licenseCategory: number;
+  lotteryEnabled: boolean;
+  dailyFee: number;
+  openTime: string;
+  closeTime: string;
+  notes: string;
+  createdAt: string;
+}
+
 export interface Market {
   id: number;
   name: string;
@@ -30,15 +45,16 @@ export interface Market {
   address: string;
   latitude: number;
   longitude: number;
-  totalSpots: number;
-  occupiedSpots: number;
-  openTime: string;
-  closeTime: string;
-  notes: string;
+  totalSpots?: number;
+  occupiedSpots?: number;
+  openTime?: string;
+  closeTime?: string;
+  notes?: string;
   isActive: boolean;
   schedules: MarketSchedule[];
   marketSellers: unknown[];
   supervisors: MarketSupervisor[];
+  currentHistory?: MarketCurrentHistory | null;
 }
 
 export interface MarketSchedule {

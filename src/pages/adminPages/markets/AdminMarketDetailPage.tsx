@@ -192,7 +192,7 @@ function mapMarketToFormValues(market: Market): MarketFormValues {
     }))
     .filter((entry) => entry.day);
 
-  const availableSlots = market.totalSpots ?? 0;
+  const availableSlots = market.currentHistory?.capacity ?? market.totalSpots ?? 0;
   const occupiedSpots = resolveOccupiedSpots(market);
 
   return {

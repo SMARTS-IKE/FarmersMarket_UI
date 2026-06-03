@@ -1,4 +1,5 @@
 import { Box, Typography } from "@mui/material";
+import { useState } from "react";
 import type { MarketFormProps } from "../../models/market";
 import CustomInputField from "../../shared/components/CustomInputField";
 import CustomButton from "../../shared/components/CustomButton";
@@ -63,6 +64,26 @@ export default function MarketForm({
     value: u.id,
   }));
 
+  const [submitAttempted, setSubmitAttempted] = useState(false);
+
+  const hasValidOperatingDays = (days: typeof values.operatingDays): boolean =>
+    days.length > 0 &&
+    days.every(
+      (entry) =>
+        Boolean(entry.day) &&
+        Boolean(entry.openTime) &&
+        Boolean(entry.closeTime) &&
+        toMinutes(entry.openTime) >= 0 &&
+        toMinutes(entry.closeTime) > toMinutes(entry.openTime)
+    );
+
+  const isFormValid = (): boolean =>
+    values.name.trim().length >= 2 &&
+    values.address.trim().length >= 3 &&
+    values.area.trim().length >= 3 &&
+    values.availableSlots >= 0 &&
+    hasValidOperatingDays(values.operatingDays);
+
   const selectedDayValues = values.operatingDays.map((entry) => entry.day).filter(Boolean);
 
   const handleUpdateWorkingDays = (selectedValues: string[]) => {
@@ -97,6 +118,12 @@ export default function MarketForm({
     onChange({ ...values, operatingDays: updated });
   };
 
+  const handleFormSubmit = () => {
+    setSubmitAttempted(true);
+    if (!isFormValid()) return;
+    onSubmit?.(values);
+  };
+
   return (
     <Box className="mb-4 flex h-full min-h-0 flex-col gap-6 overflow-y-auto">
       <Box className="flex w-full flex-wrap justify-between">
@@ -107,6 +134,7 @@ export default function MarketForm({
           onChange={(v) => onChange({ ...values, name: String(v) })}
           disabled={isViewMode}
           validation={{ required: true, minLength: 2 }}
+          showValidation={submitAttempted}
           width="75%"
         />
         <CustomInputField
@@ -117,6 +145,7 @@ export default function MarketForm({
           dropdownItems={marketTypeOptions}
           disabled={isViewMode}
           validation={{ required: true }}
+          showValidation={submitAttempted}
           width="20%"
         />
       </Box>
@@ -129,6 +158,7 @@ export default function MarketForm({
           onChange={(v) => onChange({ ...values, address: String(v) })}
           disabled={isViewMode}
           validation={{ required: true, minLength: 3 }}
+          showValidation={submitAttempted}
           width="58%"
         />
         <CustomInputField
@@ -138,6 +168,7 @@ export default function MarketForm({
           onChange={(v) => onChange({ ...values, area: String(v) })}
           disabled={isViewMode}
           validation={{ required: true, minLength: 3 }}
+          showValidation={submitAttempted}
           width="38%"
         />
       </Box>
@@ -170,6 +201,7 @@ export default function MarketForm({
                   disabled={isViewMode}
                   dropdownItems={timeOptions}
                   validation={{ required: true }}
+                  showValidation={submitAttempted}
                   width={130}
                 />
 
@@ -188,6 +220,7 @@ export default function MarketForm({
                       : []
                   }
                   validation={{ required: true }}
+                  showValidation={submitAttempted}
                   width={130}
                 />
               </Box>
@@ -209,6 +242,7 @@ export default function MarketForm({
             dropdownItems={dayOptions}
             disabled={isViewMode}
             validation={{ required: true }}
+            showValidation={submitAttempted}
             width="100%"
           />
 
@@ -226,6 +260,7 @@ export default function MarketForm({
           onChange={(v) => onChange({ ...values, availableSlots: Number(v) })}
           disabled={isViewMode}
           validation={{ required: true, min: 0 }}
+          showValidation={submitAttempted}
           width="15%"
         />
 
@@ -278,7 +313,7 @@ export default function MarketForm({
         {!isViewMode && onSubmit && (
           <CustomButton
             title={submitLabel ?? (mode === "create" ? "Δημιουργία" : "Αποθήκευση")}
-            onClick={() => onSubmit(values)}
+            onClick={handleFormSubmit}
             width={140}
           />
         )}

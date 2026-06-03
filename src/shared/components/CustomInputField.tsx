@@ -49,6 +49,7 @@ interface CustomInputFieldProps {
   dropdownItems?: DropdownOption[];
   disabledDropdownValues?: Array<string | number>;
   validation?: ValidationRules;
+  showValidation?: boolean;
   error?: string;
   onChange?: (value: string | number | string[]) => void;
   onBlur?: () => void;
@@ -56,14 +57,17 @@ interface CustomInputFieldProps {
 }
 
 function validate(
-  value: string | number | undefined,
+  value: string | number | string[] | undefined,
   rules: ValidationRules,
   type: InputFieldType
 ): string {
-  const strValue = String(value ?? "");
+  const strValue = Array.isArray(value) ? value.join(",") : String(value ?? "");
   const numValue = Number(value);
 
-  if (rules.required && strValue.trim() === "") {
+  if (
+    rules.required &&
+    (Array.isArray(value) ? value.length === 0 : strValue.trim() === "")
+  ) {
     return "Το πεδίο είναι υποχρεωτικό.";
   }
   if (rules.minLength && strValue.length < rules.minLength) {
@@ -158,6 +162,7 @@ export default function CustomInputField({
   dropdownItems = [],
   disabledDropdownValues = [],
   validation,
+  showValidation = true,
   error,
   onChange,
   onBlur,
@@ -167,8 +172,9 @@ export default function CustomInputField({
     ? toDateInputValue((value ?? defaultValue) as string)
     : (value ?? defaultValue ?? "");
 
+  const shouldValidate = showValidation !== false;
   const internalError =
-    error ?? (validation && value !== undefined && !Array.isArray(value)
+    error ?? (shouldValidate && validation && value !== undefined
       ? validate(value, validation, type)
       : "");
 
