@@ -3,7 +3,6 @@ import { useNavigate } from "@tanstack/react-router";
 import DataTable, { ColumnDef, FilterDef, FilterValues } from "../../../shared/components/DataTable";
 import type { Seller, SellerSearchRequest, SellerType } from "../../../models/seller";
 import { useSellersQuery } from "../../../queries/sellerQueries";
-import CustomButton from "../../../shared/components/CustomButton";
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 
@@ -103,13 +102,6 @@ export default function AdminSellersPage() {
 
   return (
     <div className="flex h-full flex-col gap-6 text-left">
-      {/* <div className="flex flex-wrap items-center justify-end gap-3">
-        <CustomButton
-          title="Νέος πωλητής"
-          onClick={() => navigate({ to: "/admin/sellers/new" })}
-          width="fit-content"
-        />
-      </div> */}
 
       <DataTable<Seller>
           rows={sellers}
