@@ -109,7 +109,7 @@ export const sellerRequestColumns: ColumnDef<SellerRequest>[] = [
     label: "Τύπος Αιτήματος",
     render: (row) => {
       const labels: Record<number, string> = {
-        1: "Εγγραφή",
+        1: "Αίτηση Εγγραφής",
         2: "Ακύρωση",
         3: "Αλλαγή Θέσης",
       };

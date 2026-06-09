@@ -10,14 +10,14 @@ function normalizeRole(value: string | null | undefined) {
 }
 
 export default function RoleBasedLayout() {
-  const { user, role } = useAuthStore();
-  const currentRole = normalizeRole(user?.roles?.[0]);
+  const { role } = useAuthStore();
+  const currentRole = normalizeRole(role);
 
-  if (currentRole === USER_ROLE_MAPPING.ADMIN.toLowerCase()) {
+  if (currentRole === normalizeRole(USER_ROLE_MAPPING.ADMIN)) {
     return <SystemAdminLayout />;
   }
 
-  if (currentRole === USER_ROLE_MAPPING.USER.toLowerCase()) {
+  if (currentRole === normalizeRole(USER_ROLE_MAPPING.USER)) {
     return <UserAccessLayout />;
   }
 

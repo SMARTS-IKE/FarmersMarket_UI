@@ -16,7 +16,7 @@ export default function AdminRequestsPage() {
   };
 
   return (
-    <div className="flex h-full w-full flex-col gap-6 text-left">
+    <div className="flex h-full w-full flex-col gap-6 text-left overflow-hidden">
       {activeTab === 1 && (
         <div className="flex w-full justify-end">
           <CustomButton
@@ -40,14 +40,14 @@ export default function AdminRequestsPage() {
           >
             <Tab label="Λίστα αιτήσεων πωλητών" />
             <Tab label="Φόρμες αιτήσεων" />
-            <Tab label="Περίοδοι Αιτήσεων" />
           </Tabs>
         </Box>
       </LayoutTabsSlot>
 
-      {activeTab === 0 && <SellerRequests />}
-      {activeTab === 1 && <DesignRequestSheet />}
-      {activeTab === 2 && <MarketPeriods />}
+      <div className="flex-1 overflow-y-auto pr-2 max-h-[calc(100svh-300px)]">
+        {activeTab === 0 && <SellerRequests />}
+        {activeTab === 1 && <DesignRequestSheet />}
+      </div>
     </div>
   );
 }

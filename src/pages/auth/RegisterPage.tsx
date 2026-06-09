@@ -3,10 +3,6 @@ import { useNavigate, Link } from '@tanstack/react-router';
 import { setAuthNotification } from '../../lib/authNotifications';
 import type { RegisterCredentials } from '../../models/auth';
 import { useRegisterMutation } from '../../queries/authQueries';
-import { USER_ROLE_MAPPING_TITLES } from '../../shared/mappings/users.mapping';
-
-const ROLE_VALUES = USER_ROLE_MAPPING_TITLES ? Object.values(USER_ROLE_MAPPING_TITLES) : [];
-const ROLE_KEYS = USER_ROLE_MAPPING_TITLES ? Object.keys(USER_ROLE_MAPPING_TITLES) : [];
 
 const inputClass =
   'w-full px-4 py-3 text-[15px] rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text-heading) placeholder:text-(--color-text-muted) outline-none transition focus:border-(--color-primary) focus:ring-3 focus:ring-(--color-primary-subtle)';
@@ -16,11 +12,8 @@ export default function RegisterPage() {
     firstName: '',
     lastName: '',
     email: '',
-    password: '',
-    role: '',
   });
-  const [repeatPassword, setRepeatPassword] = useState('');
-  const [errors, setErrors] = useState<Partial<Record<keyof RegisterCredentials | 'repeatPassword' | 'form', string>>>({});
+  const [errors, setErrors] = useState<Partial<Record<keyof RegisterCredentials | 'form', string>>>({});
   const navigate = useNavigate();
   const registerMutation = useRegisterMutation();
 
@@ -35,14 +28,6 @@ export default function RegisterPage() {
     
     if (!form.email.trim())      next.email         = 'Το email είναι υποχρεωτικό';
     else if (!EMAIL_RE.test(form.email)) next.email = 'Μη έγκυρη διεύθυνση email';
-    
-    if (!form.password)          next.password      = 'Ο κωδικός είναι υποχρεωτικός';
-    
-    if (!repeatPassword)         next.repeatPassword = 'Επαναλάβετε τον κωδικό';
-    else if (form.password && form.password !== repeatPassword)
-                                 next.repeatPassword = 'Οι κωδικοί δεν ταιριάζουν';
-
-    if (!form.role)              next.role          = 'Επιλέξτε ρόλο';
 
     setErrors(next);
     return Object.keys(next).length === 0;
@@ -62,11 +47,11 @@ export default function RegisterPage() {
       await registerMutation.mutateAsync(form);
       setAuthNotification({
         type: 'success',
-        message: 'Η εγγραφή ολοκληρώθηκε επιτυχώς. Μπορείτε τώρα να συνδεθείτε.',
+        message: 'Η αίτηση εγγραφής υποβλήθηκε. Ο διαχειριστής θα εγκρίνει ή θα απορρίψει την αίτηση και θα σας στείλει τον κωδικό μέσω email.',
       });
       navigate({ to: '/auth/login' });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Η εγγραφή απέτυχε';
+      const message = err instanceof Error ? err.message : 'Η αίτηση εγγραφής απέτυχε';
       setErrors({ form: message });
       setAuthNotification({ type: 'error', message });
     }
@@ -74,8 +59,8 @@ export default function RegisterPage() {
 
   return (
     <>
-      <p className="text-sm text-(--color-text-muted) text-center mb-6">
-        Δημιουργία νέου λογαριασμού
+      <p className="text-sm text-(--color-text-muted) text-center mb-6 pb-2">
+        Αίτηση Εγγραφής
       </p>
 
       <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
@@ -91,7 +76,7 @@ export default function RegisterPage() {
         <div className="grid grid-cols-2 gap-3">
           <div className="flex flex-col gap-1">
             <label htmlFor="firstName" className="text-sm font-semibold text-(--color-text-heading)">
-              Όνομα
+              Όνομα *
             </label>
             <input
               id="firstName"
@@ -108,7 +93,7 @@ export default function RegisterPage() {
 
           <div className="flex flex-col gap-1">
             <label htmlFor="lastName" className="text-sm font-semibold text-(--color-text-heading)">
-              Επώνυμο
+              Επώνυμο *
             </label>
             <input
               id="lastName"
@@ -126,7 +111,7 @@ export default function RegisterPage() {
 
         <div className="flex flex-col gap-1">
           <label htmlFor="email" className="text-sm font-semibold text-(--color-text-heading)">
-            Διεύθυνση email
+            Διεύθυνση email *
           </label>
           <input
             id="email"
@@ -142,80 +127,13 @@ export default function RegisterPage() {
           {errors.email && <p className="text-xs text-(--color-danger) mt-1">{errors.email}</p>}
         </div>
 
-        <div className="flex flex-row gap-1">
-            <div>
-              <label htmlFor="password" className="text-sm font-semibold text-(--color-text-heading)">
-                Κωδικός πρόσβασης
-              </label>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={form.password}
-                onChange={handleChange}
-                placeholder="••••••••"
-                className={`${inputClass} ${errors.password ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
-              />
-                {errors.password && <p className="text-xs text-(--color-danger) mt-1">{errors.password}</p>}
-            </div>
-          
-
-            <div>
-              <label htmlFor="repeatPassword" className="text-sm font-semibold text-(--color-text-heading)">
-                Επανάληψη κωδικού
-              </label>
-              <input
-                id="repeatPassword"
-                type="password"
-                autoComplete="new-password"
-                required
-                value={repeatPassword}
-                onChange={(e) => {
-                  setRepeatPassword(e.target.value);
-                  setErrors((prev) => ({ ...prev, repeatPassword: undefined }));
-                }}
-                placeholder="••••••••"
-                className={`${inputClass} ${errors.repeatPassword ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
-              />
-              {errors.repeatPassword && (
-                <p className="text-xs text-(--color-danger) mt-1">{errors.repeatPassword}</p>
-              )}
-            </div>
-        </div>
-
-        
-
-        <div className="flex flex-col gap-1">
-          <label htmlFor="role" className="text-sm font-semibold text-(--color-text-heading)">
-            Ρόλος
-          </label>
-          <select
-            id="role"
-            name="role"
-            required
-            value={form.role}
-            onChange={handleChange}
-            className={`${inputClass} ${errors.role ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
+          <button
+            type="submit"
+            disabled={registerMutation.isPending}
+            className="mt-2 w-full py-3 px-4 text-[15px] font-semibold rounded-lg bg-(--color-primary) text-(--color-primary-fg) transition hover:bg-(--color-primary-hover) active:bg-(--color-primary-active) disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
-            <option value="" disabled>Επιλέξτε ρόλο…</option>
-            {ROLE_VALUES.map((r, index) => (
-              <option value={ROLE_KEYS[index]}>
-                {r}
-              </option>
-            ))}
-          </select>
-          {errors.role && <p className="text-xs text-(--color-danger) mt-1">{errors.role}</p>}
-        </div>
-
-        <button
-          type="submit"
-          disabled={registerMutation.isPending}
-          className="mt-2 w-full py-3 px-4 text-[15px] font-semibold rounded-lg bg-(--color-primary) text-(--color-primary-fg) transition hover:bg-(--color-primary-hover) active:bg-(--color-primary-active) disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-        >
-          {registerMutation.isPending ? 'Εγγραφή…' : 'Εγγραφή'}
-        </button>
+            {registerMutation.isPending ? 'Υποβολή…' : 'Υποβολή Αίτησης'}
+          </button>
       </form>
 
       <p className="text-center text-sm text-(--color-text-muted) mt-6">

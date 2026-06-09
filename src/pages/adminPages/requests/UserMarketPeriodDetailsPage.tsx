@@ -169,7 +169,7 @@ export default function UserMarketPeriodDetailsPage() {
   };
 
   return (
-    <div className="flex h-full w-full flex-col gap-6 text-left">
+    <div className="flex h-full w-full flex-col gap-6 text-left overflow-hidden">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Αίτηση για την περίοδο: {period.title}</h2>
         <CustomButton
@@ -197,48 +197,50 @@ export default function UserMarketPeriodDetailsPage() {
         </Tabs>
       </Box>
 
-      {activeTab === 0 && (
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {APPLICANT_FIELDS.map((field) => (
-            <CustomInputField
-              key={field}
-              type="TEXT"
-              label={field}
-              value=""
-              placeholder="Συμπληρώνεται από τον αιτούντα"
-              width="100%"
-              disabled
-            />
-          ))}
-        </div>
-      )}
+      <div className="flex-1 overflow-y-auto pr-2 max-h-[calc(100svh-300px)]">
+        {activeTab === 0 && (
+          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+            {APPLICANT_FIELDS.map((field) => (
+              <CustomInputField
+                key={field}
+                type="TEXT"
+                label={field}
+                value=""
+                placeholder="Συμπληρώνεται από τον αιτούντα"
+                width="100%"
+                disabled
+              />
+            ))}
+          </div>
+        )}
 
-      {activeTab === 1 && (
-        <div className="flex flex-col gap-3">
-          {basicFormFields.length > 0 ? (
-            <div className="grid grid-cols-2 gap-3">
-              {basicFormFields.map((field) => (
-                <div  key={field.id}>
-                  {renderDynamicFieldInput(field)}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <Alert severity="info">Δεν βρέθηκαν δυναμικά πεδία για τη συγκεκριμένη φόρμα.</Alert>
-          )}
-        </div>
-      )}
+        {activeTab === 1 && (
+          <div className="flex flex-col gap-3">
+            {basicFormFields.length > 0 ? (
+              <div className="grid grid-cols-2 gap-3">
+                {basicFormFields.map((field) => (
+                  <div  key={field.id}>
+                    {renderDynamicFieldInput(field)}
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <Alert severity="info">Δεν βρέθηκαν δυναμικά πεδία για τη συγκεκριμένη φόρμα.</Alert>
+            )}
+          </div>
+        )}
 
-      {activeTab === 2 && (
-        <div className="flex flex-col gap-3">
-          <h3 className="text-base font-semibold">Απαιτούμενα επισυναπτόμενα</h3>
-          {attachmentFields.length > 0 ? (
-            <div className="grid grid-cols-1 gap-3 md:grid-cols-2">{attachmentFields.map((field) => renderFieldChip(field))}</div>
-          ) : (
-            <Alert severity="info">Δεν βρέθηκαν πεδία επισυναπτόμενων εγγράφων για τη συγκεκριμένη φόρμα.</Alert>
-          )}
-        </div>
-      )}
+        {activeTab === 2 && (
+          <div className="flex flex-col gap-3">
+            <h3 className="text-base font-semibold">Απαιτούμενα επισυναπτόμενα</h3>
+            {attachmentFields.length > 0 ? (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">{attachmentFields.map((field) => renderFieldChip(field))}</div>
+            ) : (
+              <Alert severity="info">Δεν βρέθηκαν πεδία επισυναπτόμενων εγγράφων για τη συγκεκριμένη φόρμα.</Alert>
+            )}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

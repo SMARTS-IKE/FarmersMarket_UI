@@ -102,7 +102,7 @@ export default function AdminFeesPaymentsPage() {
   };
 
   return (
-    <div className="flex h-full w-full flex-col gap-6 text-left">
+    <div className="flex h-full w-full flex-col gap-6 text-left overflow-hidden">
       <LayoutTabsSlot>
         <Box sx={{height: '100%', display: 'flex', justifyContent: 'center'}}>
           <Tabs
@@ -120,26 +120,28 @@ export default function AdminFeesPaymentsPage() {
         </Box>
       </LayoutTabsSlot>
 
-      {activeTab === 0 && (
-        <div className="flex flex-col gap-4">
-          <DataTable<FeeRule>
-            rows={fees}
-            columns={columns}
-            rowKey="name"
-            showFilter={false}
-            filters={tableFilters}
-            onSearch={handleSearch}
-            onClearFilters={handleClearFilters}
-            clearFiltersButtonTitle="Καθαρισμός"
-          />
-        </div>
-      )}
+      <div className="flex-1 overflow-y-auto pr-2 max-h-[calc(100svh-300px)]">
+        {activeTab === 0 && (
+          <div className="flex flex-col gap-4">
+            <DataTable<FeeRule>
+              rows={fees}
+              columns={columns}
+              rowKey="name"
+              showFilter={false}
+              filters={tableFilters}
+              onSearch={handleSearch}
+              onClearFilters={handleClearFilters}
+              clearFiltersButtonTitle="Καθαρισμός"
+            />
+          </div>
+        )}
 
-      {activeTab === 1 && (
-        <div className="flex items-center justify-center h-96 text-gray-500">
-          <p>Ενότητα Πληρωμών (Σύντομα)</p>
-        </div>
-      )}
+        {activeTab === 1 && (
+          <div className="flex items-center justify-center h-96 text-gray-500">
+            <p>Ενότητα Πληρωμών (Σύντομα)</p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }

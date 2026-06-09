@@ -5,25 +5,43 @@ export interface LoginCredentials {
 
 export interface RegisterCredentials {
   email: string;
-  password: string;
   firstName: string;
   lastName: string;
-  role: string;
+  role?: string;
 }
 
 export interface AuthResponse {
-  token: string;
+  accessToken: string;
   email?: string;
   roles?: string[];
   user?: User;
+  role?: string;
   [key: string]: unknown;
 }
 
 export interface User {
   id?: string | number;
   name?: string;
+  firstName?: string;
+  lastName?: string;
   email?: string;
   role?: string;
   roles?: string[];
+  status?: string;
+  aspNetUserId?: string;
+  [key: string]: unknown;
+}
+
+export interface JWTPayload {
+  sub: string;
+  userId: string;
+  email: string;
+  status: string;
+  firstName: string;
+  lastName: string;
+  role: string | string[];
+  exp: number;
+  iss: string;
+  aud: string;
   [key: string]: unknown;
 }

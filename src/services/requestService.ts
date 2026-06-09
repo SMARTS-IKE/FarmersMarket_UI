@@ -7,6 +7,7 @@ import type {
   SellerRequest,
   SellerRequestListResponse,
   SellerRequestSearchRequest,
+  SubmittedRequestDetail,
 } from '../models/request';
 
 export async function getSellerRequests(params: SellerRequestSearchRequest): Promise<SellerRequest[]> {
@@ -23,6 +24,10 @@ export async function getSellerRequests(params: SellerRequestSearchRequest): Pro
   }
 
   return response.items;
+}
+
+export async function getSubmittedRequestById(id: string | number): Promise<SubmittedRequestDetail> {
+  return await http.get<SubmittedRequestDetail>(`/requests/${id}`);
 }
 
 function normalizeMarketPeriodStatus(value: unknown): MarketPeriodStatus {

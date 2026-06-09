@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import DataTable, { FilterDef, FilterValues } from "../../shared/components/DataTable";
 import type { RequestStatus, SellerRequest, SellerRequestSearchRequest } from "../../models/request";
 import type { SellerSearchRequest } from "../../models/seller";
@@ -16,6 +17,7 @@ const SELLER_FILTERS: SellerSearchRequest = {
 };
 
 export default function FetchedSellerRequests() {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState<SellerRequestSearchRequest>({
     sellerId: undefined,
     status: undefined,
@@ -80,6 +82,13 @@ export default function FetchedSellerRequests() {
     });
   };
 
+  const handleRowClick = (row: SellerRequest) => {
+    navigate({
+      to: "/admin/requests/$id",
+      params: { id: String(row.id) },
+    } as any);
+  };
+
   return (
     <div className="flex w-full flex-col gap-4">
       <DataTable<SellerRequest>
@@ -90,6 +99,7 @@ export default function FetchedSellerRequests() {
         filters={tableFilters}
         onSearch={handleSearch}
         onClearFilters={handleClearFilters}
+        onRowClick={handleRowClick}
         clearFiltersButtonTitle="Καθαρισμός"
         clearFiltersPrefixIcon={<RestartAltIcon />}
         clearFiltersButtonBackgroundColor="var(--color-text-muted)"

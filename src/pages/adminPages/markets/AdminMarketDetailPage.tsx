@@ -482,7 +482,7 @@ export default function AdminMarketDetailPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col gap-2 text-left">
+    <div className="flex h-full min-h-0 w-full flex-col gap-4 text-left overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <h2 className="font-semibold text-(--color-text-heading)">Διαχείριση Αγοράς</h2>
         <CustomButton
@@ -493,18 +493,18 @@ export default function AdminMarketDetailPage() {
         />
       </div>
 
-      <Box className="flex flex-1 min-h-0 flex-col">
-        <h3 className="mb-4 text-lg  text-(--color-text-heading)">
-          {market.name || `Αγορά #${market.id}`}
-        </h3>
+      <h3 className="text-lg text-(--color-text-heading)">
+        {market.name || `Αγορά #${market.id}`}
+      </h3>
 
+      <Box className="w-full self-start">
         <Tabs
           value={activeTab}
           onChange={handleTabChange}
           variant="fullWidth"
           textColor="inherit"
           sx={{
-            marginBottom: 6,
+            marginBottom: 0,
             width: "100%",
           }}
         >
@@ -512,41 +512,36 @@ export default function AdminMarketDetailPage() {
           <Tab label={`Συμμετέχοντες πωλητές (${connectedSellersCount})`} />
           <Tab label="Παρουσίες" />
         </Tabs>
-
-        {activeTab === 0 ? (
-          <MarketForm
-            mode="edit"
-            values={formValues}
-            onChange={setFormValues}
-            onSubmit={hasUnsavedChanges ? handleSubmit : undefined}
-            onCancel={hasUnsavedChanges ? handleCancel : undefined}
-            submitLabel="Αποθήκευση"
-          />
-        ) : activeTab === 1 ? (
-          <div className="flex flex-col gap-4">
-            {/* <div className="flex bg-(--color-surface) p-4">
-              <CustomButton
-                title="Προσθήκη πωλητή"
-                prefixIcon={<AddIcon />}
-                width="fit-content"
-                disabled={availableSellerOptions.length === 0}
-                onClick={handleOpenAddSellerModal}
-              />
-            </div> */}
-
-            <ConnectedSellersTable sellers={connectedSellers} onRemoveSeller={handleRemoveSeller} />
-
-            <AddSellerModal
-              open={isAddSellerModalOpen}
-              onClose={handleCloseAddSellerModal}
-              onSave={handleSaveSellerFromModal}
-              sellerOptions={availableSellerOptions}
-            />
-          </div>
-        ) : (
-          <AttendanceTable marketId={Number(marketId)} />
-        )}
       </Box>
+
+      <div className="flex-1 overflow-y-auto pr-2 mt-2 max-h-[calc(100svh-300px)]">
+        <div className="flex flex-col gap-6">
+          {activeTab === 0 ? (
+            <MarketForm
+              mode="edit"
+              values={formValues}
+              onChange={setFormValues}
+              onSubmit={hasUnsavedChanges ? handleSubmit : undefined}
+              onCancel={hasUnsavedChanges ? handleCancel : undefined}
+              submitLabel="Αποθήκευση"
+            />
+          ) : activeTab === 1 ? (
+            <div className="flex flex-col gap-4">
+              <ConnectedSellersTable sellers={connectedSellers} onRemoveSeller={handleRemoveSeller} />
+
+              <AddSellerModal
+                open={isAddSellerModalOpen}
+                onClose={handleCloseAddSellerModal}
+                onSave={handleSaveSellerFromModal}
+                sellerOptions={availableSellerOptions}
+              />
+            </div>
+          ) : (
+            <AttendanceTable marketId={Number(marketId)} />
+          )}
+        </div>
+      </div>
+
 
       <Snackbar
         open={isSnackbarOpen && Boolean(navigationNotice)}

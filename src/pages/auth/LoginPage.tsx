@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const [successMessage, setSuccessMessage] = useState('');
   const [loading, setLoading] = useState(false);
+  const [remember, setRemember] = useState(false);
   const setAuth = useAuthStore((s) => s.setAuth);
   const navigate = useNavigate();
 
@@ -33,7 +34,31 @@ export default function LoginPage() {
     try {
       const data = await login({ email, password });
       setAuth(data);
-      const role = useAuthStore.getState().role;
+
+      const state = useAuthStore.getState();
+
+      // If 'Remember Me' is checked, persist the auth state to localStorage
+      if (remember) {
+        try {
+          // Store a simplified auth object for rehydration
+          localStorage.setItem('auth', JSON.stringify({
+            user: state.user,
+            token: state.token,
+            email: state.email,
+            role: state.role,
+          }));
+        } catch (e) {
+          // ignore storage errors
+        }
+      } else {
+        try {
+          localStorage.removeItem('auth');
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      const role = state.role;
       navigate({ to: role === 'User_Access' ? '/users' : '/admin' });
     } catch {
       setError('Λάθος στοιχεία εισόδου.\nΔοκιμάστε ξανά');
@@ -107,7 +132,12 @@ export default function LoginPage() {
 
         <div className="mt-1 flex items-center justify-between gap-3 text-[13px] text-[#6f6359]">
           <label className="inline-flex items-center gap-2">
-            <input type="checkbox" className="h-4 w-4 border-[#8f8479] accent-[#7a4f1e]" />
+            <input
+              type="checkbox"
+              className="h-4 w-4 border-[#8f8479] accent-[#7a4f1e]"
+              checked={remember}
+              onChange={(e) => setRemember(e.target.checked)}
+            />
             Να με θυμάσαι
           </label>
           <a href="#" className="font-medium text-[#6f3f16] hover:underline">
@@ -127,7 +157,7 @@ export default function LoginPage() {
       <p className="mt-3 text-center text-sm text-[#6f655c]">
         Δεν έχετε λογαριασμό;{' '}
         <Link to="/auth/register" className="font-semibold text-[#6f3f16] hover:underline">
-          Εγγραφή
+          Αίτηση Εγγραφής
         </Link>
       </p>
     </div>

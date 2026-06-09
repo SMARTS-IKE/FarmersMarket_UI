@@ -8,7 +8,7 @@ export default function AdminRequestsPage() {
   const [activeTab, setActiveTab] = useState(0);
 
   return (
-    <div className="flex h-full w-full flex-col gap-6 text-left">
+    <div className="flex h-full w-full flex-col gap-6 text-left overflow-hidden">
       <LayoutTabsSlot>
         <Box>
           <Tabs
@@ -22,8 +22,10 @@ export default function AdminRequestsPage() {
         </Box>
       </LayoutTabsSlot>
 
-      {activeTab === 0 && <DesignRequestSheet />}
-      {activeTab === 1 && <FetchedSellerRequests />}
+      <div className="flex-1 overflow-y-auto pr-2 max-h-[calc(100svh-300px)]">
+        {activeTab === 0 && <DesignRequestSheet />}
+        {activeTab === 1 && <FetchedSellerRequests />}
+      </div>
     </div>
   );
 }

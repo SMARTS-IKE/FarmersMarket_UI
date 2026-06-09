@@ -109,6 +109,30 @@ export interface MarketFormValues {
   radius: number | null;
 }
 
+export interface ConnectedMarket {
+  id: number;
+  marketId: number;
+  marketName: string;
+  sellerId: number;
+  sellerFullName: string;
+  sellerAfm: string;
+  fromDate: string;
+  toDate: string | null;
+  isActive: boolean;
+  spotLength: number | null;
+  spotLocation: string | null;
+  licenseCategory: number;
+  requestId: number | null;
+  notes: string | null;
+}
+
+export interface ConnectedMarketListResponse {
+  items: ConnectedMarket[];
+  totalCount: number;
+  page: number;
+  pageSize: number;
+}
+
 export interface MarketFormProps {
   mode: MarketFormMode;
   values: MarketFormValues;

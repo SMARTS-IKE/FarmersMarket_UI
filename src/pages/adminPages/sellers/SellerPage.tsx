@@ -1,71 +1,21 @@
 import { Alert, Box, Snackbar, Tab, Tabs } from "@mui/material";
 import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
 import { useBlocker, useNavigate, useParams } from "@tanstack/react-router";
-import type { Market, MarketSearchRequest } from "../../../models/market";
+import type { ConnectedMarket } from "../../../models/market";
 import DataTable, { type ColumnDef } from "../../../shared/components/DataTable";
 import CustomButton from "../../../shared/components/CustomButton";
 import CustomInputField from "../../../shared/components/CustomInputField";
-import { useMarketsQuery } from "../../../queries/marketQueries";
-import { useSellerQuery } from "../../../queries/sellerQueries";
+import { useSellerQuery, useSellerMarketsQuery } from "../../../queries/sellerQueries";
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
-import { marketTypeLabel } from "../../../components/markets/market.utils";
 
-const ALL_MARKETS_FILTERS: MarketSearchRequest = {
-  name: "",
-  marketType: "",
-  operatingDays: [],
-  page: 1,
-  pageSize: 5000,
-};
-
-const connectedMarketsColumns: ColumnDef<Market>[] = [
-  { key: "name", label: "Όνομα Αγοράς" },
-  { key: "marketType", label: "Τύπος Αγοράς", render: (row) => marketTypeLabel(row.marketType) },
-  { key: "address", label: "Διεύθυνση" },
-  { key: "totalSpots", label: "Σύνολο Θέσεων" },
-  { key: "occupiedSpots", label: "Δεσμευμένες Θέσεις" },
+const connectedMarketsColumns: ColumnDef<ConnectedMarket>[] = [
+  { key: "marketName", label: "Όνομα Αγοράς" },
+  { key: "fromDate", label: "Από" },
+  { key: "spotLocation", label: "Θέση", render: (row) => row.spotLocation || "-" },
 ];
 
 function asRecord(value: unknown): Record<string, unknown> | null {
   return typeof value === "object" && value !== null ? (value as Record<string, unknown>) : null;
-}
-
-function readNumber(record: Record<string, unknown>, keys: string[]): number | null {
-  for (const key of keys) {
-    const value = record[key];
-    if (typeof value === "number" && Number.isFinite(value)) {
-      return value;
-    }
-
-    if (typeof value === "string") {
-      const parsed = Number(value);
-      if (Number.isFinite(parsed)) {
-        return parsed;
-      }
-    }
-  }
-
-  return null;
-}
-
-function extractSellerId(entry: unknown): number | null {
-  const record = asRecord(entry);
-  if (!record) return null;
-
-  const nestedSellerRecord =
-    asRecord(record.seller) ??
-    asRecord(record.sellerInfo) ??
-    asRecord(record.sellerDetails) ??
-    asRecord(record.user);
-
-  return readNumber(record, ["sellerId", "id"]) ??
-    (nestedSellerRecord ? readNumber(nestedSellerRecord, ["sellerId", "id"]) : null);
-}
-
-function getMarketSellers(market: Market): unknown[] {
-  const marketRecord = asRecord(market);
-  const sellers = marketRecord?.marketSellers ?? marketRecord?.sellers ?? market.marketSellers;
-  return Array.isArray(sellers) ? sellers : [];
 }
 
 function readString(record: Record<string, unknown>, keys: string[]): string {
@@ -135,15 +85,15 @@ export default function SellerPage() {
   const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
 
   const { data: seller, isLoading, isError, error } = useSellerQuery(sellerId);
-  const { data: marketsQueryResults } = useMarketsQuery(ALL_MARKETS_FILTERS);
+  const { data: connectedMarketsResults } = useSellerMarketsQuery(sellerId);
 
-  const connectedMarkets = useMemo(() => {
-    if (!seller) return [];
+  const connectedMarkets = connectedMarketsResults?.items ?? [];
 
-    return (marketsQueryResults?.items ?? []).filter((market) =>
-      getMarketSellers(market).some((marketSeller) => extractSellerId(marketSeller) === seller.id)
-    );
-  }, [marketsQueryResults?.items, seller]);
+  const handleConnectedMarketClick = (market: ConnectedMarket) => {
+    navigate({
+      to: `/admin/sellers/${sellerId}/market/${market.id}`,
+    });
+  };
 
   const currentState = useMemo(
     () => ({
@@ -301,9 +251,14 @@ export default function SellerPage() {
   }
 
   return (
-    <div className="flex h-full w-full flex-col gap-6 text-left">
+    <div className="flex h-full w-full flex-col gap-6 text-left overflow-hidden">
       <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-semibold text-(--color-text-heading)">Επεξεργασία Πωλητή</h2>
+        <div className="flex flex-col gap-1">
+          <h2 className="font-semibold text-(--color-text-heading)">Πωλητής</h2>
+          <h3 className="text-lg text-(--color-text-heading)">
+            {seller.firstName} {seller.lastName}
+          </h3>
+        </div>
         <CustomButton
           title="Επιστροφή στη λίστα πωλητών"
           backgroundColor="var(--color-text-muted)"
@@ -312,87 +267,89 @@ export default function SellerPage() {
         />
       </div>
 
-      <div className="flex flex-wrap items-start gap-4">
-        <div className="flex flex-wrap gap-3">
-          <CustomButton
-            title="Ενεργός"
-            onClick={() => setIsActive(true)}
-            width={120}
-            backgroundColor={isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)"}
-            sx={{
-              minHeight: 32,
-              borderRadius: "0.75rem",
-              border: isActive ? "1px solid transparent" : "1px solid var(--color-text-muted)",
-              color: isActive ? "#ffffff" : "var(--color-text-muted)",
-              boxShadow: isActive ? "0 6px 16px rgba(74,63,53,0.18)" : "0 1px 2px rgba(60,40,10,0.08)",
-              "&:hover": {
-                backgroundColor: isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)",
-                filter: "none",
-              },
-            }}
-          />
-          <CustomButton
-            title="Ανενεργός"
-            onClick={() => setIsActive(false)}
-            width={120}
-            backgroundColor={!isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)"}
-            sx={{
-              minHeight: 32,
-              borderRadius: "0.75rem",
-              border: !isActive ? "1px solid transparent" : "1px solid var(--color-text-muted)",
-              color: !isActive ? "#ffffff" : "var(--color-text-muted)",
-              boxShadow: !isActive ? "0 6px 16px rgba(74,63,53,0.18)" : "0 1px 2px rgba(60,40,10,0.08)",
-              "&:hover": {
-                backgroundColor: !isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)",
-                filter: "none",
-              },
-            }}
-          />
-        </div>
-
-        <Box className="min-w-[320px] flex-1 self-start">
-          <Tabs
-            value={activeTab}
-            onChange={handleTabChange}
-            variant="fullWidth"
-            sx={{
-              backgroundColor: "#c7b9a4",
+      <Box className="w-full self-start">
+        <Tabs
+          value={activeTab}
+          onChange={handleTabChange}
+          variant="fullWidth"
+          sx={{
+            backgroundColor: "#c7b9a4",
+            minHeight: "34px",
+            padding: "0 4px",
+            marginBottom: 0,
+            "& .MuiTabs-indicator": {
+              display: "none",
+            },
+            "& .MuiTabs-flexContainer": {
               minHeight: "34px",
-              padding: "0 4px",
-              marginBottom: 0,
-              "& .MuiTabs-indicator": {
-                display: "none",
-              },
-              "& .MuiTabs-flexContainer": {
-                minHeight: "34px",
-              },
-              "& .MuiTab-root": {
-                minHeight: "34px",
-                padding: "4px 20px",
-                color: "var(--color-text-heading)",
-                fontWeight: 500,
-                textTransform: "none",
-                letterSpacing: 0,
-                opacity: 1,
-              },
-              "& .MuiTab-root:hover": {
-                backgroundColor: "rgba(255, 255, 255, 0.2)",
-              },
-              "& .MuiTab-root.Mui-selected": {
-                backgroundColor: "#9a8a76",
-                color: "var(--color-surface)",
-                fontWeight: 700,
-              },
-            }}
-          >
-            <Tab label="Στοιχεία πωλητή" />
-            <Tab label={`Συνδεδεμένες αγορές (${connectedMarkets.length})`} />
-          </Tabs>
-        </Box>
-      </div>
+            },
+            "& .MuiTab-root": {
+              minHeight: "34px",
+              padding: "4px 20px",
+              color: "var(--color-text-heading)",
+              fontWeight: 500,
+              textTransform: "none",
+              letterSpacing: 0,
+              opacity: 1,
+            },
+            "& .MuiTab-root:hover": {
+              backgroundColor: "rgba(255, 255, 255, 0.2)",
+            },
+            "& .MuiTab-root.Mui-selected": {
+              backgroundColor: "#9a8a76",
+              color: "var(--color-surface)",
+              fontWeight: 700,
+            },
+          }}
+        >
+          <Tab label="Στοιχεία πωλητή" />
+          <Tab label={`Συνδεδεμένες αγορές (${connectedMarkets.length})`} />
+        </Tabs>
+      </Box>
 
-      {activeTab === 0 ? (
-          <div className="flex flex-col gap-6">
+      <div className="flex-1 overflow-y-auto pr-2 max-h-[calc(100svh-300px)]">
+        <div className="flex flex-col gap-6 pt-2">
+          {activeTab === 0 && (
+            <div className="flex flex-wrap gap-3">
+              <CustomButton
+                title="Ενεργός"
+                onClick={() => setIsActive(true)}
+                width={120}
+                backgroundColor={isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)"}
+                sx={{
+                  minHeight: 32,
+                  borderRadius: "0.75rem",
+                  border: isActive ? "1px solid transparent" : "1px solid var(--color-text-muted)",
+                  color: isActive ? "#ffffff" : "var(--color-text-muted)",
+                  boxShadow: isActive ? "0 6px 16px rgba(74,63,53,0.18)" : "0 1px 2px rgba(60,40,10,0.08)",
+                  "&:hover": {
+                    backgroundColor: isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)",
+                    filter: "none",
+                  },
+                }}
+              />
+              <CustomButton
+                title="Ανενεργός"
+                onClick={() => setIsActive(false)}
+                width={120}
+                backgroundColor={!isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)"}
+                sx={{
+                  minHeight: 32,
+                  borderRadius: "0.75rem",
+                  border: !isActive ? "1px solid transparent" : "1px solid var(--color-text-muted)",
+                  color: !isActive ? "#ffffff" : "var(--color-text-muted)",
+                  boxShadow: !isActive ? "0 6px 16px rgba(74,63,53,0.18)" : "0 1px 2px rgba(60,40,10,0.08)",
+                  "&:hover": {
+                    backgroundColor: !isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)",
+                    filter: "none",
+                  },
+                }}
+              />
+            </div>
+          )}
+
+          {activeTab === 0 ? (
+            <div className="flex flex-col gap-6">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <CustomInputField
                 type="TEXT"
@@ -519,13 +476,16 @@ export default function SellerPage() {
             </div>
           </div>
         ) : (
-          <DataTable<Market>
+          <DataTable<ConnectedMarket>
             rows={connectedMarkets}
             columns={connectedMarketsColumns}
             rowKey="id"
             showFilter={false}
+            onRowClick={handleConnectedMarketClick}
           />
         )}
+        </div>
+      </div>
 
       <Snackbar
         open={isSnackbarOpen && Boolean(navigationNotice)}

@@ -1,6 +1,6 @@
 import { useMutation } from '@tanstack/react-query';
 import type { AuthResponse, RegisterCredentials } from '../models/auth';
-import { register } from '../services/authService';
+import { requestRegistration as register } from '../services/authService';
 
 export function useRegisterMutation() {
   return useMutation<AuthResponse, Error, RegisterCredentials>({

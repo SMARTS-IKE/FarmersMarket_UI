@@ -146,6 +146,35 @@ export interface RequestFormListResponse {
   pageSize: number;
 }
 
+export interface RequestedMarket {
+  marketId: number;
+  marketName: string;
+}
+
+export interface RequestFieldValue {
+  id: number;
+  fieldId: number;
+  fieldLabel: string;
+  value: string;
+  reviewStatus: number | null;
+  reviewComment: string | null;
+}
+
+export interface SubmittedRequestDetail {
+  id: number;
+  sellerId: number;
+  sellerFullName: string;
+  sellerAfm: string;
+  status: RequestStatus;
+  score: number | null;
+  submittedAt: string;
+  processedAt: string | null;
+  rejectionReason: string | null;
+  notes: string | null;
+  markets: RequestedMarket[];
+  fieldValues: RequestFieldValue[];
+}
+
 export interface CreateRequestFormFieldRequest {
   label: string;
   typeOfFields: number;

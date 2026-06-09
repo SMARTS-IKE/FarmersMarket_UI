@@ -7,12 +7,14 @@ import UserPage from '../pages/userPages/UserPage';
 import AdminSellersPage from '../pages/adminPages/sellers/AdminSellersPage';
 import AdminSellerCreatePage from '../pages/adminPages/sellers/AdminSellerCreatePage';
 import SellerPage from '../pages/adminPages/sellers/SellerPage';
+import AdminSellerMarketPage from '../pages/adminPages/sellers/AdminSellerMarketPage';
 import AdminMarketsPage from '../pages/adminPages/markets/AdminMarketsPage';
 import AdminMarketCreatePage from '../pages/adminPages/markets/AdminMarketCreatePage';
 import AdminMarketDetailPage from '../pages/adminPages/markets/AdminMarketDetailPage';
 import AdminReportsPage from '../pages/adminPages/AdminReportsPage';
 import AdminFeesPaymentsPage from '../pages/adminPages/FeesAndPayments/AdminFeesPaymentsPage';
 import AdminRequestsPage from '../pages/adminPages/requests/AdminRequestsPage';
+import SubmittedRequestDetailedPage from '../pages/adminPages/requests/SubmittedRequestDetailedPage';
 import DesignRequestFormPage from '../pages/adminPages/requests/DesignRequestFormPage';
 import CreateMarketPeriodPage from '../pages/adminPages/requests/CreateMarketPeriodPage';
 import { requireAuth, rootRoute } from './baseRoutes';
@@ -60,6 +62,12 @@ export const sellerDetailRoute = createRoute({
   component: SellerPage,
 });
 
+export const sellerMarketDetailRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/admin/sellers/$sellerId/market/$marketConnectionId',
+  component: AdminSellerMarketPage,
+});
+
 export const sellerCreateRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/admin/sellers/new',
@@ -102,6 +110,12 @@ export const requestsRoute = createRoute({
   component: AdminRequestsPage,
 });
 
+export const submittedRequestDetailRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/admin/requests/$id',
+  component: SubmittedRequestDetailedPage,
+});
+
 export const designRequestFormRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/admin/requests/design-form',
@@ -135,11 +149,13 @@ export const adminRouteTree = protectedRoute.addChildren([
   sellersRoute,
   sellerCreateRoute,
   sellerDetailRoute,
+  sellerMarketDetailRoute,
   marketsRoute,
   marketCreateRoute,
   marketDetailRoute,
   reportsRoute,
   requestsRoute,
+  submittedRequestDetailRoute,
   designRequestFormRoute,
   designRequestFormEditRoute,
   createMarketPeriodRoute,

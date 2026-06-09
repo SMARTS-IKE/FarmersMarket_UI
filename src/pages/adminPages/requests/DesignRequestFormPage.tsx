@@ -412,8 +412,8 @@ export default function DesignRequestFormPage() {
       >
         <Box
           sx={{
-            width: 280,
-            minWidth: 280,
+            width: 200,
+            minWidth: 200,
             display: "flex",
             flexDirection: "column",
             gap: 1.5,

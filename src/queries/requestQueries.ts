@@ -8,10 +8,11 @@ import type {
   MarketPeriodSearchRequest,
   SellerRequest,
   SellerRequestSearchRequest,
+  SubmittedRequestDetail,
   UpdateMarketPeriodRequest,
 } from '../models/request';
 import { createMarketPeriod, getMarketPeriodById, updateMarketPeriod } from '../services/periodService';
-import { getMarketPeriods, getSellerRequests } from '../services/requestService';
+import { getMarketPeriods, getSellerRequests, getSubmittedRequestById } from '../services/requestService';
 
 const REQUESTS_STALE_TIME_MS = 5 * 60 * 1000;
 const REQUESTS_GC_TIME_MS = 15 * 60 * 1000;
@@ -21,6 +22,7 @@ export const requestKeys = {
   sellerList: (params: SellerRequestSearchRequest) => ['requests', 'seller-list', params] as const,
   marketPeriods: (params: MarketPeriodSearchRequest) => ['requests', 'market-periods', params] as const,
   marketPeriodDetail: (id: string) => ['requests', 'market-period-detail', id] as const,
+  submittedDetail: (id: string | number) => ['requests', 'submitted-detail', id] as const,
 };
 
 export function useSellerRequestsQuery(params: SellerRequestSearchRequest) {
@@ -54,6 +56,16 @@ export function useMarketPeriodDetailQuery(id: string) {
   return useQuery<MarketPeriodDetail, Error>({
     queryKey: requestKeys.marketPeriodDetail(id),
     queryFn: () => getMarketPeriodById(id),
+    enabled: Boolean(id),
+    staleTime: REQUESTS_STALE_TIME_MS,
+    gcTime: REQUESTS_GC_TIME_MS,
+  });
+}
+
+export function useSubmittedRequestDetailQuery(id: string | number) {
+  return useQuery<SubmittedRequestDetail, Error>({
+    queryKey: requestKeys.submittedDetail(id),
+    queryFn: () => getSubmittedRequestById(id),
     enabled: Boolean(id),
     staleTime: REQUESTS_STALE_TIME_MS,
     gcTime: REQUESTS_GC_TIME_MS,

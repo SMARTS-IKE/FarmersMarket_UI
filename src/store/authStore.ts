@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
-import type { User, AuthResponse } from '../models/auth';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { jwtDecode } from 'jwt-decode';
+import type { User, AuthResponse, JWTPayload } from '../models/auth';
 
 interface AuthState {
   user: User | null;
@@ -11,39 +12,89 @@ interface AuthState {
   clearAuth: () => void;
 }
 
+// ── Try to restore remembered session from localStorage on store creation ──
+function getInitialState() {
+  const state: Pick<AuthState, 'user' | 'token' | 'email' | 'role'> = {
+    user: null,
+    token: null,
+    email: null,
+    role: null,
+  };
+
+  try {
+    const localAuth = localStorage.getItem('auth');
+    if (localAuth) {
+      const parsed = JSON.parse(localAuth);
+      // localStorage stores the flat state
+      if (parsed.token) {
+        state.token = parsed.token;
+        state.email = parsed.email;
+        state.user = parsed.user;
+        state.role = parsed.role;
+      }
+    }
+  } catch (e) {
+    // ignore parsing errors
+  }
+
+  return state;
+}
+
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      user: null,
-      token: null,
-      email: null,
-      role: null,
+      ...getInitialState(),
 
-      setAuth: (data: AuthResponse) =>
-        set({
-          user: data.user
-            ? {
-                ...data.user,
-                email: data.user.email ?? data.email ?? undefined,
-                role: data.user.role ?? data.roles?.[0] ?? undefined,
-                roles: data.user.roles ?? data.roles ?? undefined,
-              }
-            : data.email || data.roles?.length
-              ? {
-                  email: data.email,
-                  role: data.roles?.[0],
-                  roles: data.roles,
-                }
-              : null,
-          token: data.token ?? null,
-          email: data.email ?? data.user?.email ?? null,
-          role: data.roles?.[0] ?? data.user?.role ?? data.user?.roles?.[0] ?? null,
-        }),
+      setAuth: (data: AuthResponse) => {
+        try {
+          const decoded = jwtDecode<JWTPayload>(data.accessToken);
+          const role =
+            decoded.role ||
+            decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
 
-      clearAuth: () => set({ user: null, token: null, email: null, role: null }),
+          const user: User = {
+            id: decoded.userId || decoded.sub,
+            email: decoded.email,
+            firstName: decoded.firstName,
+            lastName: decoded.lastName,
+            name: `${decoded.firstName} ${decoded.lastName}`.trim(),
+            role: Array.isArray(role) ? role[0] : (role as string),
+            status: decoded.status,
+            aspNetUserId: decoded.aspNetUserId,
+          };
+
+          set({
+            user,
+            token: data.accessToken,
+            email: user.email ?? null,
+            role: user.role ?? null,
+          });
+        } catch (error) {
+          console.error('Failed to decode token:', error);
+          // Fallback if decoding fails but we have data
+          set({
+            user: data.user ?? null,
+            token: data.accessToken ?? null,
+            email: data.email ?? data.user?.email ?? null,
+            role: data.role ?? data.roles?.[0] ?? data.user?.role ?? null,
+          });
+        }
+      },
+
+      clearAuth: () => {
+        try {
+          sessionStorage.removeItem('auth');
+          localStorage.removeItem('auth');
+        } catch (e) {
+          // ignore
+        }
+        set({ user: null, token: null, email: null, role: null });
+      },
     }),
     {
       name: 'auth',
+      // persist to sessionStorage; when 'Remember Me' is checked, LoginPage also copies to localStorage
+      storage: createJSONStorage(() => sessionStorage),
     }
   )
 );
