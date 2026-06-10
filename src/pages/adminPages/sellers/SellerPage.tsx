@@ -303,7 +303,7 @@ export default function SellerPage() {
           }}
         >
           <Tab label="Στοιχεία πωλητή" />
-          <Tab label={`Συνδεδεμένες αγορές (${connectedMarkets.length})`} />
+          <Tab label={`Συμμετοχή σε αγορές (${connectedMarkets.length})`} />
         </Tabs>
       </Box>
 

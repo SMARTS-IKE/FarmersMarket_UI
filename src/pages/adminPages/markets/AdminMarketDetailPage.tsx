@@ -27,6 +27,7 @@ const EMPTY_FORM_VALUES: MarketFormValues = {
   latitude: null,
   longitude: null,
   radius: null,
+  areaPoints: [],
 };
 
 const DAY_NUMBER_TO_NAME: Record<number, string> = {
@@ -178,6 +179,17 @@ function extractConnectedSellerId(entry: unknown): number | null {
 
 function mapMarketToFormValues(market: Market): MarketFormValues {
   const marketRecord = asRecord(market);
+  const marketLocations = Array.isArray(market.locations)
+    ? market.locations.filter(
+        (location): location is { latitude: number; longitude: number } =>
+          typeof location?.latitude === "number" &&
+          Number.isFinite(location.latitude) &&
+          typeof location?.longitude === "number" &&
+          Number.isFinite(location.longitude)
+      )
+    : [];
+  const fallbackLatitude = marketLocations[0]?.latitude ?? null;
+  const fallbackLongitude = marketLocations[0]?.longitude ?? null;
 
   const supervisors = (Array.isArray(market.supervisors) ? market.supervisors : [])
     .map((supervisor) => supervisor.userId)
@@ -204,9 +216,20 @@ function mapMarketToFormValues(market: Market): MarketFormValues {
     occupiedSpots,
     supervisors,
     area: (marketRecord ? readString(marketRecord, ["area", "region", "district"]) : "") || "",
-    latitude: typeof market.latitude === "number" && Number.isFinite(market.latitude) ? market.latitude : null,
-    longitude: typeof market.longitude === "number" && Number.isFinite(market.longitude) ? market.longitude : null,
+    latitude:
+      typeof market.latitude === "number" && Number.isFinite(market.latitude)
+        ? market.latitude
+        : fallbackLatitude,
+    longitude:
+      typeof market.longitude === "number" && Number.isFinite(market.longitude)
+        ? market.longitude
+        : fallbackLongitude,
     radius: null,
+    areaPoints: marketLocations.map((location, idx) => ({
+      id: `location-${idx + 1}`,
+      lat: location.latitude,
+      lng: location.longitude,
+    })),
   };
 }
 
@@ -215,37 +238,50 @@ function toTimeWithSeconds(time: string): string {
   return time.length === 5 ? `${time}:00` : time;
 }
 
-function resolveFormId(market: Market): number {
-  const marketRecord = asRecord(market);
-  if (!marketRecord) return 0;
-  return readNumber(marketRecord, ["formId", "requestFormId"]) ?? 0;
+function toIsoDate(dateValue: string | undefined): string {
+  if (dateValue && /^\d{4}-\d{2}-\d{2}/.test(dateValue)) {
+    return dateValue.slice(0, 10);
+  }
+
+  return new Date().toISOString().slice(0, 10);
 }
 
 function mapFormValuesToUpdatePayload(
   values: MarketFormValues,
-  market: Market,
-  supervisorsToAdd: string[],
-  supervisorsToRemove: string[]
+  market: Market
 ): UpdateMarketRequest {
   const openTime = values.operatingDays[0]?.openTime ?? "";
   const closeTime = values.operatingDays[0]?.closeTime ?? "";
+  const hasPrimaryCoordinates = values.latitude !== null && values.longitude !== null;
+  const locations =
+    values.areaPoints.length > 0
+      ? values.areaPoints.map((point) => ({ latitude: point.lat, longitude: point.lng }))
+      : hasPrimaryCoordinates
+        ? [{ latitude: values.latitude as number, longitude: values.longitude as number }]
+        : [];
+
+  const currentHistory = market.currentHistory;
 
   return {
-    name: values.name.trim(),
-    marketType: values.marketType,
-    address: values.address.trim(),
-    area: values.area.trim(),
-    latitude: values.latitude ?? 0,
-    longitude: values.longitude ?? 0,
-    totalSpots: values.availableSlots,
-    openTime: toTimeWithSeconds(openTime),
-    closeTime: toTimeWithSeconds(closeTime),
-    notes: market.notes ?? "",
-    isActive: Boolean(market.isActive),
-    formId: resolveFormId(market),
-    supervisorsToAdd,
-    supervisorsToRemove,
-    exceptionsToAdd: [],
+    info: {
+      name: values.name.trim(),
+      marketType: values.marketType,
+      address: values.address.trim(),
+      area: values.area.trim(),
+      latitude: values.latitude ?? 0,
+      longitude: values.longitude ?? 0,
+      locations,
+    },
+    configuration: {
+      fromDate: toIsoDate(currentHistory?.fromDate),
+      capacity: values.availableSlots,
+      licenseCategory: currentHistory?.licenseCategory ?? 0,
+      lotteryEnabled: currentHistory?.lotteryEnabled ?? false,
+      dailyFee: currentHistory?.dailyFee ?? 0,
+      openTime: toTimeWithSeconds(openTime),
+      closeTime: toTimeWithSeconds(closeTime),
+      notes: currentHistory?.notes ?? market.notes ?? "",
+    },
   };
 }
 
@@ -362,19 +398,8 @@ export default function AdminMarketDetailPage() {
   const handleSubmit = async (values: MarketFormValues) => {
     if (!market) return;
 
-    // Check if supervisors have changed
-    const initialSupervisors = new Set(initialFormValues.supervisors || []);
-    const newSupervisors = new Set(values.supervisors || []);
-    
-    const supervisorsToAdd = Array.from(newSupervisors).filter(
-      (supervisor) => !initialSupervisors.has(supervisor)
-    );
-    const supervisorsToRemove = Array.from(initialSupervisors).filter(
-      (supervisor) => !newSupervisors.has(supervisor)
-    );
-
     try {
-      const updatePayload = mapFormValuesToUpdatePayload(values, market, supervisorsToAdd, supervisorsToRemove);
+      const updatePayload = mapFormValuesToUpdatePayload(values, market);
       await updateMarketMutation.mutateAsync(updatePayload);
 
       setInitialFormValues(values);

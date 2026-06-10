@@ -38,13 +38,21 @@ export interface MarketCurrentHistory {
   createdAt: string;
 }
 
+export interface MarketLocation {
+  latitude: number;
+  longitude: number;
+}
+
 export interface Market {
   id: number;
   name: string;
   marketType: MarketType;
   address: string;
+  area?: string;
+  createdAt?: string;
   latitude: number;
   longitude: number;
+  locations?: MarketLocation[];
   totalSpots?: number;
   occupiedSpots?: number;
   openTime?: string;
@@ -95,6 +103,12 @@ export interface MarketOperatingDay {
   closeTime: string;
 }
 
+export interface AreaPoint {
+  id: string;
+  lat: number;
+  lng: number;
+}
+
 export interface MarketFormValues {
   name: string;
   marketType: Exclude<MarketType, 0>;
@@ -107,6 +121,7 @@ export interface MarketFormValues {
   latitude: number | null;
   longitude: number | null;
   radius: number | null;
+  areaPoints: AreaPoint[];
 }
 
 export interface ConnectedMarket {
@@ -142,26 +157,33 @@ export interface MarketFormProps {
   submitLabel?: string;
 }
 
-export interface MarketExceptionToAddRequest {
-  exceptionDate: string;
-  isCancelled: boolean;
-  cancellationReason: string | null;
+export interface MarketLocationPointRequest {
+  latitude: number;
+  longitude: number;
 }
 
-export interface UpdateMarketRequest {
+export interface UpdateMarketInfoRequest {
   name: string;
   marketType: MarketType;
   address: string;
   area: string;
   latitude: number;
   longitude: number;
-  totalSpots: number;
+  locations: MarketLocationPointRequest[];
+}
+
+export interface UpdateMarketConfigurationRequest {
+  fromDate: string;
+  capacity: number;
+  licenseCategory: number;
+  lotteryEnabled: boolean;
+  dailyFee: number;
   openTime: string;
   closeTime: string;
   notes: string;
-  isActive: boolean;
-  formId: number;
-  supervisorsToAdd: string[];
-  supervisorsToRemove: string[];
-  exceptionsToAdd: MarketExceptionToAddRequest[];
+}
+
+export interface UpdateMarketRequest {
+  info: UpdateMarketInfoRequest;
+  configuration: UpdateMarketConfigurationRequest;
 }

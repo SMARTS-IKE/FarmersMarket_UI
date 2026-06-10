@@ -1,9 +1,9 @@
 import { Box, Typography } from "@mui/material";
 import { useState } from "react";
-import type { MarketFormProps } from "../../models/market";
+import type { MarketFormProps, AreaPoint } from "../../models/market";
 import CustomInputField from "../../shared/components/CustomInputField";
 import CustomButton from "../../shared/components/CustomButton";
-import MarketMapPicker from "../../shared/components/MarketMapPicker";
+import MapAreaModal from "../../shared/components/MapAreaModal";
 import { DAYS } from "./market.utils";
 import { useUsersQuery } from "../../queries/userQueries";
 import { USER_ROLE_MAPPING } from "../../shared/mappings/users.mapping";
@@ -65,6 +65,7 @@ export default function MarketForm({
   }));
 
   const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [isMapModalOpen, setIsMapModalOpen] = useState(false);
 
   const hasValidOperatingDays = (days: typeof values.operatingDays): boolean =>
     days.length > 0 &&
@@ -124,127 +125,148 @@ export default function MarketForm({
     onSubmit?.(values);
   };
 
+  const handleSaveAreaPoints = (points: AreaPoint[]) => {
+    onChange({ ...values, areaPoints: points });
+  };
+
   return (
     <Box className="mb-4 flex h-full min-h-0 flex-col gap-6 overflow-y-auto">
-      <Box className="flex w-full flex-wrap justify-between">
-        <CustomInputField
-          type="TEXT"
-          label="Όνομα"
-          value={values.name}
-          onChange={(v) => onChange({ ...values, name: String(v) })}
-          disabled={isViewMode}
-          validation={{ required: true, minLength: 2 }}
-          showValidation={submitAttempted}
-          width="75%"
-        />
-        <CustomInputField
-          type="DROPDOWN"
-          label="Τύπος Αγοράς"
-          value={String(values.marketType)}
-          onChange={(v) => onChange({ ...values, marketType: Number(v) as 1 | 2 })}
-          dropdownItems={marketTypeOptions}
-          disabled={isViewMode}
-          validation={{ required: true }}
-          showValidation={submitAttempted}
-          width="20%"
-        />
-      </Box>
-
-      <Box className="flex flex-wrap justify-between">
-        <CustomInputField
-          type="TEXT"
-          label="Διεύθυνση"
-          value={values.address}
-          onChange={(v) => onChange({ ...values, address: String(v) })}
-          disabled={isViewMode}
-          validation={{ required: true, minLength: 3 }}
-          showValidation={submitAttempted}
-          width="58%"
-        />
-        <CustomInputField
-          type="TEXT"
-          label="Περιοχή"
-          value={values.area}
-          onChange={(v) => onChange({ ...values, area: String(v) })}
-          disabled={isViewMode}
-          validation={{ required: true, minLength: 3 }}
-          showValidation={submitAttempted}
-          width="38%"
-        />
-      </Box>
-
-      <Box className="mt-4 flex flex-col gap-4 lg:flex-row">
-        <MarketMapPicker
-          latitude={values.latitude ?? null}
-          longitude={values.longitude ?? null}
-          radius={values.radius ?? null}
-          disabled={isViewMode}
-          height={200}
-          onChange={(lat, lng) => onChange({ ...values, latitude: lat, longitude: lng })}
-          onRadiusChange={(r) => onChange({ ...values, radius: r })}
-        />
-
-        <Box className="flex flex-1 flex-col gap-4 border p-4">
-          {values.operatingDays.length > 0 && (
-            <>
-              <div className="flex justify-center w-full">
-                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                  Ώρες Λειτουργίας
-                </Typography>
-              </div>
-              <Box className="flex flex-wrap items-start justify-center gap-3 rounded-lg p-2">
-                <CustomInputField
-                  type="DROPDOWN"
-                  label="Έναρξη"
-                  value={sharedOpenTime}
-                  onChange={(v) => handleUpdateWorkingTime("openTime", String(v))}
-                  disabled={isViewMode}
-                  dropdownItems={timeOptions}
-                  validation={{ required: true }}
-                  showValidation={submitAttempted}
-                  width={130}
-                />
-
-                <CustomInputField
-                  type="DROPDOWN"
-                  label="Λήξη"
-                  value={sharedCloseTime}
-                  onChange={(v) => handleUpdateWorkingTime("closeTime", String(v))}
-                  disabled={isViewMode}
-                  dropdownItems={timeOptions}
-                  disabledDropdownValues={
-                    sharedOpenTime
-                      ? timeOptions
-                          .filter((opt) => toMinutes(String(opt.value)) <= toMinutes(sharedOpenTime))
-                          .map((opt) => opt.value)
-                      : []
-                  }
-                  validation={{ required: true }}
-                  showValidation={submitAttempted}
-                  width={130}
-                />
-              </Box>
-
-            </>
-          )}
-
-          <div className="flex justify-center w-full mt-10">
-            <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-              Ημέρες Λειτουργίας
-            </Typography>
-          </div>
-
+      <Box className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <Box className="lg:col-span-9">
           <CustomInputField
-            type="MULTI_SELECT"
-            label=""
-            value={selectedDayValues}
-            onChange={(v) => handleUpdateWorkingDays(Array.isArray(v) ? v.map(String) : [])}
-            dropdownItems={dayOptions}
+            type="TEXT"
+            label="Όνομα"
+            value={values.name}
+            onChange={(v) => onChange({ ...values, name: String(v) })}
+            disabled={isViewMode}
+            validation={{ required: true, minLength: 2 }}
+            showValidation={submitAttempted}
+            width="100%"
+          />
+        </Box>
+        <Box className="lg:col-span-3">
+          <CustomInputField
+            type="DROPDOWN"
+            label="Τύπος Αγοράς"
+            value={String(values.marketType)}
+            onChange={(v) => onChange({ ...values, marketType: Number(v) as 1 | 2 })}
+            dropdownItems={marketTypeOptions}
             disabled={isViewMode}
             validation={{ required: true }}
             showValidation={submitAttempted}
             width="100%"
           />
+        </Box>
+      </Box>
+
+      <Box className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <Box className="lg:col-span-8">
+          <CustomInputField
+            type="TEXT"
+            label="Διεύθυνση"
+            value={values.address}
+            onChange={(v) => onChange({ ...values, address: String(v) })}
+            disabled={isViewMode}
+            validation={{ required: true, minLength: 3 }}
+            showValidation={submitAttempted}
+            width="100%"
+          />
+        </Box>
+        <Box className="lg:col-span-4">
+          <CustomInputField
+            type="TEXT"
+            label="Περιοχή"
+            value={values.area}
+            onChange={(v) => onChange({ ...values, area: String(v) })}
+            disabled={isViewMode}
+            validation={{ required: true, minLength: 3 }}
+            showValidation={submitAttempted}
+            width="100%"
+          />
+        </Box>
+      </Box>
+
+      <Box className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
+        <Box className="flex flex-col gap-3 rounded-lg border p-4">
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            Περιοχή Αγοράς στον Χάρτη
+          </Typography>
+          <CustomButton
+            title={(values.areaPoints?.length ?? 0) > 0 ? `Επεξεργασία Περιοχής` : "Ορισμός Περιοχής"}
+            onClick={() => setIsMapModalOpen(true)}
+            disabled={isViewMode}
+            width="100%"
+          />
+          {(values.areaPoints?.length ?? 0) > 0 && (
+            <Typography className="text-center" variant="caption" color="text.secondary">
+              Έχουν προστεθεί {values.areaPoints.length} σημεία
+            </Typography>
+          )}
+        </Box>
+
+        <MapAreaModal
+          open={isMapModalOpen}
+          onClose={() => setIsMapModalOpen(false)}
+          onSave={handleSaveAreaPoints}
+          initialPoints={values.areaPoints ?? []}
+          title="Επιλογή Περιοχής Αγοράς"
+        />
+
+        <Box className="flex flex-col gap-4 rounded-lg border p-4">
+          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+            Πρόγραμμα Λειτουργίας
+          </Typography>
+
+          <Box className="grid grid-cols-1 gap-3 lg:grid-cols-12">
+            <Box className="lg:col-span-6">
+              <CustomInputField
+                type="MULTI_SELECT"
+                label="Ημέρες Λειτουργίας"
+                value={selectedDayValues}
+                onChange={(v) => handleUpdateWorkingDays(Array.isArray(v) ? v.map(String) : [])}
+                dropdownItems={dayOptions}
+                disabled={isViewMode}
+                validation={{ required: true }}
+                showValidation={submitAttempted}
+                width="100%"
+              />
+            </Box>
+
+            <Box className="lg:col-span-3">
+              <CustomInputField
+                type="DROPDOWN"
+                label="Έναρξη"
+                value={sharedOpenTime}
+                onChange={(v) => handleUpdateWorkingTime("openTime", String(v))}
+                disabled={isViewMode || values.operatingDays.length === 0}
+                dropdownItems={timeOptions}
+                validation={{ required: true }}
+                showValidation={submitAttempted}
+                width="100%"
+              />
+            </Box>
+
+            <Box className="lg:col-span-3">
+              <CustomInputField
+                type="DROPDOWN"
+                label="Λήξη"
+                value={sharedCloseTime}
+                onChange={(v) => handleUpdateWorkingTime("closeTime", String(v))}
+                disabled={isViewMode || values.operatingDays.length === 0}
+                dropdownItems={timeOptions}
+                disabledDropdownValues={
+                  sharedOpenTime
+                    ? timeOptions
+                        .filter((opt) => toMinutes(String(opt.value)) <= toMinutes(sharedOpenTime))
+                        .map((opt) => opt.value)
+                    : []
+                }
+                validation={{ required: true }}
+                showValidation={submitAttempted}
+                width="100%"
+              />
+            </Box>
+          </Box>
 
           {values.operatingDays.length === 0 ? (
             <p className="text-sm text-gray-500">Δεν έχουν επιλεγεί ημέρες λειτουργίας.</p>
@@ -252,40 +274,46 @@ export default function MarketForm({
         </Box>
       </Box>
 
-      <Box className="flex flex-col gap-4 mt-6 md:flex-row md:justify-between">
-        <CustomInputField
-          type="NUMBER"
-          label="Σύνολο Θέσεων"
-          value={values.availableSlots}
-          onChange={(v) => onChange({ ...values, availableSlots: Number(v) })}
-          disabled={isViewMode}
-          validation={{ required: true, min: 0 }}
-          showValidation={submitAttempted}
-          width="15%"
-        />
-
-        {isEditMode && (
+      <Box className="mt-6 grid grid-cols-1 gap-4 lg:grid-cols-12">
+        <Box className={isEditMode ? "lg:col-span-2" : "lg:col-span-3"}>
           <CustomInputField
             type="NUMBER"
-            label="Δεσμευμένες Θέσεις"
-            value={values.occupiedSpots ?? 0}
-            onChange={(v) => onChange({ ...values, occupiedSpots: Number(v) })}
-            disabled={true}
+            label="Σύνολο Θέσεων"
+            value={values.availableSlots}
+            onChange={(v) => onChange({ ...values, availableSlots: Number(v) })}
+            disabled={isViewMode}
             validation={{ required: true, min: 0 }}
-            width="15%"
+            showValidation={submitAttempted}
+            width="100%"
           />
-        )}
+        </Box>
 
-        <CustomInputField
-          type="MULTI_SELECT"
-          label="Ορισμός Εποπτών/Υπευθύνων"
-          value={values.supervisors}
-          onChange={(v) => onChange({ ...values, supervisors: v as string[] })}
-          dropdownItems={usersList}
-          disabled={isViewMode}
-          width="60%"
-        />
+        {isEditMode && (
+          <Box className="lg:col-span-2">
+            <CustomInputField
+              type="NUMBER"
+              label="Δεσμευμένες Θέσεις"
+              value={values.occupiedSpots ?? 0}
+              onChange={(v) => onChange({ ...values, occupiedSpots: Number(v) })}
+              disabled={true}
+              validation={{ required: true, min: 0 }}
+              width="100%"
+            />
+          </Box>
+        )}
       </Box>
+
+       <Box className={isEditMode ? "lg:col-span-8" : "lg:col-span-9"}>
+          <CustomInputField
+            type="MULTI_SELECT"
+            label="Επόπτες/Υπεύθυνοι"
+            value={values.supervisors}
+            onChange={(v) => onChange({ ...values, supervisors: v as string[] })}
+            dropdownItems={usersList}
+            disabled={isViewMode}
+            width="100%"
+          />
+        </Box>
 
       <Box className="flex flex-wrap justify-end gap-3">
         {onCancel && (

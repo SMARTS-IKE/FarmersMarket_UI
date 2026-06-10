@@ -1,8 +1,9 @@
 import { Alert, Box, CircularProgress, Typography } from "@mui/material";
-import { useNavigate, useParams } from "@tanstack/react-router";
+import { Link, useNavigate, useParams } from "@tanstack/react-router";
 import { useMarketSellerQuery } from "../../../queries/sellerQueries";
 import CustomButton from "../../../shared/components/CustomButton";
 import CustomInputField from "../../../shared/components/CustomInputField";
+import LaunchIcon from "@mui/icons-material/Launch";
 
 export default function AdminSellerMarketPage() {
   const navigate = useNavigate();
@@ -30,7 +31,7 @@ export default function AdminSellerMarketPage() {
         <Alert severity="error">
           Σφάλμα κατά τη φόρτωση των στοιχείων της σύνδεσης: {error?.message || "Η σύνδεση δεν βρέθηκε"}
         </Alert>
-        <CustomButton title="Επιστροφή" onClick={handleBack} className="mt-4" />
+        <CustomButton title="Επιστροφή" onClick={handleBack} sx={{ mt: 2 }} />
       </Box>
     );
   }
@@ -39,9 +40,9 @@ export default function AdminSellerMarketPage() {
     <div className="flex flex-col h-full w-full gap-5 overflow-hidden p-6">
       <div className="flex items-center justify-between">
         <div className="flex flex-col gap-1">
-          <h2 className="font-semibold text-(--color-text-heading)">Στοιχεία Σύνδεσης Πωλητή στην Αγορά</h2>
-          <Typography variant="h5" className="text-(--color-text-heading)">
-            {connection.marketName}
+          <h2 className="font-semibold text-(--color-text-heading)">Πωλητής</h2>
+          <Typography variant="h6" className="text-(--color-text-heading)">
+            {connection.sellerFullName}
           </Typography>
         </div>
         <CustomButton
@@ -53,119 +54,46 @@ export default function AdminSellerMarketPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto pr-2">
-        <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-          {/* Market Info */}
-          <Box className="flex flex-col gap-4 p-4 border rounded-lg bg-white/50">
-            <Typography variant="h6" className="font-semibold border-b pb-2 mb-2">
-              Πληροφορίες Αγοράς
-            </Typography>
+        <Box className="flex flex-col gap-4 p-4 border rounded-lg bg-white/50">
+          <Typography variant="h6" className="font-bold border-b pb-2 mb-2">
+            Στοιχεία Θέσης στην Αγορά: 
+             <span className="text-(--color-text) font-medium pl-1">
+              {connection.marketName}
+             </span>
+          </Typography>
+          <Box className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <CustomInputField
               type="TEXT"
-              label="Όνομα Αγοράς"
-              value={connection.marketName}
+              label="Αριθμός θέσης"
+              value={connection.spotLocation || "-"}
               disabled
               width="100%"
             />
             <CustomInputField
-                type="TEXT"
-                label="Θέση"
-                value={connection.spotLocation || "-"}
-                disabled
-                width="100%"
+              type="TEXT"
+              label="Μήκος θέσης"
+              value={connection.spotLength?.toString() || "-"}
+              disabled
+              width="100%"
             />
              <CustomInputField
-                type="TEXT"
-                label="Μήκος Θέσης (m)"
-                value={connection.spotLength?.toString() || "-"}
-                disabled
-                width="100%"
-            />
-          </Box>
-
-          {/* Seller Info */}
-          <Box className="flex flex-col gap-4 p-4 border rounded-lg bg-white/50">
-            <Typography variant="h6" className="font-semibold border-b pb-2 mb-2">
-              Πληροφορίες Πωλητή
-            </Typography>
-            <CustomInputField
               type="TEXT"
-              label="Ονοματεπώνυμο"
-              value={connection.sellerFullName}
-              disabled
-              width="100%"
-            />
-            <CustomInputField
-              type="TEXT"
-              label="ΑΦΜ"
-              value={connection.sellerAfm}
+                label="Ημερομηνία Έναρξης"
+              value={connection.fromDate.split("T")[0]}
               disabled
               width="100%"
             />
           </Box>
+        </Box>
 
-          {/* Connection Period */}
-          <Box className="flex flex-col gap-4 p-4 border rounded-lg bg-white/50">
-            <Typography variant="h6" className="font-semibold border-b pb-2 mb-2">
-              Περίοδος Σύνδεσης
-            </Typography>
-            <div className="flex gap-4">
-              <CustomInputField
-                type="DATE"
-                label="Από"
-                value={connection.fromDate.split('T')[0]}
-                disabled
-                width="100%"
-              />
-              <CustomInputField
-                type="DATE"
-                label="Έως"
-                value={connection.toDate ? connection.toDate.split('T')[0] : "-"}
-                disabled
-                width="100%"
-              />
-            </div>
-            <CustomInputField
-              type="TEXT"
-              label="Κατάσταση"
-              value={connection.isActive ? "Ενεργή" : "Ανενεργή"}
-              disabled
-              width="100%"
-            />
-          </Box>
-
-          {/* Additional Info */}
-          <Box className="flex flex-col gap-4 p-4 border rounded-lg bg-white/50">
-            <Typography variant="h6" className="font-semibold border-b pb-2 mb-2">
-              Λοιπά Στοιχεία
-            </Typography>
-            <CustomInputField
-                type="TEXT"
-                label="Κατηγορία Άδειας"
-                value={connection.licenseCategory.toString()}
-                disabled
-                width="100%"
-            />
-            {connection.requestId && (
-                <CustomButton 
-                    title="Προβολή Αίτησης"
-                    onClick={() => navigate({ to: `/admin/requests/${connection.requestId}` })}
-                    width="fit-content"
-                />
-            )}
-          </Box>
-        </div>
-
-        <Box className="mt-6 p-4 border rounded-lg bg-white/50">
-            <Typography variant="h6" className="font-semibold border-b pb-2 mb-2">
-              Σημειώσεις
-            </Typography>
-            <CustomInputField
-              type="TEXTAREA"
-              label=""
-              value={connection.notes || "-"}
-              disabled
-              width="100%"
-            />
+        <Box className="mt-6">
+          <Link
+            to="/admin/markets/$marketId"
+            params={{ marketId: String(connection.marketId) }}
+            className="text-(--color-text-muted) hover:underline font-medium"
+          >
+            Μετάβαση στη συγκεκριμένη αγορά <LaunchIcon fontSize="small" className="ml-1" />
+          </Link>
         </Box>
       </div>
     </div>
