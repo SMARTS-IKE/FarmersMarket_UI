@@ -1,4 +1,4 @@
-import { Market } from "@/models/market";
+import { CreateMarketRequest, DAY_NAME_TO_NUMBER, Market, MarketFormValues } from "../../models/market";
 import { ColumnDef } from "@/shared/components/DataTable";
 
 export const DAYS = [
@@ -29,26 +29,58 @@ const dayNumberToGreekLabel: Record<number, string> = {
   6: "Σάββατο",
 };
 
+export function toTimeWithSeconds(time: string): string {
+  if (!time) return "";
+  return time.length === 5 ? `${time}:00` : time;
+}
+
+export function toIsoDate(dateValue: string | undefined): string {
+  if (dateValue && /^\d{4}-\d{2}-\d{2}/.test(dateValue)) {
+    return dateValue.slice(0, 10);
+  }
+
+  return new Date().toISOString().slice(0, 10);
+}
+
+export function mapFormValuesToCreatePayload(values: MarketFormValues): CreateMarketRequest {
+  const openTime = values.operatingDays[0]?.openTime ?? "";
+  const closeTime = values.operatingDays[0]?.closeTime ?? "";
+  const hasPrimaryCoordinates = values.latitude !== null && values.longitude !== null;
+  const locations =
+    values.areaPoints.length > 0
+      ? values.areaPoints.map((point) => ({ latitude: point.lat, longitude: point.lng }))
+      : hasPrimaryCoordinates
+        ? [{ latitude: values.latitude as number, longitude: values.longitude as number }]
+        : [];
+
+  return {
+    name: values.name.trim(),
+    address: values.address.trim(),
+    area: values.area.trim(),
+    latitude: values.latitude ?? 0,
+    longitude: values.longitude ?? 0,
+    marketType: values.marketType,
+    fromDate: toIsoDate(undefined),
+    capacity: values.availableSlots,
+    licenseCategory: 0,
+    lotteryEnabled: false,
+    dailyFee: 0,
+    openTime: toTimeWithSeconds(openTime),
+    closeTime: toTimeWithSeconds(closeTime),
+    notes: "",
+    schedules: values.operatingDays.map((od) => ({
+      dayOfWeek: DAY_NAME_TO_NUMBER[od.day] ?? 0,
+      openTime: toTimeWithSeconds(od.openTime),
+      closeTime: toTimeWithSeconds(od.closeTime),
+    })),
+    locations,
+  };
+}
+
 export const columns: ColumnDef<Market>[] = [
   { key: "name", label: "Όνομα" },
-  { key: "marketType", label: "Τύπος Αγοράς", render: (row) => marketTypeLabel(row.marketType) },
   { key: "address", label: "Διεύθυνση" },
-   {
-    key: "area", label: "Περιοχή", render: (row) => {
-      // Assuming area information is stored in notes or a similar field for now
-      // Adjust this logic based on actual data structure
-      const areaInfo = row.notes?.match(/Area:\s*(\w+)/);
-      return areaInfo ? areaInfo[1] : "Άγνωστη";
-    }
-  },
-  {
-    key: "schedules",
-    label: "Ημέρες Λειτουργίας",
-    render: (row) => (row.schedules ?? [])
-      .filter((schedule) => !schedule.isCancelled)
-      .map((schedule) => dayNumberToGreekLabel[schedule.day] ?? String(schedule.day))
-      .join(", "),
-  },
-   { key: "totalSpots", label: "Σύνολο Θέσεων" },
-   { key: "occupiedSpots", label: "Δεσμευμένες Θέσεις" },
+  { key: "area", label: "Περιοχή" },
+  { key: "totalSpots", label: "Σύνολο Θέσεων" },
+  { key: "occupiedSpots", label: "Δεσμευμένες Θέσεις" },
 ];

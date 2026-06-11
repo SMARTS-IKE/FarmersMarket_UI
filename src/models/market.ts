@@ -114,10 +114,10 @@ export interface MarketFormValues {
   marketType: Exclude<MarketType, 0>;
   address: string;
   operatingDays: MarketOperatingDay[];
-  availableSlots: number;
+  availableSlots: number | "";
   supervisors: string[];
   area: string;
-  occupiedSpots: number;
+  occupiedSpots: number | "";
   latitude: number | null;
   longitude: number | null;
   radius: number | null;
@@ -181,6 +181,32 @@ export interface UpdateMarketConfigurationRequest {
   openTime: string;
   closeTime: string;
   notes: string;
+}
+
+export interface CreateMarketRequest {
+  name: string;
+  address: string;
+  area: string;
+  latitude: number;
+  longitude: number;
+  marketType: number;
+  fromDate: string;
+  capacity: number;
+  licenseCategory: number;
+  lotteryEnabled: boolean;
+  dailyFee: number;
+  openTime: string;
+  closeTime: string;
+  notes: string;
+  schedules: {
+    dayOfWeek: number;
+    openTime: string;
+    closeTime: string;
+  }[];
+  locations: {
+    latitude: number;
+    longitude: number;
+  }[];
 }
 
 export interface UpdateMarketRequest {

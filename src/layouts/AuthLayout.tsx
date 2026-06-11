@@ -32,7 +32,7 @@ export default function AuthLayout() {
           </div>
         </section>
 
-        <section className="relative flex min-h-svh items-start justify-center overflow-hidden bg-[#a8a4a0] px-5 pt-32 pb-5 sm:px-8 sm:pt-36 sm:pb-8">
+        <section className="relative flex min-h-svh items-start justify-center overflow-hidden bg-[#a8a4a0] px-5 pt-8 pb-5 sm:px-8 sm:pt-10 sm:pb-8">
           <div className="relative z-10 mx-auto flex w-full max-w-sm flex-col items-center px-5 sm:px-0">
             <div className="w-full rounded-[26px] border border-[#b7b1a9] bg-[#d8d5d2] px-7 py-8 shadow-[0_16px_40px_rgba(66,55,45,0.22)]">
               <Outlet />

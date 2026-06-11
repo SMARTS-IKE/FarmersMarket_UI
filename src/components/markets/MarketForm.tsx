@@ -82,6 +82,7 @@ export default function MarketForm({
     values.name.trim().length >= 2 &&
     values.address.trim().length >= 3 &&
     values.area.trim().length >= 3 &&
+    typeof values.availableSlots === "number" &&
     values.availableSlots >= 0 &&
     hasValidOperatingDays(values.operatingDays);
 
@@ -132,7 +133,7 @@ export default function MarketForm({
   return (
     <Box className="mb-4 flex h-full min-h-0 flex-col gap-6 overflow-y-auto">
       <Box className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        <Box className="lg:col-span-9">
+        <Box className="lg:col-span-12">
           <CustomInputField
             type="TEXT"
             label="Όνομα"
@@ -144,7 +145,7 @@ export default function MarketForm({
             width="100%"
           />
         </Box>
-        <Box className="lg:col-span-3">
+        {/* <Box className="lg:col-span-3">
           <CustomInputField
             type="DROPDOWN"
             label="Τύπος Αγοράς"
@@ -156,7 +157,7 @@ export default function MarketForm({
             showValidation={submitAttempted}
             width="100%"
           />
-        </Box>
+        </Box> */}
       </Box>
 
       <Box className="grid grid-cols-1 gap-4 lg:grid-cols-12">
@@ -186,8 +187,8 @@ export default function MarketForm({
         </Box>
       </Box>
 
-      <Box className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-2">
-        <Box className="flex flex-col gap-3 rounded-lg border p-4">
+      <Box className="mt-4 grid grid-cols-1 gap-4 xl:grid-cols-12">
+        <Box className="xl:col-span-5 flex flex-col gap-3 rounded-lg border p-4">
           <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
             Περιοχή Αγοράς στον Χάρτη
           </Typography>
@@ -212,7 +213,7 @@ export default function MarketForm({
           title="Επιλογή Περιοχής Αγοράς"
         />
 
-        <Box className="flex flex-col gap-4 rounded-lg border p-4">
+        <Box className="xl:col-span-7 flex flex-col gap-4 rounded-lg border p-4">
           <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
             Πρόγραμμα Λειτουργίας
           </Typography>
@@ -280,7 +281,7 @@ export default function MarketForm({
             type="NUMBER"
             label="Σύνολο Θέσεων"
             value={values.availableSlots}
-            onChange={(v) => onChange({ ...values, availableSlots: Number(v) })}
+            onChange={(v) => onChange({ ...values, availableSlots: v === "" ? "" : Number(v) })}
             disabled={isViewMode}
             validation={{ required: true, min: 0 }}
             showValidation={submitAttempted}
@@ -293,8 +294,8 @@ export default function MarketForm({
             <CustomInputField
               type="NUMBER"
               label="Δεσμευμένες Θέσεις"
-              value={values.occupiedSpots ?? 0}
-              onChange={(v) => onChange({ ...values, occupiedSpots: Number(v) })}
+              value={values.occupiedSpots}
+              onChange={(v) => onChange({ ...values, occupiedSpots: v === "" ? "" : Number(v) })}
               disabled={true}
               validation={{ required: true, min: 0 }}
               width="100%"

@@ -3,6 +3,7 @@ import { useNavigate, Link } from '@tanstack/react-router';
 import { setAuthNotification } from '../../lib/authNotifications';
 import type { RegisterCredentials } from '../../models/auth';
 import { useRegisterMutation } from '../../queries/authQueries';
+import { SELLER_TYPE_LABELS } from '../../components/sellers/sellers.utils';
 
 const inputClass =
   'w-full px-4 py-3 text-[15px] rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text-heading) placeholder:text-(--color-text-muted) outline-none transition focus:border-(--color-primary) focus:ring-3 focus:ring-(--color-primary-subtle)';
@@ -12,6 +13,10 @@ export default function RegisterPage() {
     firstName: '',
     lastName: '',
     email: '',
+    afm: '',
+    phone: '',
+    address: '',
+    sellerType: 0,
   });
   const [errors, setErrors] = useState<Partial<Record<keyof RegisterCredentials | 'form', string>>>({});
   const navigate = useNavigate();
@@ -25,6 +30,12 @@ export default function RegisterPage() {
     if (!form.firstName.trim())  next.firstName     = 'Το όνομα είναι υποχρεωτικό';
     
     if (!form.lastName.trim())   next.lastName      = 'Το επώνυμο είναι υποχρεωτικό';
+
+    if (!form.afm?.trim())       next.afm           = 'Το ΑΦΜ είναι υποχρεωτικό';
+
+    if (!form.phone?.trim())     next.phone         = 'Το τηλέφωνο είναι υποχρεωτικό';
+
+    if (!form.address?.trim())   next.address       = 'Η διεύθυνση είναι υποχρεωτική';
     
     if (!form.email.trim())      next.email         = 'Το email είναι υποχρεωτικό';
     else if (!EMAIL_RE.test(form.email)) next.email = 'Μη έγκυρη διεύθυνση email';
@@ -35,7 +46,7 @@ export default function RegisterPage() {
 
   function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
     const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: name === 'sellerType' ? Number(value) : value }));
     setErrors((prev) => ({ ...prev, [name]: undefined }));
   }
 
@@ -125,6 +136,56 @@ export default function RegisterPage() {
             className={`${inputClass} ${errors.email ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
           />
           {errors.email && <p className="text-xs text-(--color-danger) mt-1">{errors.email}</p>}
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-1">
+            <label htmlFor="afm" className="text-sm font-semibold text-(--color-text-heading)">
+              ΑΦΜ *
+            </label>
+            <input
+              id="afm"
+              name="afm"
+              type="text"
+              value={form.afm}
+              onChange={handleChange}
+              placeholder="ΑΦΜ"
+              className={`${inputClass} ${errors.afm ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
+            />
+            {errors.afm && <p className="text-xs text-(--color-danger) mt-1">{errors.afm}</p>}
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label htmlFor="phone" className="text-sm font-semibold text-(--color-text-heading)">
+              Τηλέφωνο *
+            </label>
+            <input
+              id="phone"
+              name="phone"
+              type="tel"
+              value={form.phone}
+              onChange={handleChange}
+              placeholder="Τηλέφωνο"
+              className={`${inputClass} ${errors.phone ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
+            />
+            {errors.phone && <p className="text-xs text-(--color-danger) mt-1">{errors.phone}</p>}
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-1">
+          <label htmlFor="address" className="text-sm font-semibold text-(--color-text-heading)">
+            Διεύθυνση *
+          </label>
+          <input
+            id="address"
+            name="address"
+            type="text"
+            value={form.address}
+            onChange={handleChange}
+            placeholder="Διεύθυνση"
+            className={`${inputClass} ${errors.address ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
+          />
+          {errors.address && <p className="text-xs text-(--color-danger) mt-1">{errors.address}</p>}
         </div>
 
           <button

@@ -503,11 +503,7 @@ export default function CustomInputField({
       error={!!internalError}
       helperText={internalError}
       onChange={(e) => {
-        if (type === "NUMBER") {
-          onChange?.(Number(e.target.value));
-        } else {
-          onChange?.(e.target.value);
-        }
+        onChange?.(e.target.value);
       }}
       onBlur={onBlur}
       slotProps={{

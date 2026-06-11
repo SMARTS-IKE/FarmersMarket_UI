@@ -195,7 +195,7 @@ export default function DataTable<T extends object>({
   const getCellContent = (row: T, col: ColumnDef<T>): React.ReactNode => {
     if (col.render) return col.render(row);
     const value = (row as Record<string, unknown>)[col.key as string];
-    return value != null ? String(value) : "—";
+    return value != null && value !== "" ? String(value) : "—";
   };
 
   return (

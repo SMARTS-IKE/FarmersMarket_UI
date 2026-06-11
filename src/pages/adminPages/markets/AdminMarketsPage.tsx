@@ -29,23 +29,7 @@ export default function AdminMarketsPage() {
   const markets: Market[] = data?.items ?? [];
 
   const tableFilters: FilterDef[] = useMemo(() => [
-    { title: "name", label: "Όνομα", type: "TEXT" },
-    {
-      title: "marketType",
-      label: "Τύπος Αγοράς",
-      type: "DROPDOWN",
-      dataItems: [
-        { label: "Λαϊκή", value: 1 },
-        { label: "Οργανωμένη", value: 2 },
-      ],
-    },
-    {
-      title: "operatingDays",
-      label: "Ημέρα Λειτουργίας",
-      type: "DROPDOWN",
-      width: 180,
-      dataItems: DAYS,
-    },
+    { title: "name", label: "Όνομα", type: "TEXT" }
   ], []);
 
   const handleSearch = (values: FilterValues) => {

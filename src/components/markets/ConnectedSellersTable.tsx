@@ -1,5 +1,6 @@
 import DeleteIcon from "@mui/icons-material/Delete";
 import { useMemo } from "react";
+import { useNavigate } from "@tanstack/react-router";
 import CustomButton from "../../shared/components/CustomButton";
 import DataTable, { type ColumnDef } from "../../shared/components/DataTable";
 import { SELLER_TYPE_LABELS } from "../sellers/sellers.utils";
@@ -106,7 +107,8 @@ function createConnectedSellerColumns(
           backgroundColor="var(--color-danger)"
           width="fit-content"
           disabled={!Number.isFinite(sellerId) || !onRemoveSeller}
-          onClick={() => {
+          onClick={(e) => {
+            e.stopPropagation();
             if (Number.isFinite(sellerId)) {
               onRemoveSeller?.(sellerId);
             }
@@ -295,6 +297,8 @@ function normalizeConnectedSeller(
 }
 
 export default function ConnectedSellersTable({ sellers, onRemoveSeller }: ConnectedSellersTableProps) {
+  const navigate = useNavigate();
+
   const sellerIds = useMemo(
     () =>
       sellers
@@ -343,6 +347,15 @@ export default function ConnectedSellersTable({ sellers, onRemoveSeller }: Conne
       rowKey="id"
       showFilter={false}
       defaultRowsPerPage={10}
+      onRowClick={(row) => {
+        const sellerId = row.sellerId ?? row.id;
+        if (sellerId) {
+          navigate({
+            to: "/admin/sellers/$sellerId",
+            params: { sellerId: String(sellerId) },
+          });
+        }
+      }}
     />
   );
 }

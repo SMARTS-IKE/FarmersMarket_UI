@@ -95,7 +95,9 @@ function normalizeMarketDetailResponse(raw: unknown): Market {
     latitude: readNumber(record, ['latitude', 'Latitude', 'lat', 'Lat']) ?? fallbackLatitude,
     longitude: readNumber(record, ['longitude', 'Longitude', 'lng', 'lon', 'Lng', 'Lon']) ?? fallbackLongitude,
     locations,
-    totalSpots: readNumber(record, ['totalSpots', 'capacity']) ?? undefined,
+    totalSpots: readNumber(record, ['totalSpots', 'capacity']) ?? 
+                normalizeCurrentHistory(record.currentHistory)?.capacity ?? 
+                undefined,
     occupiedSpots: readNumber(record, ['occupiedSpots']) ?? undefined,
     openTime: readString(record, ['openTime']) || undefined,
     closeTime: readString(record, ['closeTime']) || undefined,
@@ -141,18 +143,26 @@ export async function getMarkets(params: MarketSearchRequest): Promise<MarketLis
 
   if (Array.isArray(response)) {
     return {
-      items: response,
+      items: response.map(normalizeMarketDetailResponse),
       totalCount: response.length,
       page: params.page,
       pageSize: params.pageSize,
     };
   }
 
-  return response;
+  return {
+    ...response,
+    items: response.items.map(normalizeMarketDetailResponse),
+  };
 }
 
 export async function getMarketById(id: string): Promise<Market> {
   const response = await http.get<unknown>(`/Markets/${id}`);
+  return normalizeMarketDetailResponse(response);
+}
+
+export async function createMarket(payload: CreateMarketRequest): Promise<Market> {
+  const response = await http.post<unknown, CreateMarketRequest>('/Markets', payload);
   return normalizeMarketDetailResponse(response);
 }
 
@@ -173,6 +183,10 @@ export async function addMarketSeller(
 
 export async function removeMarketSeller(marketId: string, sellerId: number): Promise<void> {
   return http.delete<void>(`/Markets/${marketId}/sellers/${sellerId}`);
+}
+
+export async function getMarketSellers(marketId: string): Promise<ConnectedMarketListResponse> {
+  return http.get<ConnectedMarketListResponse>(`/MarketSeller/market/${marketId}`);
 }
 
 export async function addMarketSupervisor(marketId: string, userId: string): Promise<void> {

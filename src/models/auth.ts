@@ -7,6 +7,11 @@ export interface RegisterCredentials {
   email: string;
   firstName: string;
   lastName: string;
+  afm?: string;
+  phone?: string;
+  address?: string;
+  sellerType?: number;
+  password?: string;
   role?: string;
 }
 

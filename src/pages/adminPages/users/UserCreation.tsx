@@ -6,6 +6,7 @@ import CustomInputField from '../../../shared/components/CustomInputField';
 import { setAuthNotification } from '../../../lib/authNotifications';
 import { useRegisterMutation } from '../../../queries/authQueries';
 import { USER_ROLE_MAPPING, USER_ROLE_MAPPING_TITLES } from '../../../shared/mappings/users.mapping';
+import { SELLER_TYPE_LABELS } from '../../../components/sellers/sellers.utils';
 
 const ROLE_OPTIONS = USER_ROLE_MAPPING_TITLES ? Object.values(USER_ROLE_MAPPING_TITLES) : [];
 const ROLE_KEYS = USER_ROLE_MAPPING_TITLES ? Object.keys(USER_ROLE_MAPPING_TITLES) : [];
@@ -18,6 +19,10 @@ export default function UserCreation() {
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
+  const [afm, setAfm] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [sellerType, setSellerType] = useState<number>(0);
   const [password] = useState(INITIAL_PASSWORD);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([DEFAULT_ROLE]);
   const [submitAttempted, setSubmitAttempted] = useState(false);
@@ -31,14 +36,21 @@ export default function UserCreation() {
       firstName.trim().length > 0 ||
       lastName.trim().length > 0 ||
       email.trim().length > 0 ||
+      afm.trim().length > 0 ||
+      phone.trim().length > 0 ||
+      address.trim().length > 0 ||
+      sellerType !== 0 ||
       selectedRoles.length !== 1 ||
       selectedRoles[0] !== DEFAULT_ROLE,
-    [email, firstName, lastName, selectedRoles]
+    [email, firstName, lastName, afm, phone, address, sellerType, selectedRoles]
   );
 
   const firstNameTrimmed = firstName.trim();
   const lastNameTrimmed = lastName.trim();
   const emailTrimmed = email.trim();
+  const afmTrimmed = afm.trim();
+  const phoneTrimmed = phone.trim();
+  const addressTrimmed = address.trim();
 
   const emailError = submitAttempted && !emailTrimmed ? 'Το πεδίο είναι υποχρεωτικό.' : '';
   const firstNameError = submitAttempted
@@ -55,6 +67,9 @@ export default function UserCreation() {
         ? 'Ελάχιστος αριθμός χαρακτήρων: 2.'
         : ''
     : '';
+  const afmError = submitAttempted && !afmTrimmed ? 'Το πεδίο είναι υποχρεωτικό.' : '';
+  const phoneError = submitAttempted && !phoneTrimmed ? 'Το πεδίο είναι υποχρεωτικό.' : '';
+  const addressError = submitAttempted && !addressTrimmed ? 'Το πεδίο είναι υποχρεωτικό.' : '';
   const roleError = submitAttempted && selectedRoles.length === 0 ? 'Το πεδίο είναι υποχρεωτικό.' : '';
 
   useEffect(() => {
@@ -91,6 +106,10 @@ export default function UserCreation() {
     setFirstName('');
     setLastName('');
     setEmail('');
+    setAfm('');
+    setPhone('');
+    setAddress('');
+    setSellerType(0);
     setSelectedRoles([DEFAULT_ROLE]);
     setSubmitAttempted(false);
     setNotificationMessage('');
@@ -101,7 +120,7 @@ export default function UserCreation() {
   async function handleCreate() {
     setSubmitAttempted(true);
 
-    if (!firstNameTrimmed || firstNameTrimmed.length < 2 || !lastNameTrimmed || lastNameTrimmed.length < 2 || !emailTrimmed || !password) {
+    if (!firstNameTrimmed || firstNameTrimmed.length < 2 || !lastNameTrimmed || lastNameTrimmed.length < 2 || !emailTrimmed || !password || !afmTrimmed || !phoneTrimmed || !addressTrimmed) {
       showNotification('Συμπληρώστε όλα τα υποχρεωτικά πεδία.', 'warning');
       return;
     }
@@ -117,6 +136,10 @@ export default function UserCreation() {
         firstName: firstNameTrimmed,
         lastName: lastNameTrimmed,
         email: emailTrimmed,
+        afm: afmTrimmed,
+        phone: phoneTrimmed,
+        address: addressTrimmed,
+        sellerType,
         password,
         role: primaryRole,
       });
@@ -152,8 +175,8 @@ export default function UserCreation() {
           </div>
         </div>
 
-        <section className="grid w-full content-start gap-10">
-          <div className="grid w-full gap-8 mb-10 md:grid-cols-2">
+        <section className="grid w-full content-start gap-4">
+          <div className="grid w-full gap-8 mb-2 md:grid-cols-2">
             <CustomInputField
               type="TEXT"
               label="Ηλεκτρονικό ταχυδρομείο *"
@@ -185,12 +208,47 @@ export default function UserCreation() {
               width="100%"
               error={lastNameError}
             />
+            <CustomInputField
+              type="TEXT"
+              label="ΑΦΜ *"
+              value={afm}
+              onChange={(value) => setAfm(String(value))}
+              width="100%"
+              error={afmError}
+            />
+            <CustomInputField
+              type="TEXT"
+              label="Τηλέφωνο *"
+              value={phone}
+              onChange={(value) => setPhone(String(value))}
+              width="100%"
+              error={phoneError}
+            />
+            <CustomInputField
+              type="TEXT"
+              label="Διεύθυνση *"
+              value={address}
+              onChange={(value) => setAddress(String(value))}
+              width="100%"
+              error={addressError}
+            />
+            <CustomInputField
+              type="DROPDOWN"
+              label="Τύπος Πωλητή"
+              value={sellerType}
+              onChange={(value) => setSellerType(Number(value))}
+              width="100%"
+              dropdownItems={Object.entries(SELLER_TYPE_LABELS).map(([value, label]) => ({
+                label,
+                value: Number(value),
+              }))}
+            />
           </div>
 
           <div className="grid justify-items-start">
             <div className="grid content-start gap-4 w-full max-w-sm">
               <div className="w-full text-left text-sm font-medium text-(--color-text-heading)">Ρόλος *</div>
-              <div className="grid grid-cols-1 gap-4">
+              <div className="grid grid-cols-2 gap-4">
                 {[
                   ...ROLE_KEYS.map((role, index) => ({ label: role, active: selectedRoles.includes(role), index })),
                 ].map((role) => (
@@ -228,7 +286,7 @@ export default function UserCreation() {
         </section>
 
         <div className="flex flex-wrap justify-end gap-3">
-          {isNavigationLocked && (
+        
             <CustomButton
               title="Ακύρωση"
               backgroundColor="transparent"
@@ -245,10 +303,10 @@ export default function UserCreation() {
                 },
               }}
             />
-          )}
+         
 
           <CustomButton
-            title={registerMutation.isPending ? 'Δημιουργία...' : 'Δημιουργία'}
+            title={registerMutation.isPending ? 'Αποθήκευση...' : 'Αποθήκευση'}
             onClick={handleCreate}
             disabled={registerMutation.isPending}
             width={140}

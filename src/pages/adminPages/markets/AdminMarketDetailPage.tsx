@@ -8,12 +8,14 @@ import type { Market, MarketFormValues, UpdateMarketRequest } from "../../../mod
 import {
   useAddMarketSellerMutation,
   useMarketQuery,
+  useMarketSellersQuery,
   useRemoveMarketSellerMutation,
   useUpdateMarketMutation,
 } from "../../../queries/marketQueries";
 import ConnectedSellersTable from "../../../components/markets/ConnectedSellersTable";
 import AttendanceTable from "../../../components/markets/AttendanceTable";
 import { useSellersQuery } from "../../../queries/sellerQueries";
+import { toIsoDate, toTimeWithSeconds } from "../../../components/markets/market.utils";
 
 const EMPTY_FORM_VALUES: MarketFormValues = {
   name: "",
@@ -233,19 +235,6 @@ function mapMarketToFormValues(market: Market): MarketFormValues {
   };
 }
 
-function toTimeWithSeconds(time: string): string {
-  if (!time) return "";
-  return time.length === 5 ? `${time}:00` : time;
-}
-
-function toIsoDate(dateValue: string | undefined): string {
-  if (dateValue && /^\d{4}-\d{2}-\d{2}/.test(dateValue)) {
-    return dateValue.slice(0, 10);
-  }
-
-  return new Date().toISOString().slice(0, 10);
-}
-
 function mapFormValuesToUpdatePayload(
   values: MarketFormValues,
   market: Market
@@ -274,7 +263,7 @@ function mapFormValuesToUpdatePayload(
     },
     configuration: {
       fromDate: toIsoDate(currentHistory?.fromDate),
-      capacity: values.availableSlots,
+      capacity: Number(values.availableSlots),
       licenseCategory: currentHistory?.licenseCategory ?? 0,
       lotteryEnabled: currentHistory?.lotteryEnabled ?? false,
       dailyFee: currentHistory?.dailyFee ?? 0,
@@ -290,6 +279,7 @@ export default function AdminMarketDetailPage() {
   const params = useParams({ strict: false });
   const marketId = typeof params.marketId === "string" ? params.marketId : "";
   const { data: market, isLoading, isError, error } = useMarketQuery(marketId);
+  const { data: marketSellersData } = useMarketSellersQuery(marketId);
   const addMarketSellerMutation = useAddMarketSellerMutation(marketId);
   const removeMarketSellerMutation = useRemoveMarketSellerMutation(marketId);
   const updateMarketMutation = useUpdateMarketMutation(marketId);
@@ -373,9 +363,16 @@ export default function AdminMarketDetailPage() {
     const mappedValues = mapMarketToFormValues(market);
     setFormValues(mappedValues);
     setInitialFormValues(mappedValues);
-    setConnectedSellers(market.marketSellers ?? []);
     setIsAddSellerModalOpen(false);
   }, [market]);
+
+  useEffect(() => {
+    if (marketSellersData) {
+      setConnectedSellers(marketSellersData.items ?? []);
+    } else if (market) {
+      setConnectedSellers(market.marketSellers ?? []);
+    }
+  }, [marketSellersData, market]);
 
   useEffect(() => {
     if (!hasUnsavedChanges) {
@@ -535,7 +532,6 @@ export default function AdminMarketDetailPage() {
         >
           <Tab label="Στοιχεία αγοράς" />
           <Tab label={`Συμμετέχοντες πωλητές (${connectedSellersCount})`} />
-          <Tab label="Παρουσίες" />
         </Tabs>
       </Box>
 
