@@ -10,9 +10,7 @@ export default function AdminSellerMarketPage() {
   const params = useParams({ strict: false });
   const marketConnectionId = typeof params.marketConnectionId === "string" ? params.marketConnectionId : "";
   const sellerId = typeof params.sellerId === "string" ? params.sellerId : "";
-
   const { data: connection, isLoading, isError, error } = useMarketSellerQuery(marketConnectionId);
-
   const handleBack = () => {
     navigate({ to: `/admin/sellers/${sellerId}` });
   };
