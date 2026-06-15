@@ -1,8 +1,5 @@
-import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useBlocker, useNavigate, useParams } from '@tanstack/react-router';
-import { Alert, Snackbar } from '@mui/material';
-import CustomButton from '../../shared/components/CustomButton';
-import CustomInputField from '../../shared/components/CustomInputField';
 import { setAuthNotification } from '../../lib/authNotifications';
 import {
   useAssignUserRoleMutation,
@@ -12,6 +9,9 @@ import {
   useUserQuery,
 } from '../../queries/userQueries';
 import { USER_ROLE_MAPPING_TITLES } from '../../shared/mappings/users.mapping';
+
+const inputClass =
+  'w-full px-4 py-3 text-[15px] rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text-heading) placeholder:text-(--color-text-muted) outline-none transition focus:border-(--color-primary) focus:ring-3 focus:ring-(--color-primary-subtle) disabled:opacity-50 disabled:cursor-not-allowed';
 
 const ROLE_OPTIONS = USER_ROLE_MAPPING_TITLES ? Object.values(USER_ROLE_MAPPING_TITLES) : [];
 const ROLE_KEYS = USER_ROLE_MAPPING_TITLES ? Object.keys(USER_ROLE_MAPPING_TITLES) : [];
@@ -34,9 +34,7 @@ export default function UserPage() {
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [initialSelectedRoles, setInitialSelectedRoles] = useState<string[]>([]);
   const [isNavigationLocked, setIsNavigationLocked] = useState(false);
-  const [notificationMessage, setNotificationMessage] = useState('');
-  const [notificationSeverity, setNotificationSeverity] = useState<'success' | 'warning' | 'error'>('warning');
-  const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const allowProgrammaticNavigationRef = useRef(false);
 
   useEffect(() => {
@@ -55,8 +53,7 @@ export default function UserPage() {
     setInitialSelectedRoles(nextRoles);
     setIsNavigationLocked(false);
     allowProgrammaticNavigationRef.current = false;
-    setNotificationMessage('');
-    setIsSnackbarOpen(false);
+    setErrors({});
   }, [user]);
 
   const isSavingUser = updateUserMutation.isPending;
@@ -81,9 +78,7 @@ export default function UserPage() {
     : '—';
 
   const showNotification = (message: string, severity: 'success' | 'warning' | 'error' = 'warning') => {
-    setNotificationMessage(message);
-    setNotificationSeverity(severity);
-    setIsSnackbarOpen(true);
+    setErrors({ form: message });
   };
 
   useEffect(() => {
@@ -105,8 +100,7 @@ export default function UserPage() {
   async function handleSave() {
     if (!hasPendingChanges) return;
 
-    setNotificationMessage('');
-    setIsSnackbarOpen(false);
+    setErrors({});
 
     try {
       await updateUserMutation.mutateAsync({
@@ -141,19 +135,14 @@ export default function UserPage() {
     setLastName(initialLastName);
     setIsActive(initialIsActive);
     setSelectedRoles(initialSelectedRoles);
-    setNotificationMessage('');
-    setIsSnackbarOpen(false);
+    setErrors({});
     setIsNavigationLocked(false);
   }
 
   function handleRoleToggle(role: string) {
-    setNotificationMessage('');
-    setIsSnackbarOpen(false);
-
+    setErrors({});
     setSelectedRoles((current) =>
-      current.includes(role)
-        ? []
-        : [role]
+      current.includes(role) ? [] : [role]
     );
   }
 
@@ -167,12 +156,14 @@ export default function UserPage() {
   };
 
   const handleReinitializePassword = async () => {
-    setNotificationMessage('');
-    setIsSnackbarOpen(false);
+    setErrors({});
 
     try {
       await reinitializePasswordMutation.mutateAsync();
-      showNotification('Ο κωδικός του χρήστη επαναρχικοποιήθηκε επιτυχώς.', 'success');
+      setAuthNotification({
+        type: 'success',
+        message: 'Ο κωδικός του χρήστη επαναρχικοποιήθηκε επιτυχώς.',
+      });
     } catch (mutationError) {
       showNotification(
         mutationError instanceof Error
@@ -190,220 +181,164 @@ export default function UserPage() {
 
   if (!userId) {
     return (
-      <div className="flex flex-col gap-4 rounded-2xl border border-(--color-border) bg-(--color-surface) p-6 text-(--color-text-heading)">
-        <h1 className="text-2xl font-semibold">Στοιχεία χρήστη</h1>
-        <p className="text-sm text-(--color-text-muted)">Δεν βρέθηκε έγκυρο αναγνωριστικό χρήστη.</p>
-        <CustomButton
-          title="Επιστροφή στη λίστα χρηστών"
-          onClick={handleBackToList}
-          width="fit-content"
-          backgroundColor="var(--color-text-muted)"
-        />
+      <div className="min-h-screen p-6 md:px-10 bg-transparent">
+        <div className="mx-auto max-w-2xl">
+          <div className="rounded-lg border border-(--color-border) bg-(--color-surface) p-6">
+            <h1 className="text-2xl font-semibold text-(--color-text-heading) mb-2">Στοιχεία χρήστη</h1>
+            <p className="text-sm text-(--color-text-muted)">Δεν βρέθηκε έγκυρο αναγνωριστικό χρήστη.</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (isLoading) {
     return (
-      <div className="flex flex-col gap-4 rounded-2xl border border-(--color-border) bg-(--color-surface) p-6 text-(--color-text-heading)">
-        <h1 className="text-2xl font-semibold">Στοιχεία χρήστη</h1>
-        <p className="text-sm text-(--color-text-muted)">Φόρτωση στοιχείων χρήστη...</p>
+      <div className="min-h-screen p-6 md:px-10 bg-transparent">
+        <div className="mx-auto max-w-2xl">
+          <div className="rounded-lg border border-(--color-border) bg-(--color-surface) p-6">
+            <h1 className="text-2xl font-semibold text-(--color-text-heading) mb-2">Στοιχεία χρήστη</h1>
+            <p className="text-sm text-(--color-text-muted)">Φόρτωση στοιχείων χρήστη...</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   if (isError || !user) {
     return (
-      <div className="flex flex-col gap-4 rounded-2xl border border-(--color-danger-border) bg-danger-subtle p-6 text-(--color-text-heading)">
-        <h1 className="text-2xl font-semibold">Στοιχεία χρήστη</h1>
-        <p className="text-sm text-(--color-danger)">{error?.message ?? 'Η φόρτωση των στοιχείων χρήστη απέτυχε.'}</p>
-        <CustomButton
-          title="Επιστροφή στη λίστα χρηστών"
-          onClick={handleBackToList}
-          width="fit-content"
-          backgroundColor="var(--color-text-muted)"
-        />
+      <div className="min-h-screen p-6 md:px-10 bg-transparent">
+        <div className="mx-auto max-w-2xl">
+          <div className="rounded-lg border border-(--color-danger-border) bg-danger-subtle p-6">
+            <h1 className="text-2xl font-semibold text-(--color-text-heading) mb-2">Στοιχεία χρήστη</h1>
+            <p className="text-sm text-(--color-danger)">{error?.message ?? 'Η φόρτωση των στοιχείων χρήστη απέτυχε.'}</p>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-full p-6 text-left text-(--color-text-heading) md:px-10">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-semibold text-(--color-text-heading)">{firstName || '—'} {lastName || ''}</h2>
-          <div className="flex flex-wrap items-center gap-3">
-            <CustomButton
-                      title="Επιστροφή στη λίστα χρηστών"
-                      backgroundColor="var(--color-text-muted)"
-                      width="fit-content"
-                      onClick={handleBackToList} />
-          </div>
+    <div className="min-h-screen p-6 md:px-10 bg-transparent">
+      <div className="mx-auto max-w-2xl">
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold text-(--color-text-heading) mb-2">Στοιχεία χρήστη</h2>
+          <p className="text-sm text-(--color-text-muted)">Επεξεργασία στοιχείων χρήστη</p>
         </div>
 
-        <section className="grid w-full content-start gap-10">
-          <div className="grid w-full gap-8 mb-10 md:grid-cols-2">
-              <div className="md:col-span-2">
-                <CustomInputField
-                  type="TEXT"
-                  label="Ηλεκτρονικό ταχυδρομείο"
-                  value={user.email || '—'}
-                  disabled
-                  width="100%"
-                />
-              </div>
-              <CustomInputField
-                type="TEXT"
-                label="Όνομα"
+        <form className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); handleSave(); }} noValidate>
+          {errors.form && (
+            <div
+              className="bg-danger-subtle border border-(--color-danger-border) text-danger rounded-lg px-4 py-3 text-sm"
+              role="alert"
+            >
+              {errors.form}
+            </div>
+          )}
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="firstName" className="text-sm font-semibold text-(--color-text-heading)">
+                Όνομα
+              </label>
+              <input
+                id="firstName"
+                name="firstName"
+                type="text"
                 value={firstName}
-                onChange={(value) => setFirstName(String(value))}
-                width="100%"
+                onChange={(e) => setFirstName(e.target.value)}
+                placeholder="Όνομα"
+                className={inputClass}
               />
-              <CustomInputField
-                type="TEXT"
-                label="Επώνυμο"
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label htmlFor="lastName" className="text-sm font-semibold text-(--color-text-heading)">
+                Επώνυμο
+              </label>
+              <input
+                id="lastName"
+                name="lastName"
+                type="text"
                 value={lastName}
-                onChange={(value) => setLastName(String(value))}
-                width="100%"
+                onChange={(e) => setLastName(e.target.value)}
+                placeholder="Επώνυμο"
+                className={inputClass}
               />
-          </div>
-
-          <div className="grid w-full gap-6 md:grid-cols-2 md:items-start">
-            <div className="grid content-start gap-4 w-full max-w-sm md:justify-self-start">
-              <div className="w-full text-left text-sm font-medium text-(--color-text-heading)">Ρόλος</div>
-              <div className="grid grid-cols-1 gap-4">
-                <CustomButton
-                  key={currentRoleKey || 'current-role'}
-                  title={currentRoleTitle}
-                  width="100%"
-                  onClick={() => null}
-                  disabled={false}
-                  backgroundColor="var(--color-dark)"
-                  sx={{
-                    minHeight: 44,
-                    height: '100%',
-                    borderRadius: '0.75rem',
-                    border: '1px solid transparent',
-                    color: '#ffffff',
-                    boxShadow: '0 1px 2px rgba(60,40,10,0.08)',
-                    fontSize: '0.875rem',
-                    lineHeight: 1.2,
-                    whiteSpace: 'normal',
-                    paddingInline: '0.75rem',
-                    cursor: 'default',
-                    pointerEvents: 'none',
-                    '&:hover': {
-                      backgroundColor: 'var(--color-dark)',
-                      filter: 'none',
-                    },
-                  }}
-                />
-              </div>
-            </div>
-
-            <div className="grid content-start gap-4 w-full max-w-sm md:justify-self-end">
-              <div className="w-full text-left text-sm font-medium text-(--color-text-heading)">Κατάσταση</div>
-              <div className="grid grid-cols-1 gap-4">
-                <CustomButton
-                  title="Ενεργός"
-                  onClick={() => setIsActive(true)}
-                  width="100%"
-                  disabled={isSavingUser || isUpdatingRole || isReinitializingPassword}
-                  backgroundColor={isActive ? 'var(--color-dark)' : 'rgba(255,255,255,0.85)'}
-                  sx={{
-                    minHeight: 44,
-                    height: '100%',
-                    borderRadius: '0.75rem',
-                    border: isActive ? '1px solid transparent' : '1px solid var(--color-text-muted)',
-                    color: isActive ? '#ffffff' : 'var(--color-text)',
-                    boxShadow: '0 1px 2px rgba(60,40,10,0.08)',
-                    fontSize: '0.875rem',
-                    lineHeight: 1.2,
-                    whiteSpace: 'normal',
-                    paddingInline: '0.75rem',
-                    '&:hover': {
-                      backgroundColor: isActive ? 'var(--color-text)' : 'rgba(255,255,255,0.85)',
-                      filter: 'none',
-                    },
-                  }}
-                />
-                <CustomButton
-                  title="Ανενεργός"
-                  onClick={() => setIsActive(false)}
-                  width="100%"
-                  disabled={isSavingUser || isUpdatingRole || isReinitializingPassword}
-                  backgroundColor={!isActive ? 'var(--color-dark)' : 'rgba(255,255,255,0.85)'}
-                  sx={{
-                    minHeight: 44,
-                    height: '100%',
-                    borderRadius: '0.75rem',
-                    border: !isActive ? '1px solid transparent' : '1px solid var(--color-text-muted)',
-                    color: !isActive ? '#ffffff' : 'var(--color-text)',
-                    boxShadow: '0 1px 2px rgba(60,40,10,0.08)',
-                    fontSize: '0.875rem',
-                    lineHeight: 1.2,
-                    whiteSpace: 'normal',
-                    paddingInline: '0.75rem',
-                    '&:hover': {
-                      backgroundColor: !isActive ? 'var(--color-text)' : 'rgba(255,255,255,0.85)',
-                      filter: 'none',
-                    },
-                  }}
-                />
-              </div>
             </div>
           </div>
-        </section>
 
-        <div className="flex flex-wrap justify-end gap-3">
-          {/* <CustomButton
-            title={isReinitializingPassword ? 'Επαναρχικοποίηση...' : 'Επαναρχικοποίηση Κωδικού'}
-            backgroundColor="var(--color-text-muted)"
-            onClick={handleReinitializePassword}
-            disabled={isReinitializingPassword}
-            width={220}
-          /> */}
+          <div className="flex flex-col gap-1">
+            <label htmlFor="email" className="text-sm font-semibold text-(--color-text-heading)">
+              Ηλεκτρονικό ταχυδρομείο
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              value={user.email || ''}
+              disabled
+              className={inputClass}
+            />
+          </div>
 
-          {isNavigationLocked && (
-            <CustomButton
-              title="Ακύρωση"
-              backgroundColor="transparent"
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="role" className="text-sm font-semibold text-(--color-text-heading)">
+                Ρόλος
+              </label>
+              <select
+                id="role"
+                name="role"
+                value={selectedRoles[0] || ''}
+                onChange={(e) => handleRoleToggle(e.target.value)}
+                className={inputClass}
+              >
+                <option value="">-- Επιλέξτε --</option>
+                {ROLE_KEYS.map((roleKey, index) => (
+                  <option key={roleKey} value={roleKey}>
+                    {ROLE_OPTIONS[index]}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label htmlFor="isActive" className="text-sm font-semibold text-(--color-text-heading)">
+                Κατάσταση
+              </label>
+              <select
+                id="isActive"
+                name="isActive"
+                value={isActive ? 'active' : 'inactive'}
+                onChange={(e) => setIsActive(e.target.value === 'active')}
+                className={inputClass}
+              >
+                <option value="active">Ενεργός</option>
+                <option value="inactive">Ανενεργός</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              disabled={isSavingUser || isUpdatingRole || isReinitializingPassword}
+              className="w-full py-3 px-4 text-[15px] font-semibold rounded-lg bg-(--color-text) text-white transition hover:brightness-90 active:brightness-75 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {isSavingUser || isUpdatingRole ? 'Αποθήκευση...' : 'Αποθήκευση'}
+            </button>
+            <button
+              type="button"
               onClick={handleCancel}
               disabled={isSavingUser || isUpdatingRole || isReinitializingPassword}
-              width={120}
-              sx={{
-                color: 'var(--color-dark)',
-                border: '1px solid var(--color-text-muted)',
-                '&:hover': {
-                  backgroundColor: 'transparent',
-                  borderColor: 'var(--color-text-muted)',
-                  filter: 'none',
-                },
-              }}
-            />
-          )}
-
-          {hasPendingChanges && (
-            <CustomButton
-              title={isSavingUser || isUpdatingRole ? 'Αποθήκευση...' : 'Αποθήκευση'}
-              onClick={handleSave}
-              disabled={isSavingUser || isUpdatingRole || isReinitializingPassword}
-              width={140}
-            />
-          )}
-        </div>
+              className="w-full py-3 px-4 text-[15px] font-semibold rounded-lg bg-transparent border border-(--color-text-muted) text-(--color-text-heading) transition hover:bg-(--color-bg-hover) disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            >
+              Ακύρωση
+            </button>
+          </div>
+        </form>
       </div>
-
-      <Snackbar
-        open={isSnackbarOpen && Boolean(notificationMessage)}
-        autoHideDuration={4500}
-        onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={handleSnackbarClose} severity={notificationSeverity} variant="filled" sx={{ width: '100%' }}>
-          {notificationMessage}
-        </Alert>
-      </Snackbar>
     </div>
   );
 }

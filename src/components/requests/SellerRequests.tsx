@@ -1,10 +1,14 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import DataTable, { FilterDef, FilterValues } from "../../shared/components/DataTable";
+import IconButton from "@mui/material/IconButton";
+import Menu from "@mui/material/Menu";
+import MenuItem from "@mui/material/MenuItem";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
 import type { RequestStatus, SellerRequest, SellerRequestSearchRequest } from "../../models/request";
 import type { SellerSearchRequest } from "../../models/seller";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import { useSellerRequestsQuery } from "../../queries/requestQueries";
+import { useApproveRequestMutation, useDeleteRequestMutation, useRejectRequestMutation, useSellerRequestsQuery } from "../../queries/requestQueries";
 import { useSellersQuery } from "../../queries/sellerQueries";
 import { sellerRequestColumns } from "./request.utils";
 
@@ -22,6 +26,39 @@ export default function FetchedSellerRequests() {
     sellerId: undefined,
     status: undefined,
   });
+
+  const [menuState, setMenuState] = useState<{ anchorEl: HTMLElement; rowId: number } | null>(null);
+  const menuRowRef = useRef<SellerRequest | null>(null);
+
+  const approveMutation = useApproveRequestMutation();
+  const rejectMutation = useRejectRequestMutation();
+  const deleteMutation = useDeleteRequestMutation();
+
+  const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, row: SellerRequest) => {
+    event.stopPropagation();
+    menuRowRef.current = row;
+    setMenuState({ anchorEl: event.currentTarget, rowId: row.id });
+  };
+
+  const handleMenuClose = () => {
+    setMenuState(null);
+    menuRowRef.current = null;
+  };
+
+  const handleApprove = () => {
+    if (menuRowRef.current) approveMutation.mutate(menuRowRef.current.id);
+    handleMenuClose();
+  };
+
+  const handleReject = () => {
+    if (menuRowRef.current) rejectMutation.mutate(menuRowRef.current.id);
+    handleMenuClose();
+  };
+
+  const handleDelete = () => {
+    if (menuRowRef.current) deleteMutation.mutate(menuRowRef.current.id);
+    handleMenuClose();
+  };
 
   const { data: sellersData } = useSellersQuery(SELLER_FILTERS);
   const allSellers = sellersData?.items ?? [];
@@ -93,7 +130,23 @@ export default function FetchedSellerRequests() {
     <div className="flex w-full flex-col gap-4">
       <DataTable<SellerRequest>
         rows={sellerRequests}
-        columns={sellerRequestColumns}
+        columns={[
+          ...sellerRequestColumns,
+          {
+            key: "actions" as keyof SellerRequest,
+            label: "",
+            filterable: false,
+            render: (row) => (
+              <IconButton
+                size="small"
+                onClick={(e) => handleMenuOpen(e, row)}
+                aria-label="actions"
+              >
+                <MoreVertIcon fontSize="small" />
+              </IconButton>
+            ),
+          },
+        ]}
         rowKey="id"
         showFilter={false}
         filters={tableFilters}
@@ -104,6 +157,17 @@ export default function FetchedSellerRequests() {
         clearFiltersPrefixIcon={<RestartAltIcon />}
         clearFiltersButtonBackgroundColor="var(--color-text-muted)"
       />
+      <Menu
+        anchorEl={menuState?.anchorEl}
+        open={Boolean(menuState)}
+        onClose={handleMenuClose}
+      >
+        <MenuItem onClick={handleApprove}>Έγκριση Αιτήματος</MenuItem>
+        <MenuItem onClick={handleReject}>Απόρριψη Αιτήματος</MenuItem>
+        <MenuItem onClick={handleDelete} sx={{ color: "error.main" }}>
+          Διαγραφή Αιτήματος
+        </MenuItem>
+      </Menu>
     </div>
   );
 }

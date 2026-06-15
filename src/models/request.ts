@@ -18,6 +18,16 @@ export interface SellerRequest {
   requestType: RequestType;
   status: RequestStatus;
   submittedAt: string;
+  sellerId: number;
+  formId: number;
+  sellerAfm: string;
+  score: number | null;
+  processedAt: string | null;
+  rejectionReason: string | null;
+  notes: string | null;
+  markets: RequestedMarket[];
+  fieldValues: RequestFieldValue[];
+  documents: SubmittedRequestDocument[];
 }
 
 export interface SellerRequestSearchRequest {
@@ -156,15 +166,30 @@ export interface RequestFieldValue {
   fieldId: number;
   fieldLabel: string;
   value: string;
+  weight?: number;
   reviewStatus: number | null;
   reviewComment: string | null;
+}
+
+export interface SubmittedRequestDocument {
+  id?: number;
+  name?: string | null;
+  title?: string | null;
+  fileName?: string | null;
+  url?: string | null;
+  downloadUrl?: string | null;
+  contentType?: string | null;
+  [key: string]: unknown;
 }
 
 export interface SubmittedRequestDetail {
   id: number;
   sellerId: number;
+  formId: number | null;
   sellerFullName: string;
   sellerAfm: string;
+  sellerType?: string | number;
+  sellerLicenseNumber?: string;
   status: RequestStatus;
   score: number | null;
   submittedAt: string;
@@ -173,6 +198,7 @@ export interface SubmittedRequestDetail {
   notes: string | null;
   markets: RequestedMarket[];
   fieldValues: RequestFieldValue[];
+  documents: SubmittedRequestDocument[];
 }
 
 export interface CreateRequestFormFieldRequest {

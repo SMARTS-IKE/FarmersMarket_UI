@@ -103,7 +103,6 @@ export const sellerRequestColumns: ColumnDef<SellerRequest>[] = [
     label: "Πωλητής",
     render: (row) => row.sellerFullName || row.sellerName || "-",
   },
-  { key: "marketName", label: "Αγορά" },
   {
     key: "requestType",
     label: "Τύπος Αιτήματος",

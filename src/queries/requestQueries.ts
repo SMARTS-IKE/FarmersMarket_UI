@@ -12,7 +12,7 @@ import type {
   UpdateMarketPeriodRequest,
 } from '../models/request';
 import { createMarketPeriod, getMarketPeriodById, updateMarketPeriod } from '../services/periodService';
-import { getMarketPeriods, getSellerRequests, getSubmittedRequestById } from '../services/requestService';
+import { approveRequest, deleteRequest, getMarketPeriods, getSellerRequests, getSubmittedRequestById, rejectRequest } from '../services/requestService';
 
 const REQUESTS_STALE_TIME_MS = 5 * 60 * 1000;
 const REQUESTS_GC_TIME_MS = 15 * 60 * 1000;
@@ -48,6 +48,33 @@ export function useCreateMarketPeriodMutation() {
     mutationFn: (payload) => createMarketPeriod(payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['requests', 'market-periods'] });
+    },
+  });
+}
+
+export function useApproveRequestMutation() {
+  return useMutation<void, Error, number>({
+    mutationFn: (id) => approveRequest(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['requests', 'seller-list'] });
+    },
+  });
+}
+
+export function useRejectRequestMutation() {
+  return useMutation<void, Error, number>({
+    mutationFn: (id) => rejectRequest(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['requests', 'seller-list'] });
+    },
+  });
+}
+
+export function useDeleteRequestMutation() {
+  return useMutation<void, Error, number>({
+    mutationFn: (id) => deleteRequest(id),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: ['requests', 'seller-list'] });
     },
   });
 }

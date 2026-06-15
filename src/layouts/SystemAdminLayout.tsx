@@ -133,6 +133,16 @@ function SystemAdminLayoutInner() {
           </aside>
 
           <main className={`flex h-full min-h-0 flex-col bg-(--color-surface) p-5 md:p-7${isList ? ' lg:col-span-3' : ''}`}>
+            {!isList && (tabSlot || filterSlot) && (
+              <div className="mb-4 flex min-w-0 flex-col items-stretch justify-start gap-2 overflow-x-auto">
+                {tabSlot && (
+                  <div className="w-full">{tabSlot}</div>
+                )}
+                {filterSlot && (
+                  <div className="flex min-w-0 items-end justify-center overflow-x-auto">{filterSlot}</div>
+                )}
+              </div>
+            )}
             {isList && (
               <div className="hidden lg:flex justify-between items-start mb-4 gap-4">
                 {/* Left column content */}

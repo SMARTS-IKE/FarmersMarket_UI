@@ -1,329 +1,290 @@
-import { useEffect, useMemo, useState, type SyntheticEvent } from 'react';
+import { useState } from 'react';
 import { useNavigate } from '@tanstack/react-router';
-import { Alert, Snackbar } from '@mui/material';
-import CustomButton from '../../../shared/components/CustomButton';
-import CustomInputField from '../../../shared/components/CustomInputField';
 import { setAuthNotification } from '../../../lib/authNotifications';
+import type { RegisterCredentials } from '../../../models/auth';
 import { useRegisterMutation } from '../../../queries/authQueries';
 import { USER_ROLE_MAPPING, USER_ROLE_MAPPING_TITLES } from '../../../shared/mappings/users.mapping';
 import { SELLER_TYPE_LABELS } from '../../../components/sellers/sellers.utils';
+
+const inputClass =
+  'w-full px-4 py-3 text-[15px] rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text-heading) placeholder:text-(--color-text-muted) outline-none transition focus:border-(--color-primary) focus:ring-3 focus:ring-(--color-primary-subtle)';
 
 const ROLE_OPTIONS = USER_ROLE_MAPPING_TITLES ? Object.values(USER_ROLE_MAPPING_TITLES) : [];
 const ROLE_KEYS = USER_ROLE_MAPPING_TITLES ? Object.keys(USER_ROLE_MAPPING_TITLES) : [];
 const INITIAL_PASSWORD = 'Aa111111!';
 const DEFAULT_ROLE = USER_ROLE_MAPPING.USER;
 
+interface UserCreationForm extends RegisterCredentials {
+  role: string;
+}
+
 export default function UserCreation() {
   const navigate = useNavigate();
   const registerMutation = useRegisterMutation();
-  const [firstName, setFirstName] = useState('');
-  const [lastName, setLastName] = useState('');
-  const [email, setEmail] = useState('');
-  const [afm, setAfm] = useState('');
-  const [phone, setPhone] = useState('');
-  const [address, setAddress] = useState('');
-  const [sellerType, setSellerType] = useState<number>(0);
-  const [password] = useState(INITIAL_PASSWORD);
-  const [selectedRoles, setSelectedRoles] = useState<string[]>([DEFAULT_ROLE]);
-  const [submitAttempted, setSubmitAttempted] = useState(false);
-  const [isNavigationLocked, setIsNavigationLocked] = useState(false);
-  const [notificationMessage, setNotificationMessage] = useState('');
-  const [notificationSeverity, setNotificationSeverity] = useState<'success' | 'warning' | 'error'>('warning');
-  const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
+  const [form, setForm] = useState<UserCreationForm>({
+    firstName: '',
+    lastName: '',
+    email: '',
+    afm: '',
+    phone: '',
+    address: '',
+    sellerType: 0,
+    role: DEFAULT_ROLE,
+  });
+  const [errors, setErrors] = useState<Partial<Record<keyof UserCreationForm | 'form', string>>>({});
 
-  const hasPendingChanges = useMemo(
-    () =>
-      firstName.trim().length > 0 ||
-      lastName.trim().length > 0 ||
-      email.trim().length > 0 ||
-      afm.trim().length > 0 ||
-      phone.trim().length > 0 ||
-      address.trim().length > 0 ||
-      sellerType !== 0 ||
-      selectedRoles.length !== 1 ||
-      selectedRoles[0] !== DEFAULT_ROLE,
-    [email, firstName, lastName, afm, phone, address, sellerType, selectedRoles]
-  );
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-  const firstNameTrimmed = firstName.trim();
-  const lastNameTrimmed = lastName.trim();
-  const emailTrimmed = email.trim();
-  const afmTrimmed = afm.trim();
-  const phoneTrimmed = phone.trim();
-  const addressTrimmed = address.trim();
+  function validate(): boolean {
+    const next: typeof errors = {};
 
-  const emailError = submitAttempted && !emailTrimmed ? 'Το πεδίο είναι υποχρεωτικό.' : '';
-  const firstNameError = submitAttempted
-    ? !firstNameTrimmed
-      ? 'Το πεδίο είναι υποχρεωτικό.'
-      : firstNameTrimmed.length < 2
-        ? 'Ελάχιστος αριθμός χαρακτήρων: 2.'
-        : ''
-    : '';
-  const lastNameError = submitAttempted
-    ? !lastNameTrimmed
-      ? 'Το πεδίο είναι υποχρεωτικό.'
-      : lastNameTrimmed.length < 2
-        ? 'Ελάχιστος αριθμός χαρακτήρων: 2.'
-        : ''
-    : '';
-  const afmError = submitAttempted && !afmTrimmed ? 'Το πεδίο είναι υποχρεωτικό.' : '';
-  const phoneError = submitAttempted && !phoneTrimmed ? 'Το πεδίο είναι υποχρεωτικό.' : '';
-  const addressError = submitAttempted && !addressTrimmed ? 'Το πεδίο είναι υποχρεωτικό.' : '';
-  const roleError = submitAttempted && selectedRoles.length === 0 ? 'Το πεδίο είναι υποχρεωτικό.' : '';
+    if (!form.firstName.trim()) next.firstName = 'Το όνομα είναι υποχρεωτικό';
+    else if (form.firstName.trim().length < 2) next.firstName = 'Ελάχιστος αριθμός χαρακτήρων: 2.';
 
-  useEffect(() => {
-    setIsNavigationLocked(hasPendingChanges);
-  }, [hasPendingChanges]);
+    if (!form.lastName.trim()) next.lastName = 'Το επώνυμο είναι υποχρεωτικό';
+    else if (form.lastName.trim().length < 2) next.lastName = 'Ελάχιστος αριθμός χαρακτήρων: 2.';
 
-  const showNotification = (message: string, severity: 'success' | 'warning' | 'error' = 'warning') => {
-    setNotificationMessage(message);
-    setNotificationSeverity(severity);
-    setIsSnackbarOpen(true);
-  };
+    if (!form.afm?.trim()) next.afm = 'Το ΑΦΜ είναι υποχρεωτικό';
 
-  function handleRoleToggle(role: string) {
-    setNotificationMessage('');
-    setIsSnackbarOpen(false);
+    if (!form.phone?.trim()) next.phone = 'Το τηλέφωνο είναι υποχρεωτικό';
 
-    setSelectedRoles((current) =>
-      current.includes(role)
-        ? []
-        : [role]
-    );
+    if (!form.address?.trim()) next.address = 'Η διεύθυνση είναι υποχρεωτική';
+
+    if (!form.email.trim()) next.email = 'Το email είναι υποχρεωτικό';
+    else if (!EMAIL_RE.test(form.email)) next.email = 'Μη έγκυρη διεύθυνση email';
+
+    if (!form.role) next.role = 'Ο ρόλος είναι υποχρεωτικός';
+
+    setErrors(next);
+    return Object.keys(next).length === 0;
   }
 
-  const handleBackToList = () => {
-    if (isNavigationLocked) {
-      showNotification('Έχετε μη αποθηκευμένες αλλαγές. Αποθηκεύστε ή ακυρώστε για να συνεχίσετε.', 'warning');
-      return;
-    }
+  function handleChange(e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) {
+    const { name, value } = e.target;
+    setForm((prev) => ({ 
+      ...prev, 
+      [name]: name === 'sellerType' ? Number(value) : value 
+    }));
+    setErrors((prev) => ({ ...prev, [name]: undefined }));
+  }
 
-    navigate({ to: '/admin/users' });
-  };
+  function handleRoleChange(role: string) {
+    setForm((prev) => ({ ...prev, role }));
+    setErrors((prev) => ({ ...prev, role: undefined }));
+  }
 
-  const handleCancel = () => {
-    setFirstName('');
-    setLastName('');
-    setEmail('');
-    setAfm('');
-    setPhone('');
-    setAddress('');
-    setSellerType(0);
-    setSelectedRoles([DEFAULT_ROLE]);
-    setSubmitAttempted(false);
-    setNotificationMessage('');
-    setIsSnackbarOpen(false);
-    setIsNavigationLocked(false);
-  };
-
-  async function handleCreate() {
-    setSubmitAttempted(true);
-
-    if (!firstNameTrimmed || firstNameTrimmed.length < 2 || !lastNameTrimmed || lastNameTrimmed.length < 2 || !emailTrimmed || !password || !afmTrimmed || !phoneTrimmed || !addressTrimmed) {
-      showNotification('Συμπληρώστε όλα τα υποχρεωτικά πεδία.', 'warning');
-      return;
-    }
-
-    if (selectedRoles.length === 0) {
-      showNotification('Επιλέξτε τουλάχιστον έναν ρόλο.', 'warning');
-      return;
-    }
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    if (!validate()) return;
 
     try {
-      const [primaryRole] = selectedRoles;
       await registerMutation.mutateAsync({
-        firstName: firstNameTrimmed,
-        lastName: lastNameTrimmed,
-        email: emailTrimmed,
-        afm: afmTrimmed,
-        phone: phoneTrimmed,
-        address: addressTrimmed,
-        sellerType,
-        password,
-        role: primaryRole,
+        firstName: form.firstName.trim(),
+        lastName: form.lastName.trim(),
+        email: form.email.trim(),
+        afm: form.afm?.trim() || '',
+        phone: form.phone?.trim() || '',
+        address: form.address?.trim() || '',
+        sellerType: form.sellerType,
+        password: INITIAL_PASSWORD,
+        role: form.role,
       });
 
       setAuthNotification({
         type: 'success',
         message: 'Ο χρήστης δημιουργήθηκε επιτυχώς.',
       });
-      setIsNavigationLocked(false);
       navigate({ to: '/admin/users' });
-    } catch (mutationError) {
-      showNotification(mutationError instanceof Error ? mutationError.message : 'Η δημιουργία χρήστη απέτυχε.', 'error');
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Η δημιουργία χρήστη απέτυχε';
+      setErrors({ form: message });
+      setAuthNotification({ type: 'error', message });
     }
   }
 
-  const handleSnackbarClose = (_event?: Event | SyntheticEvent, reason?: string) => {
-    if (reason === 'clickaway') return;
-    setIsSnackbarOpen(false);
-  };
-
   return (
-    <div className="min-h-full p-6 text-left text-(--color-text-heading) md:px-10">
-      <div className="mx-auto flex max-w-6xl flex-col gap-8">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="font-semibold text-(--color-text-heading)">Δημιουργία Χρήστη</h2>
-          <div className="flex flex-wrap items-center gap-3">
-            <CustomButton
-              title="Επιστροφή στη λίστα χρηστών"
-              backgroundColor="var(--color-text-muted)"
-              width="fit-content"
-              onClick={handleBackToList}
-            />
-          </div>
+    <div className="min-h-screen p-6 md:px-10 bg-transparent">
+      <div className="mx-auto max-w-2xl">
+        <div className="mb-8">
+          <h2 className="text-2xl font-semibold text-(--color-text-heading) mb-2">Δημιουργία Χρήστη</h2>
+          <p className="text-sm text-(--color-text-muted)">Συμπληρώστε τα στοιχεία του νέου χρήστη</p>
         </div>
 
-        <section className="grid w-full content-start gap-4">
-          <div className="grid w-full gap-8 mb-2 md:grid-cols-2">
-            <CustomInputField
-              type="TEXT"
-              label="Ηλεκτρονικό ταχυδρομείο *"
-              value={email}
-              onChange={(value) => setEmail(String(value))}
-              width="100%"
-              error={emailError}
-            />
-            <CustomInputField
-              type="TEXT"
-              label="Αρχικός κωδικός *"
-              value={password}
-              disabled
-              width="100%"
-            />
-            <CustomInputField
-              type="TEXT"
-              label="Όνομα *"
-              value={firstName}
-              onChange={(value) => setFirstName(String(value))}
-              width="100%"
-              error={firstNameError}
-            />
-            <CustomInputField
-              type="TEXT"
-              label="Επώνυμο *"
-              value={lastName}
-              onChange={(value) => setLastName(String(value))}
-              width="100%"
-              error={lastNameError}
-            />
-            <CustomInputField
-              type="TEXT"
-              label="ΑΦΜ *"
-              value={afm}
-              onChange={(value) => setAfm(String(value))}
-              width="100%"
-              error={afmError}
-            />
-            <CustomInputField
-              type="TEXT"
-              label="Τηλέφωνο *"
-              value={phone}
-              onChange={(value) => setPhone(String(value))}
-              width="100%"
-              error={phoneError}
-            />
-            <CustomInputField
-              type="TEXT"
-              label="Διεύθυνση *"
-              value={address}
-              onChange={(value) => setAddress(String(value))}
-              width="100%"
-              error={addressError}
-            />
-            <CustomInputField
-              type="DROPDOWN"
-              label="Τύπος Πωλητή"
-              value={sellerType}
-              onChange={(value) => setSellerType(Number(value))}
-              width="100%"
-              dropdownItems={Object.entries(SELLER_TYPE_LABELS).map(([value, label]) => ({
-                label,
-                value: Number(value),
-              }))}
-            />
-          </div>
+        <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>
+          {errors.form && (
+            <div
+              className="bg-danger-subtle border border-(--color-danger-border) text-danger rounded-lg px-4 py-3 text-sm"
+              role="alert"
+            >
+              {errors.form}
+            </div>
+          )}
 
-          <div className="grid justify-items-start">
-            <div className="grid content-start gap-4 w-full max-w-sm">
-              <div className="w-full text-left text-sm font-medium text-(--color-text-heading)">Ρόλος *</div>
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  ...ROLE_KEYS.map((role, index) => ({ label: role, active: selectedRoles.includes(role), index })),
-                ].map((role) => (
-                  <CustomButton
-                    key={role.label}
-                    title={ROLE_OPTIONS[role.index] || ''}
-                    width="100%"
-                    onClick={() => handleRoleToggle(role.label)}
-                    disabled={registerMutation.isPending}
-                    backgroundColor={role.active ? 'var(--color-dark)' : 'rgba(255,255,255,0.85)'}
-                    sx={{
-                      minHeight: 44,
-                      height: '100%',
-                      borderRadius: '0.75rem',
-                      border: role.active ? '1px solid transparent' : '1px solid var(--color-text-muted)',
-                      color: role.active ? '#ffffff' : 'var(--color-text)',
-                      boxShadow: '0 1px 2px rgba(60,40,10,0.08)',
-                      fontSize: '0.875rem',
-                      lineHeight: 1.2,
-                      whiteSpace: 'normal',
-                      paddingInline: '0.75rem',
-                      '&:hover': {
-                        backgroundColor: role.active ? 'var(--color-text)' : 'rgba(255,255,255,0.85)',
-                        filter: 'none',
-                      },
-                    }}
-                  />
-                ))}
-              </div>
-              {roleError && (
-                <div className="text-xs text-(--color-danger)">{roleError}</div>
-              )}
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="firstName" className="text-sm font-semibold text-(--color-text-heading)">
+                Όνομα *
+              </label>
+              <input
+                id="firstName"
+                name="firstName"
+                type="text"
+                autoComplete="given-name"
+                value={form.firstName}
+                onChange={handleChange}
+                placeholder="Όνομα"
+                className={`${inputClass} ${errors.firstName ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
+              />
+              {errors.firstName && <p className="text-xs text-(--color-danger) mt-1">{errors.firstName}</p>}
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label htmlFor="lastName" className="text-sm font-semibold text-(--color-text-heading)">
+                Επώνυμο *
+              </label>
+              <input
+                id="lastName"
+                name="lastName"
+                type="text"
+                autoComplete="family-name"
+                value={form.lastName}
+                onChange={handleChange}
+                placeholder="Επώνυμο"
+                className={`${inputClass} ${errors.lastName ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
+              />
+              {errors.lastName && <p className="text-xs text-(--color-danger) mt-1">{errors.lastName}</p>}
             </div>
           </div>
-        </section>
 
-        <div className="flex flex-wrap justify-end gap-3">
-        
-            <CustomButton
-              title="Ακύρωση"
-              backgroundColor="transparent"
-              onClick={handleCancel}
-              disabled={registerMutation.isPending}
-              width={120}
-              sx={{
-                color: 'var(--color-dark)',
-                border: '1px solid var(--color-text-muted)',
-                '&:hover': {
-                  backgroundColor: 'transparent',
-                  borderColor: 'var(--color-text-muted)',
-                  filter: 'none',
-                },
-              }}
+          <div className="flex flex-col gap-1">
+            <label htmlFor="email" className="text-sm font-semibold text-(--color-text-heading)">
+              Διεύθυνση email *
+            </label>
+            <input
+              id="email"
+              name="email"
+              type="email"
+              autoComplete="email"
+              value={form.email}
+              onChange={handleChange}
+              placeholder="you@example.com"
+              className={`${inputClass} ${errors.email ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
             />
-         
+            {errors.email && <p className="text-xs text-(--color-danger) mt-1">{errors.email}</p>}
+          </div>
 
-          <CustomButton
-            title={registerMutation.isPending ? 'Αποθήκευση...' : 'Αποθήκευση'}
-            onClick={handleCreate}
-            disabled={registerMutation.isPending}
-            width={140}
-          />
-        </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="afm" className="text-sm font-semibold text-(--color-text-heading)">
+                ΑΦΜ *
+              </label>
+              <input
+                id="afm"
+                name="afm"
+                type="text"
+                value={form.afm}
+                onChange={handleChange}
+                placeholder="ΑΦΜ"
+                className={`${inputClass} ${errors.afm ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
+              />
+              {errors.afm && <p className="text-xs text-(--color-danger) mt-1">{errors.afm}</p>}
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label htmlFor="phone" className="text-sm font-semibold text-(--color-text-heading)">
+                Τηλέφωνο *
+              </label>
+              <input
+                id="phone"
+                name="phone"
+                type="tel"
+                value={form.phone}
+                onChange={handleChange}
+                placeholder="Τηλέφωνο"
+                className={`${inputClass} ${errors.phone ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
+              />
+              {errors.phone && <p className="text-xs text-(--color-danger) mt-1">{errors.phone}</p>}
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label htmlFor="address" className="text-sm font-semibold text-(--color-text-heading)">
+              Διεύθυνση *
+            </label>
+            <input
+              id="address"
+              name="address"
+              type="text"
+              value={form.address}
+              onChange={handleChange}
+              placeholder="Διεύθυνση"
+              className={`${inputClass} ${errors.address ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
+            />
+            {errors.address && <p className="text-xs text-(--color-danger) mt-1">{errors.address}</p>}
+          </div>
+
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex flex-col gap-1">
+              <label htmlFor="sellerType" className="text-sm font-semibold text-(--color-text-heading)">
+                Τύπος Πωλητή
+              </label>
+              <select
+                id="sellerType"
+                name="sellerType"
+                value={form.sellerType}
+                onChange={handleChange}
+                className={inputClass}
+              >
+                <option value={0}>-- Επιλέξτε --</option>
+                {Object.entries(SELLER_TYPE_LABELS).map(([value, label]) => (
+                  <option key={value} value={Number(value)}>
+                    {label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-1">
+              <label htmlFor="role" className="text-sm font-semibold text-(--color-text-heading)">
+                Ρόλος *
+              </label>
+              <select
+                id="role"
+                name="role"
+                value={form.role}
+                onChange={(e) => handleRoleChange(e.target.value)}
+                className={`${inputClass} ${errors.role ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
+              >
+                <option value="">-- Επιλέξτε --</option>
+                {ROLE_KEYS.map((roleKey, index) => (
+                  <option key={roleKey} value={roleKey}>
+                    {ROLE_OPTIONS[index]}
+                  </option>
+                ))}
+              </select>
+              {errors.role && <p className="text-xs text-(--color-danger) mt-1">{errors.role}</p>}
+            </div>
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <button
+              type="submit"
+              disabled={registerMutation.isPending}
+              className="w-full py-3 px-4 text-[15px] font-semibold rounded-lg bg-(--color-text) text-white transition hover:brightness-90 active:brightness-75 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            >
+              {registerMutation.isPending ? 'Αποθήκευση...' : 'Αποθήκευση'}
+            </button>
+            <button
+              type="button"
+              onClick={() => navigate({ to: '/admin/users' })}
+              disabled={registerMutation.isPending}
+              className="w-full py-3 px-4 text-[15px] font-semibold rounded-lg bg-transparent border border-(--color-text-muted) text-(--color-text-heading) transition hover:bg-(--color-bg-hover) disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            >
+              Ακύρωση
+            </button>
+          </div>
+        </form>
       </div>
-
-      <Snackbar
-        open={isSnackbarOpen && Boolean(notificationMessage)}
-        autoHideDuration={4500}
-        onClose={handleSnackbarClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
-      >
-        <Alert onClose={handleSnackbarClose} severity={notificationSeverity} variant="filled" sx={{ width: '100%' }}>
-          {notificationMessage}
-        </Alert>
-      </Snackbar>
     </div>
   );
 }
