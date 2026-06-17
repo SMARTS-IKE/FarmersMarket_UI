@@ -8,6 +8,7 @@ import {
   useUpdateUserMutation,
   useUserQuery,
 } from '../../queries/userQueries';
+import CustomInputField from '../../shared/components/CustomInputField';
 import { USER_ROLE_MAPPING_TITLES } from '../../shared/mappings/users.mapping';
 
 const inputClass =
@@ -35,6 +36,7 @@ export default function UserPage() {
   const [initialSelectedRoles, setInitialSelectedRoles] = useState<string[]>([]);
   const [isNavigationLocked, setIsNavigationLocked] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
+  const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
   const allowProgrammaticNavigationRef = useRef(false);
 
   useEffect(() => {
@@ -137,6 +139,8 @@ export default function UserPage() {
     setSelectedRoles(initialSelectedRoles);
     setErrors({});
     setIsNavigationLocked(false);
+    allowProgrammaticNavigationRef.current = true;
+    navigate({ to: '/admin/users' });
   }
 
   function handleRoleToggle(role: string) {
@@ -238,85 +242,59 @@ export default function UserPage() {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
-              <label htmlFor="firstName" className="text-sm font-semibold text-(--color-text-heading)">
-                Όνομα
-              </label>
-              <input
-                id="firstName"
-                name="firstName"
-                type="text"
+              <CustomInputField
+                type="TEXT"
+                label="Όνομα"
                 value={firstName}
-                onChange={(e) => setFirstName(e.target.value)}
                 placeholder="Όνομα"
-                className={inputClass}
+                onChange={(v) => setFirstName(String(v ?? ''))}
+                width="100%"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label htmlFor="lastName" className="text-sm font-semibold text-(--color-text-heading)">
-                Επώνυμο
-              </label>
-              <input
-                id="lastName"
-                name="lastName"
-                type="text"
+              <CustomInputField
+                type="TEXT"
+                label="Επώνυμο"
                 value={lastName}
-                onChange={(e) => setLastName(e.target.value)}
                 placeholder="Επώνυμο"
-                className={inputClass}
+                onChange={(v) => setLastName(String(v ?? ''))}
+                width="100%"
               />
             </div>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="email" className="text-sm font-semibold text-(--color-text-heading)">
-              Ηλεκτρονικό ταχυδρομείο
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
+            <CustomInputField
+              type="TEXT"
+              label="Ηλεκτρονικό ταχυδρομείο"
               value={user.email || ''}
               disabled
-              className={inputClass}
+              width="100%"
             />
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
-              <label htmlFor="role" className="text-sm font-semibold text-(--color-text-heading)">
-                Ρόλος
-              </label>
-              <select
-                id="role"
-                name="role"
+              <CustomInputField
+                type="DROPDOWN"
+                label="Ρόλος"
                 value={selectedRoles[0] || ''}
-                onChange={(e) => handleRoleToggle(e.target.value)}
-                className={inputClass}
-              >
-                <option value="">-- Επιλέξτε --</option>
-                {ROLE_KEYS.map((roleKey, index) => (
-                  <option key={roleKey} value={roleKey}>
-                    {ROLE_OPTIONS[index]}
-                  </option>
-                ))}
-              </select>
+                dropdownItems={ROLE_KEYS.map((roleKey, index) => ({ value: roleKey, label: ROLE_OPTIONS[index] }))}
+                onChange={(v) => handleRoleToggle(String(v ?? ''))}
+                width="100%"
+              />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label htmlFor="isActive" className="text-sm font-semibold text-(--color-text-heading)">
-                Κατάσταση
-              </label>
-              <select
-                id="isActive"
-                name="isActive"
+              <CustomInputField
+                type="DROPDOWN"
+                label="Κατάσταση"
                 value={isActive ? 'active' : 'inactive'}
-                onChange={(e) => setIsActive(e.target.value === 'active')}
-                className={inputClass}
-              >
-                <option value="active">Ενεργός</option>
-                <option value="inactive">Ανενεργός</option>
-              </select>
+                dropdownItems={[{ value: 'active', label: 'Ενεργός' }, { value: 'inactive', label: 'Ανενεργός' }]}
+                onChange={(v) => setIsActive(String(v) === 'active')}
+                width="100%"
+              />
             </div>
           </div>
 
@@ -331,7 +309,7 @@ export default function UserPage() {
             <button
               type="button"
               onClick={handleCancel}
-              disabled={isSavingUser || isUpdatingRole || isReinitializingPassword}
+              disabled={isSavingUser}
               className="w-full py-3 px-4 text-[15px] font-semibold rounded-lg bg-transparent border border-(--color-text-muted) text-(--color-text-heading) transition hover:bg-(--color-bg-hover) disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
             >
               Ακύρωση

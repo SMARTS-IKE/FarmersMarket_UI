@@ -272,35 +272,8 @@ export default function SellerPage() {
           value={activeTab}
           onChange={handleTabChange}
           variant="fullWidth"
-          sx={{
-            backgroundColor: "#c7b9a4",
-            minHeight: "34px",
-            padding: "0 4px",
-            marginBottom: 0,
-            "& .MuiTabs-indicator": {
-              display: "none",
-            },
-            "& .MuiTabs-flexContainer": {
-              minHeight: "34px",
-            },
-            "& .MuiTab-root": {
-              minHeight: "34px",
-              padding: "4px 20px",
-              color: "var(--color-text-heading)",
-              fontWeight: 500,
-              textTransform: "none",
-              letterSpacing: 0,
-              opacity: 1,
-            },
-            "& .MuiTab-root:hover": {
-              backgroundColor: "rgba(255, 255, 255, 0.2)",
-            },
-            "& .MuiTab-root.Mui-selected": {
-              backgroundColor: "#9a8a76",
-              color: "var(--color-surface)",
-              fontWeight: 700,
-            },
-          }}
+          textColor="inherit"
+          sx={{ width: "100%" }}
         >
           <Tab label="Στοιχεία πωλητή" />
           <Tab label={`Συμμετοχή σε αγορές (${connectedMarkets.length})`} />

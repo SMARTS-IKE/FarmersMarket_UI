@@ -1,6 +1,10 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
-import { CircularProgress, Alert } from "@mui/material";
+import { CircularProgress, Alert, Tab, Tabs, Box, IconButton } from "@mui/material";
+import EditIcon from '@mui/icons-material/Edit';
+import SaveIcon from '@mui/icons-material/Save';
+import CloseIcon from '@mui/icons-material/Close';
+import ConfirmActionDialog from "../../../shared/components/ConfirmActionDialog";
 import { useSubmittedRequestDetailQuery } from "../../../queries/requestQueries";
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
 import type { RequestStatus } from "../../../models/request";
@@ -41,48 +45,94 @@ export default function SubmittedRequestDetailedPage() {
 
   const statusInfo = statusLabels[request.status];
 
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<'accept' | 'reject' | null>(null);
+
+  const [fieldValuesLocal, setFieldValuesLocal] = useState(() => request.fieldValues ?? []);
+  const [editingFieldId, setEditingFieldId] = useState<string | number | null>(null);
+  const [editedWeight, setEditedWeight] = useState<number | string>(0);
+
+  useEffect(() => {
+    setFieldValuesLocal(request.fieldValues ?? []);
+  }, [request.fieldValues]);
+
+  const openConfirm = (action: 'accept' | 'reject') => {
+    setConfirmAction(action);
+    setConfirmDialogOpen(true);
+  };
+
+  const handleConfirm = () => {
+    if (confirmAction === 'accept') {
+      // TODO: wire accept mutation
+      console.log('Accepted request', request.id);
+    } else if (confirmAction === 'reject') {
+      // TODO: wire reject mutation
+      console.log('Rejected request', request.id);
+    }
+
+    setConfirmDialogOpen(false);
+    setConfirmAction(null);
+  };
+
+  const handleCancelConfirm = () => {
+    setConfirmDialogOpen(false);
+    setConfirmAction(null);
+  };
+
   return (
     <div className="w-full p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-semibold text-(--color-text-heading)">Στοιχεία Αίτησης #{request.id}</h2>
-          <div className="px-4 py-2 rounded-lg text-white font-bold" style={{ backgroundColor: statusInfo.color }}>
-            {statusInfo.label}
+        <div className="flex items-center justify-between mb-6">
+          <div className="flex items-center gap-3">
+            <div
+              className="px-2 py-1 rounded text-white font-semibold text-sm"
+              style={{ backgroundColor: statusInfo.color }}
+            >
+              {statusInfo.label}
+            </div>
+            <h2 className="text-xl font-semibold text-(--color-text-heading)">Στοιχεία Αίτησης #{request.id}</h2>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => openConfirm('accept')}
+              className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+              aria-label="Accept request"
+            >
+              Αποδοχή
+            </button>
+            <button
+              onClick={() => openConfirm('reject')}
+              className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+              aria-label="Reject request"
+            >
+              Απόρριψη
+            </button>
           </div>
         </div>
 
-        <div className="flex border-b border-(--color-border) mb-6">
-          <button
-            onClick={() => setActiveTab(0)}
-            className={`px-4 py-2 font-medium transition ${
-              activeTab === 0
-                ? 'text-(--color-primary) border-b-2 border-(--color-primary)'
-                : 'text-(--color-text-muted) hover:text-(--color-text-heading)'
-            }`}
-          >
-            Στοιχεία Πωλητή
-          </button>
-          <button
-            onClick={() => setActiveTab(1)}
-            className={`px-4 py-2 font-medium transition ${
-              activeTab === 1
-                ? 'text-(--color-primary) border-b-2 border-(--color-primary)'
-                : 'text-(--color-text-muted) hover:text-(--color-text-heading)'
-            }`}
-          >
-            Συμπληρωμένα Πεδία
-          </button>
-          <button
-            onClick={() => setActiveTab(2)}
-            className={`px-4 py-2 font-medium transition ${
-              activeTab === 2
-                ? 'text-(--color-primary) border-b-2 border-(--color-primary)'
-                : 'text-(--color-text-muted) hover:text-(--color-text-heading)'
-            }`}
-          >
-            Συνημένα Έγγραφα
-          </button>
+          <div className="mb-6">
+          <Box>
+            <Tabs
+              value={activeTab}
+              onChange={(_, v) => setActiveTab(v)}
+              variant="fullWidth"
+              textColor="inherit"
+              sx={{ width: "100%" }}
+            >
+              <Tab label="Στοιχεία Πωλητή" />
+              <Tab label="Συμπληρωμένα Πεδία" />
+              <Tab label="Συνημένα Έγγραφα" />
+            </Tabs>
+          </Box>
         </div>
+
+          <ConfirmActionDialog
+            open={confirmDialogOpen}
+            action={confirmAction}
+            onClose={handleCancelConfirm}
+            onConfirm={handleConfirm}
+          />
 
         {activeTab === 0 && (
           <div className="space-y-4 bg-white rounded-lg p-6">
@@ -177,8 +227,8 @@ export default function SubmittedRequestDetailedPage() {
               <div className="space-y-4">
                 {request.fieldValues.map((field) => (
                   <div key={field.id} className="flex flex-col gap-2 pb-4 border-b border-(--color-border) last:border-b-0">
-                    <div className="flex gap-4">
-                      <div className="flex flex-col gap-1" style={{ flex: '0 0 90%' }}>
+                      <div className="flex gap-4">
+                        <div className="flex flex-col gap-1" style={{ flex: '0 0 82%' }}>
                         <label className="text-sm font-semibold text-(--color-text-heading) truncate">
                           {field.fieldLabel}
                         </label>
@@ -189,16 +239,63 @@ export default function SubmittedRequestDetailedPage() {
                           className={inputClass}
                         />
                       </div>
-                      <div className="flex flex-col gap-1" style={{ flex: '0 0 10%' }}>
+                      <div className="flex flex-col gap-1" style={{ flex: '0 0 18%' }}>
                         <label className="text-sm font-semibold text-(--color-text-heading)">
                           Βάρος
                         </label>
-                        <input
-                          type="text"
-                          value={field.weight ?? 0}
-                          disabled
-                          className={inputClass}
-                        />
+                        {editingFieldId === field.id ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="number"
+                              value={String(editedWeight)}
+                              onChange={(e) => setEditedWeight(e.target.value)}
+                              className={inputClass}
+                              style={{ width: 72 }}
+                            />
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                setFieldValuesLocal((prev) =>
+                                  prev.map((fv) => (fv.id === field.id ? { ...fv, weight: Number(editedWeight) } : fv))
+                                );
+                                setEditingFieldId(null);
+                                console.log('Saved weight for field', field.id, editedWeight);
+                              }}
+                              sx={{ backgroundColor: 'var(--color-primary)', color: 'white', '&:hover': { backgroundColor: 'var(--color-primary-hover)' } }}
+                            >
+                              <SaveIcon fontSize="small" />
+                            </IconButton>
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                setEditingFieldId(null);
+                              }}
+                              sx={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text-muted)', '&:hover': { opacity: 0.9 } }}
+                            >
+                              <CloseIcon fontSize="small" />
+                            </IconButton>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="text"
+                              value={String(fieldValuesLocal.find((fv) => fv.id === field.id)?.weight ?? 0)}
+                              disabled
+                              className={inputClass}
+                              style={{ width: 72 }}
+                            />
+                            <IconButton
+                              size="small"
+                              onClick={() => {
+                                setEditingFieldId(field.id);
+                                setEditedWeight(field.weight ?? 0);
+                              }}
+                              sx={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text-muted)', '&:hover': { opacity: 0.9 } }}
+                            >
+                              <EditIcon fontSize="small" />
+                            </IconButton>
+                          </div>
+                        )}
                       </div>
                     </div>
                     {field.reviewComment && (
@@ -254,57 +351,6 @@ export default function SubmittedRequestDetailedPage() {
           </div>
         )}
 
-        {activeTab === 3 && (
-          <div className="space-y-4 bg-white rounded-lg p-6">
-            {request.processedAt || request.notes || request.rejectionReason ? (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                {request.processedAt && (
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm font-semibold text-(--color-text-heading)">
-                      Ημερομηνία Επεξεργασίας
-                    </label>
-                    <input
-                      type="text"
-                      value={new Date(request.processedAt).toLocaleString("el-GR")}
-                      disabled
-                      className={inputClass}
-                    />
-                  </div>
-                )}
-                {request.notes && (
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm font-semibold text-(--color-text-heading)">
-                      Σημειώσεις
-                    </label>
-                    <textarea
-                      value={request.notes}
-                      disabled
-                      rows={3}
-                      className={`${inputClass} resize-none`}
-                    />
-                  </div>
-                )}
-                {request.rejectionReason && (
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm font-semibold text-(--color-danger)">
-                      Λόγος Απόρριψης
-                    </label>
-                    <textarea
-                      value={request.rejectionReason}
-                      disabled
-                      rows={3}
-                      className={`${inputClass} resize-none`}
-                    />
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-(--color-text-muted)">
-                Δεν υπάρχουν σημειώσεις επεξεργασίας.
-              </p>
-            )}
-          </div>
-        )}
       </div>
     </div>
   );

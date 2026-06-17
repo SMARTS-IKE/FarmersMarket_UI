@@ -5,6 +5,7 @@ import type { RegisterCredentials } from '../../../models/auth';
 import { useRegisterMutation } from '../../../queries/authQueries';
 import { USER_ROLE_MAPPING, USER_ROLE_MAPPING_TITLES } from '../../../shared/mappings/users.mapping';
 import { SELLER_TYPE_LABELS } from '../../../components/sellers/sellers.utils';
+import CustomInputField from '../../../shared/components/CustomInputField';
 
 const inputClass =
   'w-full px-4 py-3 text-[15px] rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text-heading) placeholder:text-(--color-text-muted) outline-none transition focus:border-(--color-primary) focus:ring-3 focus:ring-(--color-primary-subtle)';
@@ -122,147 +123,105 @@ export default function UserCreation() {
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
-              <label htmlFor="firstName" className="text-sm font-semibold text-(--color-text-heading)">
-                Όνομα *
-              </label>
-              <input
-                id="firstName"
-                name="firstName"
-                type="text"
-                autoComplete="given-name"
+              <CustomInputField
+                type="TEXT"
+                label="Όνομα *"
                 value={form.firstName}
-                onChange={handleChange}
                 placeholder="Όνομα"
-                className={`${inputClass} ${errors.firstName ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
+                onChange={(v) => { setForm((p) => ({ ...p, firstName: String(v ?? '') })); setErrors((s) => ({ ...s, firstName: undefined })); }}
+                error={errors.firstName}
+                width="100%"
               />
-              {errors.firstName && <p className="text-xs text-(--color-danger) mt-1">{errors.firstName}</p>}
             </div>
 
             <div className="flex flex-col gap-1">
-              <label htmlFor="lastName" className="text-sm font-semibold text-(--color-text-heading)">
-                Επώνυμο *
-              </label>
-              <input
-                id="lastName"
-                name="lastName"
-                type="text"
-                autoComplete="family-name"
+              <CustomInputField
+                type="TEXT"
+                label="Επώνυμο *"
                 value={form.lastName}
-                onChange={handleChange}
                 placeholder="Επώνυμο"
-                className={`${inputClass} ${errors.lastName ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
+                onChange={(v) => { setForm((p) => ({ ...p, lastName: String(v ?? '') })); setErrors((s) => ({ ...s, lastName: undefined })); }}
+                error={errors.lastName}
+                width="100%"
               />
-              {errors.lastName && <p className="text-xs text-(--color-danger) mt-1">{errors.lastName}</p>}
             </div>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="email" className="text-sm font-semibold text-(--color-text-heading)">
-              Διεύθυνση email *
-            </label>
-            <input
-              id="email"
-              name="email"
-              type="email"
-              autoComplete="email"
+            <CustomInputField
+              type="TEXT"
+              label="Διεύθυνση email *"
               value={form.email}
-              onChange={handleChange}
               placeholder="you@example.com"
-              className={`${inputClass} ${errors.email ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
+              onChange={(v) => { setForm((p) => ({ ...p, email: String(v ?? '') })); setErrors((s) => ({ ...s, email: undefined })); }}
+              error={errors.email}
+              width="100%"
             />
-            {errors.email && <p className="text-xs text-(--color-danger) mt-1">{errors.email}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
-              <label htmlFor="afm" className="text-sm font-semibold text-(--color-text-heading)">
-                ΑΦΜ *
-              </label>
-              <input
-                id="afm"
-                name="afm"
-                type="text"
+              <CustomInputField
+                type="TEXT"
+                label="ΑΦΜ *"
                 value={form.afm}
-                onChange={handleChange}
                 placeholder="ΑΦΜ"
-                className={`${inputClass} ${errors.afm ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
+                onChange={(v) => { setForm((p) => ({ ...p, afm: String(v ?? '') })); setErrors((s) => ({ ...s, afm: undefined })); }}
+                error={errors.afm}
+                width="100%"
               />
-              {errors.afm && <p className="text-xs text-(--color-danger) mt-1">{errors.afm}</p>}
             </div>
 
             <div className="flex flex-col gap-1">
-              <label htmlFor="phone" className="text-sm font-semibold text-(--color-text-heading)">
-                Τηλέφωνο *
-              </label>
-              <input
-                id="phone"
-                name="phone"
-                type="tel"
+              <CustomInputField
+                type="TEXT"
+                label="Τηλέφωνο *"
                 value={form.phone}
-                onChange={handleChange}
                 placeholder="Τηλέφωνο"
-                className={`${inputClass} ${errors.phone ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
+                onChange={(v) => { setForm((p) => ({ ...p, phone: String(v ?? '') })); setErrors((s) => ({ ...s, phone: undefined })); }}
+                error={errors.phone}
+                width="100%"
               />
-              {errors.phone && <p className="text-xs text-(--color-danger) mt-1">{errors.phone}</p>}
             </div>
           </div>
 
           <div className="flex flex-col gap-1">
-            <label htmlFor="address" className="text-sm font-semibold text-(--color-text-heading)">
-              Διεύθυνση *
-            </label>
-            <input
-              id="address"
-              name="address"
-              type="text"
+            <CustomInputField
+              type="TEXT"
+              label="Διεύθυνση *"
               value={form.address}
-              onChange={handleChange}
               placeholder="Διεύθυνση"
-              className={`${inputClass} ${errors.address ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
+              onChange={(v) => { setForm((p) => ({ ...p, address: String(v ?? '') })); setErrors((s) => ({ ...s, address: undefined })); }}
+              error={errors.address}
+              width="100%"
             />
-            {errors.address && <p className="text-xs text-(--color-danger) mt-1">{errors.address}</p>}
           </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">
-              <label htmlFor="sellerType" className="text-sm font-semibold text-(--color-text-heading)">
-                Τύπος Πωλητή
-              </label>
-              <select
-                id="sellerType"
-                name="sellerType"
+              <CustomInputField
+                type="DROPDOWN"
+                label="Τύπος Πωλητή"
                 value={form.sellerType}
-                onChange={handleChange}
-                className={inputClass}
-              >
-                <option value={0}>-- Επιλέξτε --</option>
-                {Object.entries(SELLER_TYPE_LABELS).map(([value, label]) => (
-                  <option key={value} value={Number(value)}>
-                    {label}
-                  </option>
-                ))}
-              </select>
+                dropdownItems={[{ value: 0, label: '-- Επιλέξτε --' }, ...Object.entries(SELLER_TYPE_LABELS).map(([value, label]) => ({ value: Number(value), label }))]}
+                onChange={(v) => { setForm((p) => ({ ...p, sellerType: Number(v) })); setErrors((s) => ({ ...s, sellerType: undefined })); }}
+                width="100%"
+              />
             </div>
 
             <div className="flex flex-col gap-1">
               <label htmlFor="role" className="text-sm font-semibold text-(--color-text-heading)">
                 Ρόλος *
               </label>
-              <select
-                id="role"
-                name="role"
+              <CustomInputField
+                type="DROPDOWN"
+                label="Ρόλος *"
                 value={form.role}
-                onChange={(e) => handleRoleChange(e.target.value)}
-                className={`${inputClass} ${errors.role ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
-              >
-                <option value="">-- Επιλέξτε --</option>
-                {ROLE_KEYS.map((roleKey, index) => (
-                  <option key={roleKey} value={roleKey}>
-                    {ROLE_OPTIONS[index]}
-                  </option>
-                ))}
-              </select>
-              {errors.role && <p className="text-xs text-(--color-danger) mt-1">{errors.role}</p>}
+                dropdownItems={[{ value: '', label: '-- Επιλέξτε --' }, ...ROLE_KEYS.map((roleKey, index) => ({ value: roleKey, label: ROLE_OPTIONS[index] }))]}
+                onChange={(v) => handleRoleChange(String(v))}
+                error={errors.role}
+                width="100%"
+              />
             </div>
           </div>
 

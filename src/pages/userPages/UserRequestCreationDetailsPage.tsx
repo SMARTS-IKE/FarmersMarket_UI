@@ -48,6 +48,32 @@ export default function UserRequestCreationDetailsPage() {
     setDynamicFieldValues({});
   }, [formId]);
 
+  const resolvedApplicantName =
+    (authUser?.name as string) ||
+    (authUser ? `${authUser.firstName ?? ""} ${authUser.lastName ?? ""}`.trim() : "") ||
+    (sellerQuery.data ? `${sellerQuery.data.firstName} ${sellerQuery.data.lastName}`.trim() : "");
+
+  const resolvedApplicantAfm = sellerQuery.data?.afm ?? (authUser as any)?.afm ?? "";
+  const sellerTypeNum = Number(sellerQuery.data?.sellerType ?? (authUser as any)?.sellerType ?? 0);
+  const resolvedLicenseCategory = sellerTypeNum === 1 ? "Παραγωγός" : sellerTypeNum === 2 ? "Μεταπωλητής" : String((authUser as any)?.sellerType ?? "");
+  const resolvedLicenseNumber = sellerQuery.data?.licenses?.[0]?.number ?? (authUser as any)?.licenseNumber ?? "";
+
+  const [applicantInfo, setApplicantInfo] = useState({
+    name: "",
+    afm: "",
+    licenseCategory: "",
+    licenseNumber: "",
+  });
+
+  useEffect(() => {
+    setApplicantInfo({
+      name: resolvedApplicantName,
+      afm: String(resolvedApplicantAfm ?? ""),
+      licenseCategory: String(resolvedLicenseCategory ?? ""),
+      licenseNumber: String(resolvedLicenseNumber ?? ""),
+    });
+  }, [resolvedApplicantName, resolvedApplicantAfm, resolvedLicenseCategory, resolvedLicenseNumber]);
+
   const isDocumentField = (field: RequestFormField) => {
     const label = field.label.toLowerCase();
     return ATTACHMENT_KEYWORDS.some((keyword) => label.includes(keyword));
@@ -87,32 +113,6 @@ export default function UserRequestCreationDetailsPage() {
   const customFields = selectedForm?.fields ?? [];
   const attachmentFields = customFields.filter((f) => isDocumentField(f));
   const basicFormFields = customFields.filter((f) => !isDocumentField(f));
-
-  const resolvedApplicantName =
-    (authUser?.name as string) ||
-    (authUser ? `${authUser.firstName ?? ""} ${authUser.lastName ?? ""}`.trim() : "") ||
-    (sellerQuery.data ? `${sellerQuery.data.firstName} ${sellerQuery.data.lastName}`.trim() : "");
-
-  const resolvedApplicantAfm = sellerQuery.data?.afm ?? (authUser as any)?.afm ?? "";
-  const sellerTypeNum = Number(sellerQuery.data?.sellerType ?? (authUser as any)?.sellerType ?? 0);
-  const resolvedLicenseCategory = sellerTypeNum === 1 ? "Παραγωγός" : sellerTypeNum === 2 ? "Μεταπωλητής" : String((authUser as any)?.sellerType ?? "");
-  const resolvedLicenseNumber = sellerQuery.data?.licenses?.[0]?.number ?? (authUser as any)?.licenseNumber ?? "";
-
-  const [applicantInfo, setApplicantInfo] = useState({
-    name: "",
-    afm: "",
-    licenseCategory: "",
-    licenseNumber: "",
-  });
-
-  useEffect(() => {
-    setApplicantInfo({
-      name: resolvedApplicantName,
-      afm: String(resolvedApplicantAfm ?? ""),
-      licenseCategory: String(resolvedLicenseCategory ?? ""),
-      licenseNumber: String(resolvedLicenseNumber ?? ""),
-    });
-  }, [resolvedApplicantName, resolvedApplicantAfm, resolvedLicenseCategory, resolvedLicenseNumber]);
 
   const renderFieldChip = (field: RequestFormField) => {
     const typeLabelMap: Record<number, string> = {
@@ -196,9 +196,6 @@ export default function UserRequestCreationDetailsPage() {
     );
   };
 
-  const inputClass =
-    'w-full px-4 py-3 text-[15px] rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text-heading) placeholder:text-(--color-text-muted) outline-none transition focus:border-(--color-primary) focus:ring-3 focus:ring-(--color-primary-subtle) disabled:opacity-50 disabled:cursor-not-allowed';
-
   return (
     <div className="w-full p-6">
       <div className="max-w-6xl mx-auto">
@@ -243,23 +240,43 @@ export default function UserRequestCreationDetailsPage() {
             <div className="space-y-4 bg-white rounded-lg p-6">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm font-semibold text-(--color-text-heading)">Ονοματεπώνυμο</label>
-                  <input type="text" value={applicantInfo.name} onChange={(e) => setApplicantInfo((p) => ({ ...p, name: e.target.value }))} className={inputClass} />
+                  <CustomInputField
+                    type="TEXT"
+                    label="Ονοματεπώνυμο"
+                    value={applicantInfo.name}
+                    onChange={(nextValue) => setApplicantInfo((p) => ({ ...p, name: String(nextValue) }))}
+                    width="100%"
+                  />
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm font-semibold text-(--color-text-heading)">ΑΦΜ</label>
-                  <input type="text" value={applicantInfo.afm} onChange={(e) => setApplicantInfo((p) => ({ ...p, afm: e.target.value }))} className={inputClass} />
+                  <CustomInputField
+                    type="TEXT"
+                    label="ΑΦΜ"
+                    value={applicantInfo.afm}
+                    onChange={(nextValue) => setApplicantInfo((p) => ({ ...p, afm: String(nextValue) }))}
+                    width="100%"
+                  />
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm font-semibold text-(--color-text-heading)">Κατηγορία Άδειας</label>
-                  <input type="text" value={applicantInfo.licenseCategory} onChange={(e) => setApplicantInfo((p) => ({ ...p, licenseCategory: e.target.value }))} className={inputClass} />
+                  <CustomInputField
+                    type="TEXT"
+                    label="Κατηγορία Άδειας"
+                    value={applicantInfo.licenseCategory}
+                    onChange={(nextValue) => setApplicantInfo((p) => ({ ...p, licenseCategory: String(nextValue) }))}
+                    width="100%"
+                  />
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="text-sm font-semibold text-(--color-text-heading)">Αριθμός Άδειας</label>
-                  <input type="text" value={applicantInfo.licenseNumber} onChange={(e) => setApplicantInfo((p) => ({ ...p, licenseNumber: e.target.value }))} className={inputClass} />
+                  <CustomInputField
+                    type="TEXT"
+                    label="Αριθμός Άδειας"
+                    value={applicantInfo.licenseNumber}
+                    onChange={(nextValue) => setApplicantInfo((p) => ({ ...p, licenseNumber: String(nextValue) }))}
+                    width="100%"
+                  />
                 </div>
               </div>
             </div>

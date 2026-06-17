@@ -59,9 +59,10 @@ export const useAuthStore = create<AuthState>()(
             lastName: decoded.lastName,
             name: `${decoded.firstName} ${decoded.lastName}`.trim(),
             role: Array.isArray(role) ? role[0] : (role as string),
-            status: decoded.status,
-            aspNetUserId: decoded.aspNetUserId,
+            status: decoded.status
           };
+
+          console.log(user);
 
           set({
             user,
