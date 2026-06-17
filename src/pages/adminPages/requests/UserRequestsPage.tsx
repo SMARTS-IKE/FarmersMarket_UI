@@ -1,11 +1,21 @@
-import { useState } from "react";
+import { useState, type SyntheticEvent } from "react";
 import { Box, Tab, Tabs } from "@mui/material";
+import { useNavigate } from "@tanstack/react-router";
 import SellerRequests from "../../../components/requests/SellerRequests";
-import NewRequestPeriodsTable from "../../../components/requests/NewRequestPeriodsTable";
 import LayoutTabsSlot from "../../../shared/components/LayoutTabsSlot";
 
 export default function UserRequestsPage() {
   const [activeTab, setActiveTab] = useState(0);
+  const navigate = useNavigate();
+
+  const handleTabChange = (_: SyntheticEvent, nextValue: number) => {
+    if (nextValue === 1) {
+      void navigate({ to: "/users/requests/new" });
+      return;
+    }
+
+    setActiveTab(nextValue);
+  };
 
   return (
     <div className="flex h-full w-full flex-col gap-6 text-left overflow-hidden">
@@ -13,7 +23,7 @@ export default function UserRequestsPage() {
         <Box className="flex h-full">
           <Tabs
             value={activeTab}
-            onChange={(_, nextValue) => setActiveTab(nextValue)}
+            onChange={handleTabChange}
             variant="fullWidth"
             textColor="inherit"
             sx={{
@@ -28,7 +38,6 @@ export default function UserRequestsPage() {
 
       <div className="flex-1 overflow-y-auto pr-2 max-h-[calc(100svh-300px)]">
         {activeTab === 0 && <SellerRequests />}
-        {activeTab === 1 && <NewRequestPeriodsTable />}
       </div>
     </div>
   );

@@ -3,7 +3,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { Tab, Tabs, Box } from "@mui/material";
 import CustomButton from "../../../shared/components/CustomButton";
 import DesignRequestSheet from "../../../components/requests/DesignRequestSheet";
-import MarketPeriods from "../../../components/requests/MarketPeriods";
 import SellerRequests from "../../../components/requests/SellerRequests";
 import LayoutTabsSlot from "../../../shared/components/LayoutTabsSlot";
 

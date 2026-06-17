@@ -1,0 +1,327 @@
+import { Alert, Chip } from "@mui/material";
+import { useNavigate, useParams } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
+import CustomButton from "../../shared/components/CustomButton";
+import CustomInputField from "../../shared/components/CustomInputField";
+import type { RequestFormField } from "../../models/request";
+import { useRequestFormByIdQuery } from "../../queries/formsQueries";
+import { useSellerQuery } from "../../queries/sellerQueries";
+import { useAuthStore } from "../../store/authStore";
+import { TYPE_OF_FIELDS_TO_DESIGN_FIELD } from "../../components/requests/request.utils";
+import { useCreateRequestMutation } from "../../queries/requestQueries";
+
+const ATTACHMENT_KEYWORDS = ["έγγρα", "δικαιολογ", "επισυνα", "attachment", "document", "pdf"] as const;
+const BOOLEAN_OPTIONS = [
+  { label: "Ναι", value: "true" },
+  { label: "Όχι", value: "false" },
+];
+
+export default function UserRequestCreationDetailsPage() {
+  const navigate = useNavigate();
+  const params = useParams({ strict: false });
+  const formId = typeof params.formId === "string" ? params.formId : "";
+
+  const [activeTab, setActiveTab] = useState(0);
+  const [dynamicFieldValues, setDynamicFieldValues] = useState<Record<number, string | number | string[]>>({});
+
+  const requestFormDetailQuery = useRequestFormByIdQuery(formId);
+  const authUser = useAuthStore((s) => s.user);
+  const sellerQuery = useSellerQuery(authUser?.id ? String(authUser.id) : "");
+  const createRequestMutation = useCreateRequestMutation();
+
+  const renderCounter = useRef(0);
+  renderCounter.current += 1;
+  // Debug: track renders to help diagnose hooks mismatch
+  // eslint-disable-next-line no-console
+  // Log hook-related statuses to help identify order/availability changes
+  // eslint-disable-next-line no-console
+  console.debug('UserRequestCreationDetailsPage render', renderCounter.current, {
+    formId,
+    authUserId: authUser?.id,
+    requestFormStatus: requestFormDetailQuery?.status,
+    sellerQueryStatus: sellerQuery?.status,
+    createRequestStatus: createRequestMutation?.status,
+  });
+
+
+  useEffect(() => {
+    setDynamicFieldValues({});
+  }, [formId]);
+
+  const isDocumentField = (field: RequestFormField) => {
+    const label = field.label.toLowerCase();
+    return ATTACHMENT_KEYWORDS.some((keyword) => label.includes(keyword));
+  };
+
+  const handleBack = () => {
+    navigate({ to: "/users/requests" });
+  };
+
+  if (requestFormDetailQuery.isLoading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center text-(--color-text-muted)">
+        Φόρτωση φόρμας αίτησης...
+      </div>
+    );
+  }
+
+  if (requestFormDetailQuery.isError || !requestFormDetailQuery.data) {
+    return (
+      <div className="flex h-full w-full flex-col gap-4 text-left">
+        <Alert severity="error">
+          {requestFormDetailQuery.error?.message ?? "Δεν ήταν δυνατή η φόρτωση της φόρμας."}
+        </Alert>
+        <div>
+          <CustomButton
+            title="Επιστροφή"
+            backgroundColor="var(--color-text-muted)"
+            width="fit-content"
+            onClick={handleBack}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  const selectedForm = requestFormDetailQuery.data;
+  const customFields = selectedForm?.fields ?? [];
+  const attachmentFields = customFields.filter((f) => isDocumentField(f));
+  const basicFormFields = customFields.filter((f) => !isDocumentField(f));
+
+  const resolvedApplicantName =
+    (authUser?.name as string) ||
+    (authUser ? `${authUser.firstName ?? ""} ${authUser.lastName ?? ""}`.trim() : "") ||
+    (sellerQuery.data ? `${sellerQuery.data.firstName} ${sellerQuery.data.lastName}`.trim() : "");
+
+  const resolvedApplicantAfm = sellerQuery.data?.afm ?? (authUser as any)?.afm ?? "";
+  const sellerTypeNum = Number(sellerQuery.data?.sellerType ?? (authUser as any)?.sellerType ?? 0);
+  const resolvedLicenseCategory = sellerTypeNum === 1 ? "Παραγωγός" : sellerTypeNum === 2 ? "Μεταπωλητής" : String((authUser as any)?.sellerType ?? "");
+  const resolvedLicenseNumber = sellerQuery.data?.licenses?.[0]?.number ?? (authUser as any)?.licenseNumber ?? "";
+
+  const [applicantInfo, setApplicantInfo] = useState({
+    name: "",
+    afm: "",
+    licenseCategory: "",
+    licenseNumber: "",
+  });
+
+  useEffect(() => {
+    setApplicantInfo({
+      name: resolvedApplicantName,
+      afm: String(resolvedApplicantAfm ?? ""),
+      licenseCategory: String(resolvedLicenseCategory ?? ""),
+      licenseNumber: String(resolvedLicenseNumber ?? ""),
+    });
+  }, [resolvedApplicantName, resolvedApplicantAfm, resolvedLicenseCategory, resolvedLicenseNumber]);
+
+  const renderFieldChip = (field: RequestFormField) => {
+    const typeLabelMap: Record<number, string> = {
+      1: "Κείμενο",
+      2: "Αριθμός",
+      3: "Ημερομηνία",
+      4: "Μεγάλο κείμενο",
+      5: "Dropdown",
+      6: "Ναι / Όχι",
+    };
+
+    return (
+      <div key={field.id} className="flex items-center justify-between rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-3">
+        <div className="flex flex-col gap-1">
+          <span className="font-medium text-(--color-dark)">{field.label}</span>
+          <span className="text-sm text-(--color-text-muted)">{typeLabelMap[field.typeOfFields] ?? "Άγνωστο"}</span>
+        </div>
+        {field.isRequired && <Chip size="small" label="Υποχρεωτικό" />}
+      </div>
+    );
+  };
+
+  const renderDynamicFieldInput = (field: RequestFormField) => {
+    const fieldType = TYPE_OF_FIELDS_TO_DESIGN_FIELD[field.typeOfFields] ?? "TEXT";
+    const value = dynamicFieldValues[field.id] ?? "";
+
+    if (fieldType === "BOOLEAN") {
+      return (
+        <CustomInputField
+          key={field.id}
+          type="DROPDOWN"
+          label={field.isRequired ? `${field.label} *` : field.label}
+          value={value}
+          dropdownItems={BOOLEAN_OPTIONS}
+          onChange={(nextValue) =>
+            setDynamicFieldValues((prev) => ({
+              ...prev,
+              [field.id]: nextValue,
+            }))
+          }
+          width="100%"
+        />
+      );
+    }
+
+    if (fieldType === "DROPDOWN") {
+      return (
+        <CustomInputField
+          key={field.id}
+          type="DROPDOWN"
+          label={field.isRequired ? `${field.label} *` : field.label}
+          value={value}
+          dropdownItems={field.options.map((o) => ({ label: o, value: o }))}
+          onChange={(nextValue) =>
+            setDynamicFieldValues((prev) => ({
+              ...prev,
+              [field.id]: nextValue,
+            }))
+          }
+          width="100%"
+        />
+      );
+    }
+
+    const inputType = fieldType === "TEXTAREA" ? "TEXTAREA" : fieldType === "NUMBER" ? "NUMBER" : fieldType === "DATE" ? "DATE" : "TEXT";
+
+    return (
+      <CustomInputField
+        key={field.id}
+        type={inputType}
+        label={field.isRequired ? `${field.label} *` : field.label}
+        value={value}
+        onChange={(nextValue) =>
+          setDynamicFieldValues((prev) => ({
+            ...prev,
+            [field.id]: nextValue,
+          }))
+        }
+        width="100%"
+      />
+    );
+  };
+
+  const inputClass =
+    'w-full px-4 py-3 text-[15px] rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text-heading) placeholder:text-(--color-text-muted) outline-none transition focus:border-(--color-primary) focus:ring-3 focus:ring-(--color-primary-subtle) disabled:opacity-50 disabled:cursor-not-allowed';
+
+  return (
+    <div className="w-full p-6">
+      <div className="max-w-6xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <h2 className="text-2xl font-semibold text-(--color-text-heading)">Αίτηση: {selectedForm.title}</h2>
+          <div className="flex items-center gap-3">
+            <CustomButton title="Επιστροφή" backgroundColor="var(--color-text-muted)" width="fit-content" onClick={handleBack} />
+          </div>
+        </div>
+
+        <div className="flex border-b border-(--color-border) mb-6">
+          <button
+            onClick={() => setActiveTab(0)}
+            className={`px-4 py-2 font-medium transition ${
+              activeTab === 0 ? 'text-(--color-primary) border-b-2 border-(--color-primary)' : 'text-(--color-text-muted) hover:text-(--color-text-heading)'
+            }`}
+          >
+            Στοιχεία Αιτούντος
+          </button>
+
+          <button
+            onClick={() => setActiveTab(1)}
+            className={`px-4 py-2 font-medium transition ${
+              activeTab === 1 ? 'text-(--color-primary) border-b-2 border-(--color-primary)' : 'text-(--color-text-muted) hover:text-(--color-text-heading)'
+            }`}
+          >
+            Βασικά Στοιχεία Αίτησης
+          </button>
+
+          <button
+            onClick={() => setActiveTab(2)}
+            className={`px-4 py-2 font-medium transition ${
+              activeTab === 2 ? 'text-(--color-primary) border-b-2 border-(--color-primary)' : 'text-(--color-text-muted) hover:text-(--color-text-heading)'
+            }`}
+          >
+            Επισυναπτόμενα Έγγραφα
+          </button>
+        </div>
+
+        <div className="flex-1">
+          {activeTab === 0 && (
+            <div className="space-y-4 bg-white rounded-lg p-6">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-semibold text-(--color-text-heading)">Ονοματεπώνυμο</label>
+                  <input type="text" value={applicantInfo.name} onChange={(e) => setApplicantInfo((p) => ({ ...p, name: e.target.value }))} className={inputClass} />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-semibold text-(--color-text-heading)">ΑΦΜ</label>
+                  <input type="text" value={applicantInfo.afm} onChange={(e) => setApplicantInfo((p) => ({ ...p, afm: e.target.value }))} className={inputClass} />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-semibold text-(--color-text-heading)">Κατηγορία Άδειας</label>
+                  <input type="text" value={applicantInfo.licenseCategory} onChange={(e) => setApplicantInfo((p) => ({ ...p, licenseCategory: e.target.value }))} className={inputClass} />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-sm font-semibold text-(--color-text-heading)">Αριθμός Άδειας</label>
+                  <input type="text" value={applicantInfo.licenseNumber} onChange={(e) => setApplicantInfo((p) => ({ ...p, licenseNumber: e.target.value }))} className={inputClass} />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 1 && (
+            <div className="space-y-4 bg-white rounded-lg p-6">
+              {basicFormFields.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {basicFormFields.map((field) => (
+                    <div key={field.id}>{renderDynamicFieldInput(field)}</div>
+                  ))}
+                </div>
+              ) : (
+                <Alert severity="info">Δεν βρέθηκαν δυναμικά πεδία για τη συγκεκριμένη φόρμα.</Alert>
+              )}
+            </div>
+          )}
+
+          {activeTab === 2 && (
+            <div className="space-y-4 bg-white rounded-lg p-6">
+              <h3 className="text-base font-semibold">Απαιτούμενα επισυναπτόμενα</h3>
+              {attachmentFields.length > 0 ? (
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">{attachmentFields.map((f) => renderFieldChip(f))}</div>
+              ) : (
+                <Alert severity="info">Δεν βρέθηκαν πεδία επισυναπτόμενων εγγράφων για τη συγκεκριμένη φόρμα.</Alert>
+              )}
+            </div>
+          )}
+
+          <div className="mt-6 flex justify-end">
+            <CustomButton
+              title={createRequestMutation.status === 'pending' ? "Υποβολή..." : "Υποβολή Αίτησης"}
+              backgroundColor="var(--color-primary)"
+              onClick={() => {
+                const fieldValues = Object.keys(dynamicFieldValues).map((k) => ({
+                  fieldId: Number(k),
+                  value: Array.isArray(dynamicFieldValues[Number(k)]) ? (dynamicFieldValues[Number(k)] as string[]).join(",") : String(dynamicFieldValues[Number(k)] ?? ""),
+                }));
+
+                const payload: Record<string, unknown> = {
+                  formId: Number(formId),
+                  sellerId: authUser?.id ? Number(authUser.id) : undefined,
+                  sellerFullName: applicantInfo.name,
+                  sellerAfm: applicantInfo.afm,
+                  fieldValues,
+                  documents: [],
+                  markets: [],
+                };
+
+                createRequestMutation.mutate(payload, {
+                  onSuccess: () => {
+                    navigate({ to: "/users/requests" });
+                  },
+                });
+              }}
+              width="fit-content"
+              disabled={createRequestMutation.status === 'pending'}
+            />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

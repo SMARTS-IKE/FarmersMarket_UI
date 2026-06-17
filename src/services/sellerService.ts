@@ -16,8 +16,14 @@ export async function getSellers(params: SellerSearchRequest): Promise<SellerLis
   return http.get<SellerListResponse>(`/Sellers${qs ? `?${qs}` : ''}`);
 }
 
-export async function getSellerById(id: string): Promise<Seller> {
-  return http.get<Seller>(`/Sellers/${id}`);
+export async function getSellerById(id: string): Promise<Seller | null> {
+  try {
+    return await http.get<Seller>(`/Sellers/${id}`);
+  } catch (err: any) {
+    // If the API returns 404 (seller not found), treat as "no seller" and return null.
+    if (err?.status === 404) return null;
+    throw err;
+  }
 }
 
 export async function getSellerMarkets(sellerId: string): Promise<ConnectedMarketListResponse> {

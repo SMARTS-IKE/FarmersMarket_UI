@@ -24,7 +24,7 @@ export function useSellersQuery(params: SellerSearchRequest) {
 }
 
 export function useSellerQuery(id: string) {
-  return useQuery<Seller, Error>({
+  return useQuery<Seller | null, Error>({
     queryKey: sellerKeys.detail(id),
     queryFn: () => getSellerById(id),
     enabled: Boolean(id),

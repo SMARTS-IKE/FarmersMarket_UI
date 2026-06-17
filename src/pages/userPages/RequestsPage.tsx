@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Tab, Tabs, Box } from "@mui/material";
 import DesignRequestSheet from "../../components/requests/DesignRequestSheet";
-import MarketPeriods from "../../components/requests/MarketPeriods";
+import UserMarketRequests from "../../components/requests/UserMarketRequests";
 import SellerRequests from "../../components/requests/SellerRequests";
 import LayoutTabsSlot from "../../shared/components/LayoutTabsSlot";
 
@@ -31,7 +31,7 @@ export default function RequestsPage() {
       <div className="flex-1 overflow-y-auto pr-2 max-h-[calc(100svh-300px)]">
         {activeTab === 0 && <SellerRequests />}
         {activeTab === 1 && <DesignRequestSheet />}
-        {activeTab === 2 && <MarketPeriods />}
+        {activeTab === 2 && <UserMarketRequests />}
       </div>
     </div>
   );

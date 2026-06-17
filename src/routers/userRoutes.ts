@@ -1,12 +1,12 @@
 import { createRoute } from '@tanstack/react-router';
-import { z } from 'zod';
 import RoleBasedLayout from '../layouts/RoleBasedLayout';
 import AdminDashboardPage from '../pages/adminPages/AdminDashboardPage';
 import AdminMarketDetailPage from '../pages/adminPages/markets/AdminMarketDetailPage';
 import UserRequestsPage from '../pages/adminPages/requests/UserRequestsPage';
-import UserMarketPeriodDetailsPage from '../pages/adminPages/requests/UserMarketPeriodDetailsPage';
+import UserRequestCreationDetailsPage from '../pages/userPages/UserRequestCreationDetailsPage';
+import UserRequestCreationPage from '../pages/userPages/UserRequestCreationPage';
 import UserMarketsPage from '../pages/userPages/UserMarketsPage';
-import { requireAuth, rootRoute } from './baseRoutes';
+import { requireAuth, requireUserRole, rootRoute } from './baseRoutes';
 
 export const userProtectedRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -39,13 +39,17 @@ export const userRequestsRoute = createRoute({
   component: UserRequestsPage,
 });
 
-export const userMarketPeriodDetailsRoute = createRoute({
+export const userRequestCreationRoute = createRoute({
   getParentRoute: () => userProtectedRoute,
-  path: '/users/requests/periods/$periodId',
-  validateSearch: z.object({
-    formId: z.coerce.number().optional(),
-  }),
-  component: UserMarketPeriodDetailsPage,
+  path: '/users/requests/new',
+  beforeLoad: requireUserRole,
+  component: UserRequestCreationPage,
+});
+
+export const userFormCreationDetailsRoute = createRoute({
+  getParentRoute: () => userProtectedRoute,
+  path: '/users/requests/forms/$formId',
+  component: UserRequestCreationDetailsPage,
 });
 
 export const userRouteTree = userProtectedRoute.addChildren([
@@ -53,5 +57,6 @@ export const userRouteTree = userProtectedRoute.addChildren([
   userMarketsRoute,
   userMarketDetailRoute,
   userRequestsRoute,
-  userMarketPeriodDetailsRoute,
+  userRequestCreationRoute,
+  userFormCreationDetailsRoute,
 ]);
