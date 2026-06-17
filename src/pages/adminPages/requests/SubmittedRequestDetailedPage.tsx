@@ -4,8 +4,10 @@ import { CircularProgress, Alert, Tab, Tabs, Box, IconButton } from "@mui/materi
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
 import CloseIcon from '@mui/icons-material/Close';
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import ConfirmActionDialog from "../../../shared/components/ConfirmActionDialog";
-import { useSubmittedRequestDetailQuery } from "../../../queries/requestQueries";
+import { useSubmittedRequestDetailQuery, useReviewFieldValueMutation, useRecalculateFieldReviewsMutation, useSetRequestStatusMutation } from "../../../queries/requestQueries";
+import { useAuthStore } from '../../../store/authStore';
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
 import type { RequestStatus } from "../../../models/request";
 import { OpenInNew } from "@mui/icons-material";
@@ -24,6 +26,35 @@ export default function SubmittedRequestDetailedPage() {
   const navigate = useNavigate();
   const { id } = useParams({ strict: false });
   const { data: request, isLoading, error } = useSubmittedRequestDetailQuery(id as string);
+  const reviewMutation = useReviewFieldValueMutation();
+  const recalcMutation = useRecalculateFieldReviewsMutation();
+  const setStatusMutation = useSetRequestStatusMutation();
+  const currentUser = useAuthStore((s) => s.user);
+
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<'accept' | 'reject' | null>(null);
+
+  const [fieldValuesLocal, setFieldValuesLocal] = useState(() => [] as typeof request.fieldValues);
+  const [editingFieldId, setEditingFieldId] = useState<string | number | null>(null);
+  const [editedWeight, setEditedWeight] = useState<number | string>(0);
+
+  useEffect(() => {
+    setFieldValuesLocal(request?.fieldValues ?? []);
+  }, [request?.fieldValues]);
+
+  const [totalScore, setTotalScore] = useState<number | null>(null);
+
+  useEffect(() => {
+    // Initialize total score from server if provided, otherwise sum local weights
+    if (request) {
+      if (typeof request.score === 'number' && !Number.isNaN(request.score)) {
+        setTotalScore(request.score);
+      } else {
+        const sum = (request.fieldValues ?? []).reduce((acc, fv) => acc + (fv.weight ?? 0), 0);
+        setTotalScore(sum);
+      }
+    }
+  }, [request]);
 
   if (isLoading) {
     return (
@@ -45,29 +76,23 @@ export default function SubmittedRequestDetailedPage() {
 
   const statusInfo = statusLabels[request.status];
 
-  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
-  const [confirmAction, setConfirmAction] = useState<'accept' | 'reject' | null>(null);
-
-  const [fieldValuesLocal, setFieldValuesLocal] = useState(() => request.fieldValues ?? []);
-  const [editingFieldId, setEditingFieldId] = useState<string | number | null>(null);
-  const [editedWeight, setEditedWeight] = useState<number | string>(0);
-
-  useEffect(() => {
-    setFieldValuesLocal(request.fieldValues ?? []);
-  }, [request.fieldValues]);
-
   const openConfirm = (action: 'accept' | 'reject') => {
     setConfirmAction(action);
     setConfirmDialogOpen(true);
   };
 
   const handleConfirm = () => {
+    if (!confirmAction) return;
+
+    const payloadBase = {
+      reason: '',
+      processedByUserId: String(currentUser?.id ?? ''),
+    };
+
     if (confirmAction === 'accept') {
-      // TODO: wire accept mutation
-      console.log('Accepted request', request.id);
+      setStatusMutation.mutate({ id: request.id, payload: { ...payloadBase, status: 1 } });
     } else if (confirmAction === 'reject') {
-      // TODO: wire reject mutation
-      console.log('Rejected request', request.id);
+      setStatusMutation.mutate({ id: request.id, payload: { ...payloadBase, status: 2 } });
     }
 
     setConfirmDialogOpen(false);
@@ -96,17 +121,19 @@ export default function SubmittedRequestDetailedPage() {
           <div className="flex items-center gap-2">
             <button
               onClick={() => openConfirm('accept')}
-              className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition"
+              className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Accept request"
+              disabled={setStatusMutation.isLoading}
             >
-              Αποδοχή
+              {setStatusMutation.isLoading ? 'Επεξεργασία...' : 'Αποδοχή'}
             </button>
             <button
               onClick={() => openConfirm('reject')}
-              className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition"
+              className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Reject request"
+              disabled={setStatusMutation.isLoading}
             >
-              Απόρριψη
+              {setStatusMutation.isLoading ? 'Επεξεργασία...' : 'Απόρριψη'}
             </button>
           </div>
         </div>
@@ -255,11 +282,27 @@ export default function SubmittedRequestDetailedPage() {
                             <IconButton
                               size="small"
                               onClick={() => {
-                                setFieldValuesLocal((prev) =>
-                                  prev.map((fv) => (fv.id === field.id ? { ...fv, weight: Number(editedWeight) } : fv))
+                                // Call API to review field value
+                                const adjustedScore = Number(editedWeight) || 0;
+                                reviewMutation.mutate(
+                                  {
+                                    requestId: request.id,
+                                    fieldValueId: field.id,
+                                    payload: {
+                                      isApproved: true,
+                                      adjustedScore,
+                                      reviewNote: field.reviewComment ?? '',
+                                    },
+                                  },
+                                  {
+                                    onSuccess: () => {
+                                      setFieldValuesLocal((prev) =>
+                                        prev.map((fv) => (fv.id === field.id ? { ...fv, weight: adjustedScore } : fv))
+                                      );
+                                      setEditingFieldId(null);
+                                    },
+                                  }
                                 );
-                                setEditingFieldId(null);
-                                console.log('Saved weight for field', field.id, editedWeight);
                               }}
                               sx={{ backgroundColor: 'var(--color-primary)', color: 'white', '&:hover': { backgroundColor: 'var(--color-primary-hover)' } }}
                             >
@@ -351,6 +394,27 @@ export default function SubmittedRequestDetailedPage() {
           </div>
         )}
 
+        {/* Total score and recalculation */}
+        <div className="mt-6 flex items-center justify-end gap-4">
+          <div className="text-sm text-(--color-text-muted)">Συνολική Βαθμολογία:</div>
+          <div className="text-xl font-semibold text-(--color-text-heading)">{totalScore ?? '-'}</div>
+          <IconButton
+            size="small"
+            onClick={() => {
+              recalcMutation.mutate(request.id);
+            }}
+            disabled={recalcMutation.isLoading}
+            aria-label="Recalculate"
+            title="Επαναυπολογισμός"
+            sx={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text-muted)', '&:hover': { opacity: 0.9 } }}
+          >
+            {recalcMutation.isLoading ? (
+              <CircularProgress size={18} color="inherit" />
+            ) : (
+              <RestartAltIcon fontSize="small" />
+            )}
+          </IconButton>
+        </div>
       </div>
     </div>
   );

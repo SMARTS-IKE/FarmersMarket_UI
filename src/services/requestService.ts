@@ -115,3 +115,15 @@ export async function deleteRequest(id: number): Promise<void> {
 export async function createRequest(payload: Record<string, unknown>): Promise<void> {
   await http.post<void>('/requests', payload);
 }
+
+export async function reviewFieldValue(requestId: string | number, fieldValueId: string | number, payload: { isApproved: boolean; adjustedScore: number; reviewNote: string }): Promise<void> {
+  await http.post<void>(`/requests/${requestId}/field-reviews/${fieldValueId}`, payload);
+}
+
+export async function recalculateFieldReviews(requestId: string | number): Promise<void> {
+  await http.post<void>(`/requests/${requestId}/field-reviews/recalculate`, {});
+}
+
+export async function setRequestStatus(id: string | number, payload: { status: number; reason: string; processedByUserId: string }): Promise<void> {
+  await http.put<void>(`/requests/${id}/status`, payload);
+}

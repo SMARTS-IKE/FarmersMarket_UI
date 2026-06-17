@@ -10,7 +10,7 @@ import type {
   UpdateMarketPeriodRequest,
 } from '../models/request';
 import { createMarketPeriod, getMarketPeriodById, updateMarketPeriod } from '../services/periodService';
-import { approveRequest, createRequest, deleteRequest, getSellerRequests, getSubmittedRequestById, rejectRequest } from '../services/requestService';
+import { approveRequest, createRequest, deleteRequest, getSellerRequests, getSubmittedRequestById, rejectRequest, reviewFieldValue, recalculateFieldReviews, setRequestStatus } from '../services/requestService';
 
 const REQUESTS_STALE_TIME_MS = 5 * 60 * 1000;
 const REQUESTS_GC_TIME_MS = 15 * 60 * 1000;
@@ -119,4 +119,36 @@ export function useCreateRequestMutation() {
       await queryClient.invalidateQueries({ queryKey: ['requests', 'seller-list'] });
     },
   });
+}
+
+export function useReviewFieldValueMutation() {
+  return useMutation<void, Error, { requestId: string | number; fieldValueId: string | number; payload: { isApproved: boolean; adjustedScore: number; reviewNote: string } }>(
+    {
+      mutationFn: ({ requestId, fieldValueId, payload }) => reviewFieldValue(requestId, fieldValueId, payload),
+      onSuccess: async (_data, variables) => {
+        await queryClient.invalidateQueries({ queryKey: requestKeys.submittedDetail(variables.requestId) });
+      },
+    }
+  );
+}
+
+export function useRecalculateFieldReviewsMutation() {
+  return useMutation<void, Error, string | number>({
+    mutationFn: (id) => recalculateFieldReviews(id),
+    onSuccess: async (_data, id) => {
+      await queryClient.invalidateQueries({ queryKey: requestKeys.submittedDetail(id) });
+    },
+  });
+}
+
+export function useSetRequestStatusMutation() {
+  return useMutation<void, Error, { id: string | number; payload: { status: number; reason: string; processedByUserId: string } }>(
+    {
+      mutationFn: ({ id, payload }) => setRequestStatus(id, payload),
+      onSuccess: async (_data, variables) => {
+        await queryClient.invalidateQueries({ queryKey: requestKeys.submittedDetail(variables.id) });
+        await queryClient.invalidateQueries({ queryKey: requestKeys.sellerList({} as any) });
+      },
+    }
+  );
 }
