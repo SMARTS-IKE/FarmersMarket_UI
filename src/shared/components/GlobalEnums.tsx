@@ -1,5 +1,4 @@
 import { createContext, ReactNode, useContext, useEffect, useState } from 'react';
-import { http } from '../../lib/http';
 
 export enum SellerType {
   Producer = 0,
@@ -75,6 +74,9 @@ export const GlobalEnumsProvider = ({ children }: { children: ReactNode }) => {
 
   const fetchEnums = async () => {
     try {
+      // Dynamically import `http` to avoid circular module initialization issues
+      const { http } = await import('../../lib/http');
+
       // Replace `/enums` with the actual backend endpoint when available
       const res = await http.get<{
         sellerTypes?: Record<number, string>;
