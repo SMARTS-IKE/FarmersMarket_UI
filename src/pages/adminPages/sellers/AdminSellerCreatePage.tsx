@@ -129,10 +129,7 @@ export default function AdminSellerCreatePage() {
             value={String(sellerType)}
             onChange={(value) => setSellerType(String(value))}
             width="100%"
-            dropdownItems={[
-              { label: SELLER_TYPE_LABELS[1] ?? "Παραγωγός", value: "1" },
-              { label: SELLER_TYPE_LABELS[2] ?? "Επαγγελματίας", value: "2" },
-            ]}
+            dropdownItems={[{ label: '-- Επιλέξτε --', value: '' }, ...Object.entries(SELLER_TYPE_LABELS).map(([k, v]) => ({ label: v, value: String(k) }))]}
             error={sellerTypeError}
           />
           <CustomInputField

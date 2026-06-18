@@ -5,6 +5,7 @@ import type {
   SellerRequest as SellerRequest,
   RequestSheet,
 } from "../../models/request";
+import { RequestStatusLabels } from "../../shared/components/GlobalEnums";
 
 export const STEPS = [
   {
@@ -104,27 +105,10 @@ export const sellerRequestColumns: ColumnDef<SellerRequest>[] = [
     render: (row) => row.sellerFullName || row.sellerName || "-",
   },
   {
-    key: "requestType",
-    label: "Τύπος Αιτήματος",
-    render: (row) => {
-      const labels: Record<number, string> = {
-        1: "Αίτηση Εγγραφής",
-        2: "Ακύρωση",
-        3: "Αλλαγή Θέσης",
-      };
-      return labels[row.requestType] ?? "Άγνωστο";
-    },
-  },
-  {
     key: "status",
     label: "Κατάσταση",
     render: (row) => {
-      const labels: Record<number, string> = {
-        0: "Σε Αναμονή",
-        1: "Εγκεκριμένο",
-        2: "Απορριφθέν",
-      };
-      return labels[row.status] ?? "Άγνωστο";
+      return RequestStatusLabels[row.status] ?? "Άγνωστο";
     },
   },
   {

@@ -344,10 +344,7 @@ export default function SellerPage() {
                 value={sellerType}
                 onChange={(value) => setSellerType(String(value))}
                 width="100%"
-                dropdownItems={[
-                  { label: SELLER_TYPE_LABELS[0] ?? "Παραγωγός", value: "0" },
-                  { label: SELLER_TYPE_LABELS[1] ?? "Επαγγελματίας", value: "1" },
-                ]}
+                dropdownItems={[{ label: '-- Επιλέξτε --', value: '' }, ...Object.entries(SELLER_TYPE_LABELS).map(([k, v]) => ({ label: v, value: String(k) }))]}
               />
               <CustomInputField
                 type="TEXT"

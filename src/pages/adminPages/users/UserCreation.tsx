@@ -203,16 +203,13 @@ export default function UserCreation() {
                 type="DROPDOWN"
                 label="Τύπος Πωλητή"
                 value={form.sellerType}
-                dropdownItems={[{ value: 0, label: '-- Επιλέξτε --' }, ...Object.entries(SELLER_TYPE_LABELS).map(([value, label]) => ({ value: Number(value), label }))]}
+                dropdownItems={[{ value: '', label: '-- Επιλέξτε --' }, ...Object.entries(SELLER_TYPE_LABELS).map(([value, label]) => ({ value: Number(value), label }))]}
                 onChange={(v) => { setForm((p) => ({ ...p, sellerType: Number(v) })); setErrors((s) => ({ ...s, sellerType: undefined })); }}
                 width="100%"
               />
             </div>
 
             <div className="flex flex-col gap-1">
-              <label htmlFor="role" className="text-sm font-semibold text-(--color-text-heading)">
-                Ρόλος *
-              </label>
               <CustomInputField
                 type="DROPDOWN"
                 label="Ρόλος *"

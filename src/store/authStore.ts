@@ -1,6 +1,23 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
-import { jwtDecode } from 'jwt-decode';
+// Small local JWT decoder fallback to avoid import/export mismatches with jwt-decode
+function safeJwtDecode<T = any>(token: string): T {
+  try {
+    const parts = token.split('.');
+    if (parts.length < 2) return {} as T;
+    const payload = parts[1];
+    // atob is available in browser environments
+    const json = decodeURIComponent(
+      atob(payload)
+        .split('')
+        .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+        .join('')
+    );
+    return JSON.parse(json) as T;
+  } catch (e) {
+    return {} as T;
+  }
+}
 import type { User, AuthResponse, JWTPayload } from '../models/auth';
 
 interface AuthState {
@@ -47,7 +64,7 @@ export const useAuthStore = create<AuthState>()(
 
       setAuth: (data: AuthResponse) => {
         try {
-          const decoded = jwtDecode<JWTPayload>(data.accessToken);
+          const decoded = safeJwtDecode<JWTPayload>(data.accessToken);
           const role =
             decoded.role ||
             decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];

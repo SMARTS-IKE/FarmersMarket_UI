@@ -1,4 +1,4 @@
-export type RequestStatus = 0 | 1 | 2;
+export type RequestStatus = 0 | 3 | 4;
 export type RequestType = 1 | 2 | 3;
 export type MarketPeriodStatus = "draft" | "scheduled" | "active" | "closed";
 export type LicenseCategoryType = 0 | 1 | 2;

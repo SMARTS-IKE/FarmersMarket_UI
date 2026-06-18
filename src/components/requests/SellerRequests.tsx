@@ -8,9 +8,11 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import type { RequestStatus, SellerRequest, SellerRequestSearchRequest } from "../../models/request";
 import type { SellerSearchRequest } from "../../models/seller";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import { useApproveRequestMutation, useDeleteRequestMutation, useRejectRequestMutation, useSellerRequestsQuery } from "../../queries/requestQueries";
+import { useDeleteRequestMutation, useSellerRequestsQuery, useSetRequestStatusMutation } from "../../queries/requestQueries";
+import { useAuthStore } from "../../store/authStore";
 import { useSellersQuery } from "../../queries/sellerQueries";
 import { sellerRequestColumns } from "./request.utils";
+import { useGlobalEnums } from "../../shared/components/GlobalEnums";
 
 const SELLER_FILTERS: SellerSearchRequest = {
   name: "",
@@ -24,15 +26,14 @@ export default function FetchedSellerRequests() {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<SellerRequestSearchRequest>({
     sellerId: undefined,
-    status: undefined,
+    status: 0,
   });
 
   const [menuState, setMenuState] = useState<{ anchorEl: HTMLElement; rowId: number } | null>(null);
   const menuRowRef = useRef<SellerRequest | null>(null);
 
-  const approveMutation = useApproveRequestMutation();
-  const rejectMutation = useRejectRequestMutation();
-  const deleteMutation = useDeleteRequestMutation();
+  const setStatusMutation = useSetRequestStatusMutation();
+  const currentUser = useAuthStore((s) => s.user);
 
   const handleMenuOpen = (event: React.MouseEvent<HTMLElement>, row: SellerRequest) => {
     event.stopPropagation();
@@ -46,17 +47,16 @@ export default function FetchedSellerRequests() {
   };
 
   const handleApprove = () => {
-    if (menuRowRef.current) approveMutation.mutate(menuRowRef.current.id);
+    if (menuRowRef.current) {
+      setStatusMutation.mutate({ id: menuRowRef.current.id, payload: { reason: '', processedByUserId: String(currentUser?.id ?? ''), status: 3 } });
+    }
     handleMenuClose();
   };
 
   const handleReject = () => {
-    if (menuRowRef.current) rejectMutation.mutate(menuRowRef.current.id);
-    handleMenuClose();
-  };
-
-  const handleDelete = () => {
-    if (menuRowRef.current) deleteMutation.mutate(menuRowRef.current.id);
+    if (menuRowRef.current) {
+      setStatusMutation.mutate({ id: menuRowRef.current.id, payload: { reason: '', processedByUserId: String(currentUser?.id ?? ''), status: 4 } });
+    }
     handleMenuClose();
   };
 
@@ -72,13 +72,11 @@ export default function FetchedSellerRequests() {
     [allSellers]
   );
 
+  const { RequestStatusLabels, RequestStatus } = useGlobalEnums();
+
   const statusDropdownItems = useMemo(
-    () => [
-      { label: "Σε Αναμονή", value: 0 },
-      { label: "Εγκεκριμένο", value: 1 },
-      { label: "Απορριφθέν", value: 2 },
-    ],
-    []
+    () => Object.entries(RequestStatusLabels).map(([k, v]) => ({ label: v, value: Number(k) })),
+    [RequestStatusLabels]
   );
 
   const tableFilters: FilterDef[] = useMemo(
@@ -100,6 +98,14 @@ export default function FetchedSellerRequests() {
   );
 
   const { data: sellerRequests = [] } = useSellerRequestsQuery(filters);
+
+  const visibleRequests = useMemo(() => {
+    // If a status filter is applied, show results as returned by the query.
+    if (filters.status !== undefined && filters.status !== null) return sellerRequests;
+
+    // By default, hide processed requests (Approved or Rejected)
+    return sellerRequests;
+  }, [sellerRequests, filters.status, RequestStatus]);
 
   const handleSearch = (values: FilterValues) => {
     setFilters({
@@ -129,7 +135,7 @@ export default function FetchedSellerRequests() {
   return (
     <div className="flex w-full flex-col gap-4">
       <DataTable<SellerRequest>
-        rows={sellerRequests}
+        rows={visibleRequests}
         columns={[
           ...sellerRequestColumns,
           {
@@ -164,9 +170,7 @@ export default function FetchedSellerRequests() {
       >
         <MenuItem onClick={handleApprove}>Έγκριση Αιτήματος</MenuItem>
         <MenuItem onClick={handleReject}>Απόρριψη Αιτήματος</MenuItem>
-        <MenuItem onClick={handleDelete} sx={{ color: "error.main" }}>
-          Διαγραφή Αιτήματος
-        </MenuItem>
+
       </Menu>
     </div>
   );

@@ -9,16 +9,16 @@ import ConfirmActionDialog from "../../../shared/components/ConfirmActionDialog"
 import { useSubmittedRequestDetailQuery, useReviewFieldValueMutation, useRecalculateFieldReviewsMutation, useSetRequestStatusMutation } from "../../../queries/requestQueries";
 import { useAuthStore } from '../../../store/authStore';
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
-import type { RequestStatus } from "../../../models/request";
+import { useGlobalEnums } from '../../../shared/components/GlobalEnums';
 import { OpenInNew } from "@mui/icons-material";
 
 const inputClass =
   'w-full px-4 py-3 text-[15px] rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text-heading) placeholder:text-(--color-text-muted) outline-none transition focus:border-(--color-primary) focus:ring-3 focus:ring-(--color-primary-subtle) disabled:opacity-50 disabled:cursor-not-allowed';
 
-const statusLabels: Record<RequestStatus, { label: string; color: string }> = {
-  0: { label: "Σε Αναμονή", color: "#f59e0b" },
-  1: { label: "Εγκεκριμένο", color: "#10b981" },
-  2: { label: "Απορριφθέν", color: "#ef4444" },
+const REQUEST_STATUS_COLORS: Record<number, string> = {
+  0: '#f59e0b', // pending
+  3: '#10b981', // approved
+  4: '#ef4444', // rejected
 };
 
 export default function SubmittedRequestDetailedPage() {
@@ -74,7 +74,11 @@ export default function SubmittedRequestDetailedPage() {
     );
   }
 
-  const statusInfo = statusLabels[request.status];
+  const { RequestStatusLabels } = useGlobalEnums();
+  const statusInfo = {
+    label: RequestStatusLabels[request.status] ?? 'Άγνωστο',
+    color: REQUEST_STATUS_COLORS[request.status] ?? '#6b7280',
+  };
 
   const openConfirm = (action: 'accept' | 'reject') => {
     setConfirmAction(action);
@@ -90,9 +94,9 @@ export default function SubmittedRequestDetailedPage() {
     };
 
     if (confirmAction === 'accept') {
-      setStatusMutation.mutate({ id: request.id, payload: { ...payloadBase, status: 1 } });
+      setStatusMutation.mutate({ id: request.id, payload: { ...payloadBase, status: 3 } });
     } else if (confirmAction === 'reject') {
-      setStatusMutation.mutate({ id: request.id, payload: { ...payloadBase, status: 2 } });
+      setStatusMutation.mutate({ id: request.id, payload: { ...payloadBase, status: 4 } });
     }
 
     setConfirmDialogOpen(false);
@@ -118,24 +122,26 @@ export default function SubmittedRequestDetailedPage() {
             <h2 className="text-xl font-semibold text-(--color-text-heading)">Στοιχεία Αίτησης #{request.id}</h2>
           </div>
 
-          <div className="flex items-center gap-2">
-            <button
-              onClick={() => openConfirm('accept')}
-              className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Accept request"
-              disabled={setStatusMutation.isLoading}
-            >
-              {setStatusMutation.isLoading ? 'Επεξεργασία...' : 'Αποδοχή'}
-            </button>
-            <button
-              onClick={() => openConfirm('reject')}
-              className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
-              aria-label="Reject request"
-              disabled={setStatusMutation.isLoading}
-            >
-              {setStatusMutation.isLoading ? 'Επεξεργασία...' : 'Απόρριψη'}
-            </button>
-          </div>
+          {request.status === 0 && (
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() => openConfirm('accept')}
+                className="px-3 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Accept request"
+                disabled={setStatusMutation.isLoading}
+              >
+                {setStatusMutation.isLoading ? 'Επεξεργασία...' : 'Αποδοχή'}
+              </button>
+              <button
+                onClick={() => openConfirm('reject')}
+                className="px-3 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                aria-label="Reject request"
+                disabled={setStatusMutation.isLoading}
+              >
+                {setStatusMutation.isLoading ? 'Επεξεργασία...' : 'Απόρριψη'}
+              </button>
+            </div>
+          )}
         </div>
 
           <div className="mb-6">
@@ -270,7 +276,7 @@ export default function SubmittedRequestDetailedPage() {
                         <label className="text-sm font-semibold text-(--color-text-heading)">
                           Βάρος
                         </label>
-                        {editingFieldId === field.id ? (
+                        {request.status === 0 && editingFieldId === field.id ? (
                           <div className="flex items-center gap-2">
                             <input
                               type="number"
@@ -327,16 +333,18 @@ export default function SubmittedRequestDetailedPage() {
                               className={inputClass}
                               style={{ width: 72 }}
                             />
-                            <IconButton
-                              size="small"
-                              onClick={() => {
-                                setEditingFieldId(field.id);
-                                setEditedWeight(field.weight ?? 0);
-                              }}
-                              sx={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text-muted)', '&:hover': { opacity: 0.9 } }}
-                            >
-                              <EditIcon fontSize="small" />
-                            </IconButton>
+                            {request.status === 0 && (
+                              <IconButton
+                                size="small"
+                                onClick={() => {
+                                  setEditingFieldId(field.id);
+                                  setEditedWeight(field.weight ?? 0);
+                                }}
+                                sx={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text-muted)', '&:hover': { opacity: 0.9 } }}
+                              >
+                                <EditIcon fontSize="small" />
+                              </IconButton>
+                            )}
                           </div>
                         )}
                       </div>
@@ -398,22 +406,24 @@ export default function SubmittedRequestDetailedPage() {
         <div className="mt-6 flex items-center justify-end gap-4">
           <div className="text-sm text-(--color-text-muted)">Συνολική Βαθμολογία:</div>
           <div className="text-xl font-semibold text-(--color-text-heading)">{totalScore ?? '-'}</div>
-          <IconButton
-            size="small"
-            onClick={() => {
-              recalcMutation.mutate(request.id);
-            }}
-            disabled={recalcMutation.isLoading}
-            aria-label="Recalculate"
-            title="Επαναυπολογισμός"
-            sx={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text-muted)', '&:hover': { opacity: 0.9 } }}
-          >
-            {recalcMutation.isLoading ? (
-              <CircularProgress size={18} color="inherit" />
-            ) : (
-              <RestartAltIcon fontSize="small" />
-            )}
-          </IconButton>
+          {request.status === 0 && (
+            <IconButton
+              size="small"
+              onClick={() => {
+                recalcMutation.mutate(request.id);
+              }}
+              disabled={recalcMutation.isLoading}
+              aria-label="Recalculate"
+              title="Επαναυπολογισμός"
+              sx={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text-muted)', '&:hover': { opacity: 0.9 } }}
+            >
+              {recalcMutation.isLoading ? (
+                <CircularProgress size={18} color="inherit" />
+              ) : (
+                <RestartAltIcon fontSize="small" />
+              )}
+            </IconButton>
+          )}
         </div>
       </div>
     </div>
