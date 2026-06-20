@@ -44,8 +44,8 @@ function SystemAdminLayoutInner() {
             <div className="flex items-center gap-4">
               <img src={logo02} alt="Farmers Market logo" className="h-auto max-h-[70px] w-auto rounded-lg object-contain xl:max-h-[88px]" />
               <div className="hidden md:flex md:flex-col md:items-start md:leading-tight">
-                <p className="text-base uppercase font-bold text-(--color-text) whitespace-nowrap">Πλατφόρμα Διαχείρισης</p>
-                <p className="text-sm uppercase text-(--color-text)">Λαϊκών Αγορών</p>
+                <p className="text-base font-bold text-(--color-text) whitespace-nowrap">Πλατφόρμα Διαχείρισης</p>
+                <p className="text-sm text-(--color-text)">Λαϊκών Αγορών</p>
               </div>
             </div>
 
@@ -86,7 +86,7 @@ function SystemAdminLayoutInner() {
           </div>
         </header>
 
-        <div className="grid flex-1 gap-px bg-(--color-border-subtle) lg:grid-cols-[300px_minmax(0,1fr)]">
+        <div className="flex flex-1 items-stretch gap-px bg-(--color-border-subtle)">
           <aside className={`flex flex-col gap-4 bg-(--color-bg-subtle) p-3 transition-all ${collapsed ? 'w-20' : 'w-72'}`}>
             <div className="flex items-center justify-end">
               <IconButton aria-label="toggle_menu" onClick={() => setCollapsed((s) => !s)} size="small">
@@ -117,7 +117,7 @@ function SystemAdminLayoutInner() {
             )}
           </aside>
 
-          <main className={`flex h-full min-h-0 flex-col bg-(--color-surface) p-5 md:p-7`}>
+          <main className={`flex-1 min-w-0 flex h-full min-h-0 flex-col bg-(--color-surface) p-5 md:p-7 transition-all`}>
             {(tabSlot || filterSlot) && (
               <div className="mb-4 flex min-w-0 flex-col items-stretch justify-start gap-2 overflow-x-auto">
                 {tabSlot && (
