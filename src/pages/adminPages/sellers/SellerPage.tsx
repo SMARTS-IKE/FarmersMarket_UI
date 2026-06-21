@@ -59,9 +59,10 @@ export default function SellerPage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [afm, setAfm] = useState("");
-  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [userId, setUserId] = useState<number | null>(null);
+  const [createdAt, setCreatedAt] = useState("");
   const [sellerType, setSellerType] = useState<string>("0");
   const [isActive, setIsActive] = useState(false);
   const [licenseNumber, setLicenseNumber] = useState("");
@@ -71,7 +72,6 @@ export default function SellerPage() {
     firstName: "",
     lastName: "",
     afm: "",
-    email: "",
     phone: "",
     address: "",
     sellerType: "",
@@ -79,6 +79,8 @@ export default function SellerPage() {
     licenseNumber: "",
     licenseIssuedAt: "",
     licenseExpiresAt: "",
+    userId: null,
+    createdAt: "",
   });
   const [navigationNotice, setNavigationNotice] = useState("");
   const [notificationSeverity, setNotificationSeverity] = useState<"success" | "warning">("warning");
@@ -100,7 +102,6 @@ export default function SellerPage() {
       firstName,
       lastName,
       afm,
-      email,
       phone,
       address,
       sellerType,
@@ -108,8 +109,10 @@ export default function SellerPage() {
       licenseNumber,
       licenseIssuedAt,
       licenseExpiresAt,
+      userId,
+      createdAt,
     }),
-    [firstName, lastName, afm, email, phone, address, sellerType, isActive, licenseNumber, licenseIssuedAt, licenseExpiresAt]
+    [firstName, lastName, afm, phone, address, sellerType, isActive, licenseNumber, licenseIssuedAt, licenseExpiresAt, userId, createdAt]
   );
   const hasUnsavedChanges = useMemo(
     () => JSON.stringify(currentState) !== JSON.stringify(initialState),
@@ -119,26 +122,26 @@ export default function SellerPage() {
   useEffect(() => {
     if (!seller) return;
 
-    const latestLicense = getLatestLicense(seller.licenses ?? []);
+    const cl = (seller as any).currentLicense ?? null;
 
     const mappedState = {
       firstName: seller.firstName ?? "",
       lastName: seller.lastName ?? "",
       afm: seller.afm ?? "",
-      email: seller.email ?? "",
       phone: seller.phone ?? "",
       address: seller.address ?? "",
-      sellerType: String(seller.sellerType),
+      sellerType: String(seller.sellerType ?? ""),
       isActive: Boolean(seller.isActive),
-      licenseNumber: latestLicense?.number ?? "",
-      licenseIssuedAt: latestLicense?.issuedAt ?? "",
-      licenseExpiresAt: latestLicense?.expiresAt ?? "",
+      licenseNumber: cl?.licenseNumber ?? cl?.license_number ?? "",
+      licenseIssuedAt: cl?.fromDate ?? cl?.seasonalFromDate ?? "",
+      licenseExpiresAt: cl?.licenseExpiry ?? cl?.expiresAt ?? cl?.toDate ?? cl?.seasonalToDate ?? "",
+      userId: typeof seller.userId === 'number' ? seller.userId : null,
+      createdAt: seller.createdAt ?? "",
     };
 
     setFirstName(mappedState.firstName);
     setLastName(mappedState.lastName);
     setAfm(mappedState.afm);
-    setEmail(mappedState.email);
     setPhone(mappedState.phone);
     setAddress(mappedState.address);
     setSellerType(mappedState.sellerType);
@@ -146,6 +149,8 @@ export default function SellerPage() {
     setLicenseNumber(mappedState.licenseNumber);
     setLicenseIssuedAt(mappedState.licenseIssuedAt);
     setLicenseExpiresAt(mappedState.licenseExpiresAt);
+    setUserId(mappedState.userId ?? null);
+    setCreatedAt(mappedState.createdAt ?? "");
     setInitialState(mappedState);
     setNavigationNotice("");
     setIsSnackbarOpen(false);
@@ -188,7 +193,6 @@ export default function SellerPage() {
     setFirstName(initialState.firstName);
     setLastName(initialState.lastName);
     setAfm(initialState.afm);
-    setEmail(initialState.email);
     setPhone(initialState.phone);
     setAddress(initialState.address);
     setSellerType(initialState.sellerType);
@@ -196,6 +200,8 @@ export default function SellerPage() {
     setLicenseNumber(initialState.licenseNumber);
     setLicenseIssuedAt(initialState.licenseIssuedAt);
     setLicenseExpiresAt(initialState.licenseExpiresAt);
+    setUserId(initialState.userId ?? null);
+    setCreatedAt(initialState.createdAt ?? "");
     setNavigationNotice("");
     setIsSnackbarOpen(false);
   };
@@ -256,8 +262,12 @@ export default function SellerPage() {
         <div className="flex flex-col gap-1">
           <h2 className="font-semibold text-(--color-text-heading)">Πωλητής</h2>
           <h3 className="text-lg text-(--color-text-heading)">
-            {seller.firstName} {seller.lastName}
+            {seller.fullName ? seller.fullName : `${firstName} ${lastName}`}
           </h3>
+          <div className="text-sm text-(--color-text-muted) mt-1">
+            {userId !== null && <span className="mr-4">User ID: {userId}</span>}
+            {createdAt && <span>Created: {new Date(createdAt).toLocaleString()}</span>}
+          </div>
         </div>
         <CustomButton
           title="Επιστροφή στη λίστα πωλητών"
@@ -362,13 +372,6 @@ export default function SellerPage() {
               />
               <CustomInputField
                 type="TEXT"
-                label="Email"
-                value={email}
-                onChange={(value) => setEmail(String(value))}
-                width="100%"
-              />
-              <CustomInputField
-                type="TEXT"
                 label="Διεύθυνση"
                 value={address}
                 onChange={(value) => setAddress(String(value))}
@@ -378,7 +381,7 @@ export default function SellerPage() {
 
             <div className="pt-6">
               <h3 className="mb-4 text-lg font-semibold text-(--color-text-heading)">Άδεια</h3>
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+              <div className="flex flex-row items-start gap-4 justify-center">
                 <CustomInputField
                   type="TEXT"
                   label="Αριθμός"

@@ -23,7 +23,6 @@ const columns: ColumnDef<Seller>[] = [
   { key: "firstName", label: "Όνομα" },
   { key: "lastName", label: "Επώνυμο" },
   { key: "afm", label: "ΑΦΜ" },
-  { key: "email", label: "Email" },
   { key: "phone", label: "Τηλέφωνο" },
   {
     key: "sellerType",
@@ -59,6 +58,7 @@ const tableFilters: FilterDef[] = [
     title: "sellerType",
     label: "Τύπος Πωλητή",
     type: "DROPDOWN",
+    width: 250,
     dataItems: Object.entries(SELLER_TYPE_LABELS).map(([value, label]) => ({
       label,
       value: Number(value),

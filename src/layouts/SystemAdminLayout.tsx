@@ -39,11 +39,11 @@ function SystemAdminLayoutInner() {
   return (
     <div className="min-h-svh">
       <div className="flex min-h-svh w-full flex-col overflow-visible border border-(--color-border) bg-(--color-surface) shadow-[var(--shadow-lg)] md:overflow-hidden">
-        <header className="border-b-4 border-[#ef4123] bg-[#C4B5A0] px-4 md:px-6">
+        <header className="relative z-20 border-b-4 border-[#ef4123] bg-[#C4B5A0] px-4 md:px-6">
           <div className="flex items-center justify-between gap-4 py-2 xl:py-0">
             <div className="flex items-center gap-4">
               <img src={logo02} alt="Farmers Market logo" className="h-auto max-h-[70px] w-auto rounded-lg object-contain xl:max-h-[88px]" />
-              <div className="hidden md:flex md:flex-col md:items-start md:leading-tight">
+              <div className="flex flex-col items-start leading-tight">
                 <p className="text-base font-bold text-(--color-text) whitespace-nowrap">Πλατφόρμα Διαχείρισης</p>
                 <p className="text-sm text-(--color-text)">Λαϊκών Αγορών</p>
               </div>
@@ -87,7 +87,7 @@ function SystemAdminLayoutInner() {
         </header>
 
         <div className="flex flex-1 items-stretch gap-px bg-(--color-border-subtle)">
-          <aside className={`flex flex-col gap-4 bg-(--color-bg-subtle) p-3 transition-all ${collapsed ? 'w-20' : 'w-72'}`}>
+          <aside className={`relative z-10 flex flex-col gap-4 bg-(--color-bg-subtle) p-3 transition-all ${collapsed ? 'w-20' : 'w-72'}`}>
             <div className="flex items-center justify-end">
               <IconButton aria-label="toggle_menu" onClick={() => setCollapsed((s) => !s)} size="small">
                 {collapsed ? <MenuRoundedIcon /> : <CloseRoundedIcon />}
@@ -102,7 +102,7 @@ function SystemAdminLayoutInner() {
                   <Link
                     key={tab.to}
                     to={tab.to}
-                    className={`flex items-center gap-3 rounded px-3 py-2 text-sm transition ${isActive ? 'bg-(--color-text-muted) text-(--color-surface) border border-(--color-border)' : 'text-(--color-text) hover:bg-(--color-primary-subtle)'}`}
+                    className={`flex items-center gap-3 rounded px-3 py-2 text-sm transition font-medium ${isActive ? 'bg-(--color-text-muted) text-(--color-surface) border border-(--color-border) font-bold' : 'text-(--color-text) hover:bg-(--color-primary-subtle)'} `}
                   >
                     <span className="truncate">{!collapsed ? tab.label : tab.label.charAt(0)}</span>
                   </Link>
@@ -124,7 +124,7 @@ function SystemAdminLayoutInner() {
                   <div className="w-full">{tabSlot}</div>
                 )}
                 {filterSlot && (
-                  <div className="flex min-w-0 items-end justify-center overflow-x-auto">{filterSlot}</div>
+                  <div className="flex min-w-0 items-start justify-center overflow-x-auto py-3 min-h-[56px]">{filterSlot}</div>
                 )}
               </div>
             )}

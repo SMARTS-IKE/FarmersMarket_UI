@@ -168,6 +168,8 @@ export default function CustomInputField({
   onBlur,
   sx,
 }: CustomInputFieldProps) {
+  const inputClass =
+    'w-full px-4 py-0 h-10 text-[15px] rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text-heading) placeholder:text-(--color-text-muted) outline-none transition focus:border-(--color-primary) focus:ring-3 focus:ring-(--color-primary-subtle) disabled:opacity-50 disabled:cursor-not-allowed flex items-center';
   const normalizedDateValue = type === "DATE"
     ? toDateInputValue((value ?? defaultValue) as string)
     : (value ?? defaultValue ?? "");
@@ -178,8 +180,9 @@ export default function CustomInputField({
       ? validate(value, validation, type)
       : "");
 
+  const computedWidth = (width === 240 && (type === "DROPDOWN" || type === "MULTI_SELECT")) ? 320 : width;
+
   const focusSx: SxProps<Theme> = {
-    "& .MuiInput-underline:after": { borderBottomColor: "var(--color-dark)" },
     "& .MuiFormLabel-root.Mui-focused": { color: "var(--color-dark)" },
   };
 
@@ -198,15 +201,94 @@ export default function CustomInputField({
   };
 
   const sharedSx: SxProps<Theme> = {
-    width,
+    width: computedWidth,
+    // Ensure the root input container matches the custom box style
     ...(backgroundColor && {
       "& .MuiInputBase-root": { backgroundColor },
     }),
+    "& .MuiInputBase-root": {
+      borderRadius: 8,
+      border: '1px solid var(--color-border)',
+      height: 40,
+      padding: 0,
+      display: 'flex',
+      alignItems: 'center',
+      position: 'relative',
+      backgroundColor: backgroundColor ?? 'var(--color-bg)'
+    },
+    "& .MuiInputBase-input, & .MuiSelect-select, & input": {
+      height: 40,
+      padding: '0 16px',
+      paddingRight: '40px',
+      display: 'flex',
+      alignItems: 'center',
+      lineHeight: '1',
+      '&:focus': {
+        outline: 'none',
+        boxShadow: 'none',
+        borderBottom: 'none',
+      },
+    },
+    // ensure placeholder text is left-aligned
+    "& .MuiOutlinedInput-input::placeholder, & .MuiInputBase-input::placeholder, & input::placeholder": {
+      textAlign: 'left',
+    },
+    // vertically center labels when not shrunk so label overlaps input centered vertically
+    "& .MuiInputLabel-root:not(.MuiInputLabel-shrink), & .MuiFormLabel-root:not(.MuiInputLabel-shrink)": {
+      top: '50%',
+      transform: 'translate(16px, -50%)',
+      pointerEvents: 'none',
+    },
+    // ensure shrunk label uses default small transform (include FormLabel)
+    "& .MuiInputLabel-root.MuiInputLabel-shrink, & .MuiFormLabel-root.MuiInputLabel-shrink": {
+      transform: 'translate(16px, -9px) scale(0.75)'
+    },
+    // place adornments inside the input box on the right
+    "& .MuiInputAdornment-root": {
+      position: 'absolute',
+      right: 8,
+      top: '50%',
+      transform: 'translateY(-50%)',
+      margin: 0,
+      display: 'flex',
+      alignItems: 'center',
+      pointerEvents: 'auto',
+    },
+    "& .MuiSelect-icon": {
+      right: 8,
+      color: 'var(--color-text-muted)',
+      fontSize: '16px'
+    },
+    "& .MuiSelect-select:focus": {
+      backgroundColor: 'transparent',
+      outline: 'none',
+      boxShadow: 'none'
+    },
     ...focusSx,
     ...placeholderSx,
     ...labelSx,
     ...sx,
   };
+
+  // Remove MUI "standard" variant underline so custom borders are used instead
+  const removeUnderlineSx: SxProps<Theme> = {
+    "& .MuiInput-underline:before": { borderBottom: 'none' },
+    "& .MuiInput-underline:after": { borderBottom: 'none' },
+    "& .MuiInput-root:before": { borderBottom: 'none' },
+    "& .MuiInput-root:after": { borderBottom: 'none' },
+    "& .MuiSelect-root:before": { borderBottom: 'none' },
+    "& .MuiSelect-root:after": { borderBottom: 'none' },
+    "& .MuiFormControl-root .MuiInput-underline:before": { borderBottom: 'none' },
+    "& .MuiFormControl-root .MuiInput-underline:after": { borderBottom: 'none' },
+    "& .MuiOutlinedInput-notchedOutline": { border: 'none' },
+    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": { border: 'none' },
+    "& .MuiInputBase-root.Mui-focused:before": { borderBottom: 'none' },
+    "& .MuiInputBase-root.Mui-focused:after": { borderBottom: 'none' },
+    "& .MuiSelect-select:focus": { backgroundColor: 'transparent' },
+  };
+
+  // Merge underline removal into sharedSx
+  Object.assign(sharedSx as object, removeUnderlineSx as object);
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [multiOpen, setMultiOpen] = useState(false);
@@ -259,9 +341,9 @@ export default function CustomInputField({
         variant="standard"
         disabled={disabled}
         error={!!internalError}
-        sx={{ width, ...sx }}
+        sx={sharedSx}
       >
-        {label && <InputLabel>{label}</InputLabel>}
+        {label && <InputLabel shrink>{label}</InputLabel>}
         <Select
           multiple
           open={multiOpen}
@@ -271,7 +353,7 @@ export default function CustomInputField({
           onChange={(e) => onChange?.(e.target.value as string[])}
           onBlur={onBlur}
           MenuProps={dropdownMenuProps}
-          input={<Input />}
+          input={<Input className={inputClass} />}
           IconComponent={() => null}
           endAdornment={
             <InputAdornment
@@ -285,15 +367,15 @@ export default function CustomInputField({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  width: 28,
-                  height: 28,
+                  width: 22,
+                  height: 22,
                   borderRadius: "4px",
                   backgroundColor: backgroundColor ?? "var(--color-text)",
                   "& svg": {
                     transition: "transform 200ms",
                     transform: multiOpen ? "rotate(180deg)" : "rotate(0deg)",
                     color: "var(--color-surface)",
-                    fontSize: 20,
+                    fontSize: 16,
                   },
                 }}
               >
@@ -301,21 +383,25 @@ export default function CustomInputField({
               </Box>
             </InputAdornment>
           }
-          renderValue={(selected) => (
-            <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
-              {(selected as string[]).map((val) => (
-                <Chip
-                  key={val}
-                  label={dropdownItems.find((d) => d.value === val)?.label ?? val}
-                  size="small"
-                />
-              ))}
-            </Box>
-          )}
+          renderValue={(selected) => {
+            const sel = (selected as string[]) || [];
+            if (sel.length === 0) return <em>{placeholder ?? "Επιλέξτε…"}</em>;
+            return (
+              <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
+                {sel.map((val) => (
+                  <Chip
+                    key={val}
+                    label={dropdownItems.find((d) => d.value === val)?.label ?? val}
+                    size="small"
+                  />
+                ))}
+              </Box>
+            );
+          }}
           sx={{
-            "&:before": { borderBottomColor: "rgba(0, 0, 0, 0.42)" },
-            "&:hover:not(.Mui-disabled):before": { borderBottomColor: "rgba(0, 0, 0, 0.87)" },
-            "&:after": { borderBottomColor: "var(--color-dark)" },
+            "&:before": { borderBottom: 'none' },
+            "&:hover:not(.Mui-disabled):before": { borderBottom: 'none' },
+            "&:after": { borderBottom: 'none' },
             ...sx,
           }}
         >
@@ -341,17 +427,12 @@ export default function CustomInputField({
         variant="standard"
         disabled={disabled}
         error={!!internalError}
-        sx={{
-          width,
-          "& .MuiInput-underline:after": { borderBottomColor: "var(--color-dark)" },
-          "& .MuiFormLabel-root.Mui-focused": { color: "var(--color-dark)" },
-          ...labelSx,
-          ...sx,
-        }}
+        sx={sharedSx}
       >
-        {label && <InputLabel>{label}</InputLabel>}
+        {label && <InputLabel shrink>{label}</InputLabel>}
         <Select
           variant="standard"
+          displayEmpty
           open={dropdownOpen}
           onOpen={() => setDropdownOpen(true)}
           onClose={() => setDropdownOpen(false)}
@@ -372,15 +453,15 @@ export default function CustomInputField({
                   display: "flex",
                   alignItems: "center",
                   justifyContent: "center",
-                  width: 28,
-                  height: 28,
+                  width: 22,
+                  height: 22,
                   borderRadius: "4px",
                   backgroundColor: backgroundColor ?? "var(--color-text)",
                   "& svg": {
                     transition: "transform 200ms",
                     transform: dropdownOpen ? "rotate(180deg)" : "rotate(0deg)",
                     color: "var(--color-surface)",
-                    fontSize: 20,
+                    fontSize: 16,
                   },
                 }}
               >
@@ -393,6 +474,13 @@ export default function CustomInputField({
               <InputAdornment position="start">{prefixIcon}</InputAdornment>
             ) : undefined
           }
+          input={<Input className={inputClass} />}
+          renderValue={(selected) => {
+            const sel = selected as string | number | undefined;
+            if (sel === undefined || sel === "") return <em>{placeholder ?? "Επιλέξτε…"}</em>;
+            const found = dropdownItems.find((d) => d.value == sel);
+            return found ? String(found.label) : String(sel);
+          }}
         >
           <MenuItem value="" sx={dropdownMenuItemSx}>
             <em>Επιλέξτε…</em>
@@ -415,12 +503,13 @@ export default function CustomInputField({
 
   if (type === "TEXTAREA") {
     return (
-      <Box sx={{ width }}>
+      <Box sx={sharedSx}>
         <TextField
           label={label}
           placeholder={placeholder}
           value={value ?? defaultValue ?? ""}
           disabled={disabled}
+          variant="outlined"
           multiline
           minRows={3}
           fullWidth
@@ -430,6 +519,7 @@ export default function CustomInputField({
           onBlur={onBlur}
           slotProps={{
             input: {
+              className: inputClass,
               startAdornment: prefixIcon ? (
                 <InputAdornment position="start">{prefixIcon}</InputAdornment>
               ) : undefined,
@@ -443,6 +533,7 @@ export default function CustomInputField({
             ...labelSx,
             "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-dark)" },
             "& .MuiFormLabel-root.Mui-focused": { color: "var(--color-dark)" },
+            ...sharedSx,
             ...sx,
           }}
         />
@@ -471,21 +562,55 @@ export default function CustomInputField({
           }}
           slotProps={{
             textField: {
-              variant: "standard",
+              variant: "outlined",
               placeholder,
               error: !!internalError,
               helperText: internalError,
               onBlur,
-              sx: sharedSx,
+              sx: {
+                ...sharedSx,
+                "& .MuiOutlinedInput-root": {
+                  borderRadius: 8,
+                  border: '1px solid var(--color-border)',
+                  boxShadow: 'none',
+                  height: 40,
+                  padding: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                  backgroundColor: backgroundColor ?? 'var(--color-bg)'
+                },
+                "& .MuiOutlinedInput-input": {
+                  height: 40,
+                  padding: '0 16px',
+                  display: 'flex',
+                  alignItems: 'center',
+                },
+                // ensure the notched outline matches the border
+                "& .MuiOutlinedInput-notchedOutline": {
+                  border: '1px solid var(--color-border)'
+                },
+                "& .MuiInputAdornment-root": {
+                  margin: 0,
+                  display: 'flex',
+                  alignItems: 'center',
+                },
+                "& .MuiSvgIcon-root": { fontSize: '20px' },
+                "& .MuiInput-underline:before": { borderBottom: 'none' },
+                "& .MuiInput-underline:after": { borderBottom: 'none' },
+                // Remove outlined notched outline if present
+                "& .MuiOutlinedInput-notchedOutline": { border: 'none' },
+              },
               slotProps: {
                 inputLabel: { shrink: true },
                 input: {
+                  className: inputClass,
+                  sx: { borderRadius: '20px' },
                   startAdornment: prefixIcon ? (
                     <InputAdornment position="start">{prefixIcon}</InputAdornment>
                   ) : undefined,
                 },
               },
-            } as any,
+            },
           }}
         />
       </LocalizationProvider>
@@ -494,7 +619,7 @@ export default function CustomInputField({
 
   return (
     <TextField
-      variant="standard"
+      variant="outlined"
       label={label}
       placeholder={placeholder}
       type={type === "NUMBER" ? "number" : "text"}
@@ -509,6 +634,7 @@ export default function CustomInputField({
       slotProps={{
         inputLabel: undefined,
         input: {
+          className: inputClass,
           startAdornment: prefixIcon ? (
             <InputAdornment position="start">{prefixIcon}</InputAdornment>
           ) : undefined,

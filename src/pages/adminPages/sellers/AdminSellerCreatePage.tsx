@@ -10,7 +10,6 @@ export default function AdminSellerCreatePage() {
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
   const [afm, setAfm] = useState("");
-  const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
   const [sellerType, setSellerType] = useState<SellerType | string>("1");
@@ -149,13 +148,6 @@ export default function AdminSellerCreatePage() {
           />
           <CustomInputField
             type="TEXT"
-            label="Email"
-            value={email}
-            onChange={(value) => setEmail(String(value))}
-            width="100%"
-          />
-          <CustomInputField
-            type="TEXT"
             label="Διεύθυνση"
             value={address}
             onChange={(value) => setAddress(String(value))}
@@ -163,10 +155,10 @@ export default function AdminSellerCreatePage() {
           />
         </div>
 
-        <div className="mt-6 space-y-4">
+        <div className="mt-6 space-y-4 flex flex-row">
           <div className="pt-6">
             <h3 className="mb-4 text-lg font-semibold text-(--color-text-heading)">Άδεια</h3>
-            <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+            <div className="flex flex-row items-center">
               <CustomInputField
                 type="TEXT"
                 label="Αριθμός *"

@@ -235,7 +235,7 @@ export default function DataTable<T extends object>({
             <TableHead sx={{ backgroundColor: 'var(--color-text-muted)', }}>
               <TableRow>
                 {columns.map((col) => (
-                  <TableCell sx={{ color: 'var(--color-surface)', fontWeight: 700 }} key={String(col.key)}>
+                  <TableCell align="center" sx={{ color: 'var(--color-surface)', fontWeight: 700, textAlign: 'center' }} key={String(col.key)}>
                     {col.label}
                   </TableCell>
                 ))}
@@ -260,7 +260,7 @@ export default function DataTable<T extends object>({
                     }}
                   >
                     {columns.map((col) => (
-                      <TableCell key={String(col.key)}>
+                      <TableCell key={String(col.key)} align="center" sx={{ textAlign: 'center' }}>
                         {getCellContent(row, col)}
                       </TableCell>
                     ))}
