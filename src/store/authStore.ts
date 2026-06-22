@@ -69,12 +69,15 @@ export const useAuthStore = create<AuthState>()(
             decoded.role ||
             decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
 
+          const firstName = decoded.firstName ?? '';
+          const lastName = decoded.lastName ?? '';
+
           const user: User = {
             id: decoded.userId || decoded.sub,
-            email: decoded.email,
-            firstName: decoded.firstName,
-            lastName: decoded.lastName,
-            name: `${decoded.firstName} ${decoded.lastName}`.trim(),
+            email: decoded.email ?? null,
+            firstName,
+            lastName,
+            name: `${firstName} ${lastName}`.trim() || decoded.name || null,
             role: Array.isArray(role) ? role[0] : (role as string),
             status: decoded.status
           };

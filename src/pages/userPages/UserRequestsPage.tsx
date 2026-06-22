@@ -1,8 +1,8 @@
 import { useState, type SyntheticEvent } from "react";
 import { Box, Tab, Tabs } from "@mui/material";
 import { useNavigate } from "@tanstack/react-router";
-import SellerRequests from "../../../components/requests/SellerRequests";
-import LayoutTabsSlot from "../../../shared/components/LayoutTabsSlot";
+import SellerRequests from "../../components/requests/SellerRequests";
+import LayoutTabsSlot from "../../shared/components/LayoutTabsSlot";
 
 export default function UserRequestsPage() {
   const [activeTab, setActiveTab] = useState(0);

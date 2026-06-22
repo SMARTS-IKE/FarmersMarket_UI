@@ -12,7 +12,7 @@ import {
 } from "@mui/material";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import type { SxProps, Theme } from "@mui/material";
-import { useState } from "react";
+import { useState, type CSSProperties } from "react";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { el } from "date-fns/locale";
@@ -270,6 +270,19 @@ export default function CustomInputField({
     ...sx,
   };
 
+    const customLabelSx: CSSProperties = {
+      position: "absolute",
+      top: '-10px',
+      left: '15px',
+      zIndex: 1000,
+      fontWeight: 600,
+      color: 'rgba(0, 0, 0, 0.6)',
+      fontSize: '12px',
+      fontFamily: "Roboto, Helvetica, Arial, sans-serif",
+    };
+
+  
+
   // Remove MUI "standard" variant underline so custom borders are used instead
   const removeUnderlineSx: SxProps<Theme> = {
     "& .MuiInput-underline:before": { borderBottom: 'none' },
@@ -331,7 +344,7 @@ export default function CustomInputField({
     },
     "&:hover": {
       backgroundColor: "#F7F3EE",
-    },
+    }
   };
 
   if (type === "MULTI_SELECT") {
@@ -343,7 +356,7 @@ export default function CustomInputField({
         error={!!internalError}
         sx={sharedSx}
       >
-        {label && <InputLabel shrink>{label}</InputLabel>}
+        {label && <span style={customLabelSx}>{label}</span>}
         <Select
           multiple
           open={multiOpen}
@@ -429,7 +442,7 @@ export default function CustomInputField({
         error={!!internalError}
         sx={sharedSx}
       >
-        {label && <InputLabel shrink>{label}</InputLabel>}
+        {label && <span style={customLabelSx}>{label}</span>}
         <Select
           variant="standard"
           displayEmpty

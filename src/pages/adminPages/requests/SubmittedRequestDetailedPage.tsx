@@ -2,11 +2,16 @@ import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
 import { CircularProgress, Alert, Tab, Tabs, Box, IconButton } from "@mui/material";
 import EditIcon from '@mui/icons-material/Edit';
-import SaveIcon from '@mui/icons-material/Save';
+import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
-import RestartAltIcon from '@mui/icons-material/RestartAlt';
+import { queryClient } from "../../../lib/queryClient";
+import { requestKeys } from "../../../queries/requestQueries";
+import CustomInputField from "../../../shared/components/CustomInputField";
+import { useSellerQuery } from "../../../queries/sellerQueries";
+// Removed weight edit icons and functionality
+// Restart icon and recalculation removed per request
 import ConfirmActionDialog from "../../../shared/components/ConfirmActionDialog";
-import { useSubmittedRequestDetailQuery, useReviewFieldValueMutation, useRecalculateFieldReviewsMutation, useSetRequestStatusMutation } from "../../../queries/requestQueries";
+import { useSubmittedRequestDetailQuery, useSetRequestStatusMutation } from "../../../queries/requestQueries";
 import { useAuthStore } from '../../../store/authStore';
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
 import { useGlobalEnums } from '../../../shared/components/GlobalEnums';
@@ -26,32 +31,43 @@ export default function SubmittedRequestDetailedPage() {
   const navigate = useNavigate();
   const { id } = useParams({ strict: false });
   const { data: request, isLoading, error } = useSubmittedRequestDetailQuery(id as string);
-  const reviewMutation = useReviewFieldValueMutation();
-  const recalcMutation = useRecalculateFieldReviewsMutation();
+  // Weight review mutation removed
   const setStatusMutation = useSetRequestStatusMutation();
   const currentUser = useAuthStore((s) => s.user);
+
+  const { RequestStatusLabels } = useGlobalEnums();
+
+  // fetch seller details to obtain license info
+  const { data: sellerDetails } = useSellerQuery(request?.sellerId ? String(request.sellerId) : "");
+
+  const displaySellerName = sellerDetails
+    ? `${sellerDetails.firstName ?? ""} ${sellerDetails.lastName ?? ""}`.trim() || request.sellerFullName
+    : request.sellerFullName;
 
   const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
   const [confirmAction, setConfirmAction] = useState<'accept' | 'reject' | null>(null);
 
   const [fieldValuesLocal, setFieldValuesLocal] = useState(() => [] as typeof request.fieldValues);
-  const [editingFieldId, setEditingFieldId] = useState<string | number | null>(null);
-  const [editedWeight, setEditedWeight] = useState<number | string>(0);
+  // Weight editing removed — weights are displayed as read-only
 
   useEffect(() => {
     setFieldValuesLocal(request?.fieldValues ?? []);
   }, [request?.fieldValues]);
 
   const [totalScore, setTotalScore] = useState<number | null>(null);
+  const [editingScore, setEditingScore] = useState(false);
+  const [scoreInput, setScoreInput] = useState<number | string>(0);
 
   useEffect(() => {
     // Initialize total score from server if provided, otherwise sum local weights
     if (request) {
       if (typeof request.score === 'number' && !Number.isNaN(request.score)) {
         setTotalScore(request.score);
+        setScoreInput(request.score);
       } else {
         const sum = (request.fieldValues ?? []).reduce((acc, fv) => acc + (fv.weight ?? 0), 0);
         setTotalScore(sum);
+        setScoreInput(sum);
       }
     }
   }, [request]);
@@ -74,7 +90,6 @@ export default function SubmittedRequestDetailedPage() {
     );
   }
 
-  const { RequestStatusLabels } = useGlobalEnums();
   const statusInfo = {
     label: RequestStatusLabels[request.status] ?? 'Άγνωστο',
     color: REQUEST_STATUS_COLORS[request.status] ?? '#6b7280',
@@ -168,59 +183,87 @@ export default function SubmittedRequestDetailedPage() {
           />
 
         {activeTab === 0 && (
-          <div className="space-y-4 bg-white rounded-lg p-6">
+          <div className="space-y-4 rounded-lg ">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-semibold text-(--color-text-heading)">
                   Ονοματεπώνυμο
                 </label>
-                <div className="flex items-center gap-2 px-4 py-3 text-[15px] rounded-lg border border-(--color-border) bg-(--color-bg)">
-                  <input
-                    type="text"
-                    value={request.sellerFullName || ""}
-                    disabled
-                    className="flex-1 bg-transparent text-(--color-text-heading) outline-none disabled:opacity-100"
-                  />
-                  <button
+                <div className="flex items-center gap-2">
+                  <div className="flex-1">
+                    <CustomInputField
+                      type="TEXT"
+                      value={displaySellerName || ""}
+                      disabled
+                      width="100%"
+                    />
+                  </div>
+                  {/* <button
                     onClick={() => navigate({ to: `/admin/sellers/${request.sellerId}` })}
                     className="p-1 text-(--color-primary) hover:text-(--color-primary-hover) transition"
                     title="Προβολή Προφίλ Πωλητή"
                   >
                     <OpenInNew className="w-5 h-5" />
-                  </button>
+                  </button> */}
                 </div>
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-semibold text-(--color-text-heading)">
                   ΑΦΜ
                 </label>
-                <input
-                  type="text"
+                <CustomInputField
+                  type="TEXT"
                   value={request.sellerAfm || ""}
                   disabled
-                  className={inputClass}
+                  width="100%"
                 />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-semibold text-(--color-text-heading)">
                   Τύπος Πωλητή
                 </label>
-                <input
-                  type="text"
+                <CustomInputField
+                  type="TEXT"
                   value={request.sellerType !== undefined ? SELLER_TYPE_LABELS[Number(request.sellerType)] || String(request.sellerType) : ""}
                   disabled
-                  className={inputClass}
+                  width="100%"
                 />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-semibold text-(--color-text-heading)">
                   Αριθμός Άδειας Πωλητή
                 </label>
-                <input
-                  type="text"
+                <CustomInputField
+                  type="TEXT"
                   value={request.sellerLicenseNumber || ""}
                   disabled
-                  className={inputClass}
+                  width="100%"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-semibold text-(--color-text-heading)">
+                  Ημερομηνία Έκδοσης Άδειας
+                </label>
+                <CustomInputField
+                  type="TEXT"
+                  value={
+                    (sellerDetails as any)?.currentLicense?.issuedAt ?? (sellerDetails as any)?.currentLicense?.fromDate ?? ""
+                  }
+                  disabled
+                  width="100%"
+                />
+              </div>
+              <div className="flex flex-col gap-1">
+                <label className="text-sm font-semibold text-(--color-text-heading)">
+                  Ημερομηνία Λήξης Άδειας
+                </label>
+                <CustomInputField
+                  type="TEXT"
+                  value={
+                    (sellerDetails as any)?.currentLicense?.expiresAt ?? (sellerDetails as any)?.currentLicense?.toDate ?? ""
+                  }
+                  disabled
+                  width="100%"
                 />
               </div>
             </div>
@@ -232,22 +275,22 @@ export default function SubmittedRequestDetailedPage() {
                 <label className="text-sm font-semibold text-(--color-text-heading)">
                   Ημερομηνία Υποβολής
                 </label>
-                <input
-                  type="text"
+                <CustomInputField
+                  type="TEXT"
                   value={new Date(request.submittedAt).toLocaleString("el-GR")}
                   disabled
-                  className={inputClass}
+                  width="100%"
                 />
               </div>
               <div className="flex flex-col gap-1">
                 <label className="text-sm font-semibold text-(--color-text-heading)">
                   Αίτηση για Συμμετοχή στις Αγορές
                 </label>
-                <input
-                  type="text"
+                <CustomInputField
+                  type="TEXT"
                   value={request.markets.map((m) => m.marketName).join(", ") || "Δεν έχει αιτηθεί για συγκεκριμένες αγορές"}
                   disabled
-                  className={inputClass}
+                  width="100%"
                 />
               </div>
             </div>
@@ -255,98 +298,35 @@ export default function SubmittedRequestDetailedPage() {
         )}
 
         {activeTab === 1 && (
-          <div className="space-y-4 bg-white rounded-lg p-6">
+          <div className="space-y-4 rounded-lg">
             {request.fieldValues.length > 0 ? (
               <div className="space-y-4">
                 {request.fieldValues.map((field) => (
                   <div key={field.id} className="flex flex-col gap-2 pb-4 border-b border-(--color-border) last:border-b-0">
                       <div className="flex gap-4">
-                        <div className="flex flex-col gap-1" style={{ flex: '0 0 82%' }}>
-                        <label className="text-sm font-semibold text-(--color-text-heading) truncate">
+                        <div className="flex flex-col gap-1" style={{ flex: '0 0 90%' }}>
+                          <label className="text-sm font-semibold text-(--color-text-heading)">
                           {field.fieldLabel}
                         </label>
-                        <input
-                          type="text"
+                        <CustomInputField
+                          type="TEXT"
                           value={field.value || ""}
                           disabled
-                          className={inputClass}
+                          width="100%"
                         />
                       </div>
-                      <div className="flex flex-col gap-1" style={{ flex: '0 0 18%' }}>
-                        <label className="text-sm font-semibold text-(--color-text-heading)">
-                          Βάρος
-                        </label>
-                        {request.status === 0 && editingFieldId === field.id ? (
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="number"
-                              value={String(editedWeight)}
-                              onChange={(e) => setEditedWeight(e.target.value)}
-                              className={inputClass}
-                              style={{ width: 72 }}
-                            />
-                            <IconButton
-                              size="small"
-                              onClick={() => {
-                                // Call API to review field value
-                                const adjustedScore = Number(editedWeight) || 0;
-                                reviewMutation.mutate(
-                                  {
-                                    requestId: request.id,
-                                    fieldValueId: field.id,
-                                    payload: {
-                                      isApproved: true,
-                                      adjustedScore,
-                                      reviewNote: field.reviewComment ?? '',
-                                    },
-                                  },
-                                  {
-                                    onSuccess: () => {
-                                      setFieldValuesLocal((prev) =>
-                                        prev.map((fv) => (fv.id === field.id ? { ...fv, weight: adjustedScore } : fv))
-                                      );
-                                      setEditingFieldId(null);
-                                    },
-                                  }
-                                );
-                              }}
-                              sx={{ backgroundColor: 'var(--color-primary)', color: 'white', '&:hover': { backgroundColor: 'var(--color-primary-hover)' } }}
-                            >
-                              <SaveIcon fontSize="small" />
-                            </IconButton>
-                            <IconButton
-                              size="small"
-                              onClick={() => {
-                                setEditingFieldId(null);
-                              }}
-                              sx={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text-muted)', '&:hover': { opacity: 0.9 } }}
-                            >
-                              <CloseIcon fontSize="small" />
-                            </IconButton>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <input
-                              type="text"
+                      <div className="flex flex-col gap-1" style={{ flex: '1 1 0%', minWidth: 100 }}>
+                          <label className="text-sm font-semibold text-(--color-text-heading)">
+                            Βάρος
+                          </label>
+                        <div className="flex items-center gap-2">
+                            <CustomInputField
+                              type="NUMBER"
                               value={String(fieldValuesLocal.find((fv) => fv.id === field.id)?.weight ?? 0)}
                               disabled
-                              className={inputClass}
-                              style={{ width: 72 }}
+                              width={120}
                             />
-                            {request.status === 0 && (
-                              <IconButton
-                                size="small"
-                                onClick={() => {
-                                  setEditingFieldId(field.id);
-                                  setEditedWeight(field.weight ?? 0);
-                                }}
-                                sx={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text-muted)', '&:hover': { opacity: 0.9 } }}
-                              >
-                                <EditIcon fontSize="small" />
-                              </IconButton>
-                            )}
-                          </div>
-                        )}
+                        </div>
                       </div>
                     </div>
                     {field.reviewComment && (
@@ -364,7 +344,7 @@ export default function SubmittedRequestDetailedPage() {
         )}
 
         {activeTab === 2 && (
-          <div className="space-y-4 bg-white rounded-lg p-6">
+          <div className="space-y-4 rounded-lg">
             {request.documents && request.documents.length > 0 ? (
               <div className="space-y-3">
                 {request.documents.map((doc) => (
@@ -402,28 +382,62 @@ export default function SubmittedRequestDetailedPage() {
           </div>
         )}
 
-        {/* Total score and recalculation */}
-        <div className="mt-6 flex items-center justify-end gap-4">
-          <div className="text-sm text-(--color-text-muted)">Συνολική Βαθμολογία:</div>
-          <div className="text-xl font-semibold text-(--color-text-heading)">{totalScore ?? '-'}</div>
-          {request.status === 0 && (
-            <IconButton
-              size="small"
-              onClick={() => {
-                recalcMutation.mutate(request.id);
-              }}
-              disabled={recalcMutation.isLoading}
-              aria-label="Recalculate"
-              title="Επαναυπολογισμός"
-              sx={{ backgroundColor: 'var(--color-border)', color: 'var(--color-text-muted)', '&:hover': { opacity: 0.9 } }}
-            >
-              {recalcMutation.isLoading ? (
-                <CircularProgress size={18} color="inherit" />
-              ) : (
-                <RestartAltIcon fontSize="small" />
-              )}
-            </IconButton>
-          )}
+        {/* Total score (configurable) - boxed panel */}
+        <div className="mt-6 flex justify-end">
+          <div className="flex items-center gap-4 px-4 py-3 rounded-lg border border-(--color-border) bg-(--color-surface)">
+            <div className="text-sm text-(--color-text-muted)">Συνολική Βαθμολογία:</div>
+            {request.status === 0 ? (
+              <div className="flex items-center gap-2">
+                {!editingScore ? (
+                  <>
+                    <div className="text-xl font-semibold text-(--color-text-heading)">{totalScore ?? '-'}</div>
+                    <IconButton
+                      size="small"
+                      onClick={() => { setEditingScore(true); setScoreInput(totalScore ?? 0); }}
+                      title="Επεξεργασία βαθμολογίας"
+                      aria-label="Επεξεργασία βαθμολογίας"
+                      sx={{ p: 0.5, color: 'var(--color-text-muted)' }}
+                      disableRipple
+                    >
+                      <EditIcon fontSize="small" />
+                    </IconButton>
+                  </>
+                ) : (
+                  <div className="flex items-center gap-2">
+                    <div style={{ width: 140 }}>
+                      <CustomInputField
+                        type="NUMBER"
+                        value={scoreInput}
+                        onChange={(v) => setScoreInput(Number(String(v)) ?? 0)}
+                        width={140}
+                      />
+                    </div>
+                    <IconButton size="small" onClick={() => {
+                      const num = Number(String(scoreInput)) || 0;
+                      setTotalScore(num);
+                      // update cache so query reflects change
+                      try {
+                        queryClient.setQueryData(requestKeys.submittedDetail(request.id), (old: any) => {
+                          if (!old) return old;
+                          return { ...old, score: num };
+                        });
+                      } catch (e) {
+                        // ignore
+                      }
+                      setEditingScore(false);
+                    }} title="Αποθήκευση βαθμολογίας" aria-label="Αποθήκευση βαθμολογίας">
+                      <CheckIcon fontSize="small" />
+                    </IconButton>
+                    <IconButton size="small" onClick={() => { setEditingScore(false); setScoreInput(totalScore ?? 0); }} title="Ακύρωση" aria-label="Ακύρωση">
+                      <CloseIcon fontSize="small" />
+                    </IconButton>
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="text-xl font-semibold text-(--color-text-heading)">{totalScore ?? '-'}</div>
+            )}
+          </div>
         </div>
       </div>
     </div>

@@ -5,10 +5,11 @@ import CustomButton from "../../shared/components/CustomButton";
 import CustomInputField from "../../shared/components/CustomInputField";
 import type { RequestFormField } from "../../models/request";
 import { useRequestFormByIdQuery } from "../../queries/formsQueries";
-import { useSellerQuery } from "../../queries/sellerQueries";
+import { useSellerQuery, useSellersQuery } from "../../queries/sellerQueries";
 import { useAuthStore } from "../../store/authStore";
 import { TYPE_OF_FIELDS_TO_DESIGN_FIELD } from "../../components/requests/request.utils";
 import { useCreateRequestMutation } from "../../queries/requestQueries";
+import { useGlobalEnums } from '../../shared/components/GlobalEnums';
 
 const ATTACHMENT_KEYWORDS = ["έγγρα", "δικαιολογ", "επισυνα", "attachment", "document", "pdf"] as const;
 const BOOLEAN_OPTIONS = [
@@ -26,7 +27,32 @@ export default function UserRequestCreationDetailsPage() {
 
   const requestFormDetailQuery = useRequestFormByIdQuery(formId);
   const authUser = useAuthStore((s) => s.user);
+  // Query sellers list and try to resolve a seller record for the current user
+  const sellersQuery = useSellersQuery({ name: "", afm: "", sellerType: 0 as any, page: 1, pageSize: 50 });
   const sellerQuery = useSellerQuery(authUser?.id ? String(authUser.id) : "");
+
+  const matchedSeller = (() => {
+    // prefer explicit seller fetched by id
+    if (sellerQuery.data) return sellerQuery.data as any;
+    const list = (sellersQuery.data?.items ?? []) as any[];
+    if (!authUser) return null;
+
+    // try match by userId, then afm, then name
+    const byUser = list.find((s) => s.userId != null && String(s.userId) === String(authUser.id));
+    if (byUser) return byUser;
+
+    const byAfm = list.find((s) => s.afm && authUser?.afm && String(s.afm) === String((authUser as any).afm));
+    if (byAfm) return byAfm;
+
+    const authName = (authUser?.name ?? `${(authUser as any)?.firstName ?? ''} ${(authUser as any)?.lastName ?? ''}`).trim();
+    const byName = list.find((s) => {
+      const sName = `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim();
+      return sName && authName && sName === authName;
+    });
+    if (byName) return byName;
+
+    return null;
+  })();
   const createRequestMutation = useCreateRequestMutation();
 
   const renderCounter = useRef(0);
@@ -48,15 +74,17 @@ export default function UserRequestCreationDetailsPage() {
     setDynamicFieldValues({});
   }, [formId]);
 
+  const { SellerTypeLabels } = useGlobalEnums();
+
   const resolvedApplicantName =
     (authUser?.name as string) ||
     (authUser ? `${authUser.firstName ?? ""} ${authUser.lastName ?? ""}`.trim() : "") ||
-    (sellerQuery.data ? `${sellerQuery.data.firstName} ${sellerQuery.data.lastName}`.trim() : "");
+    (matchedSeller ? `${(matchedSeller as any).firstName} ${(matchedSeller as any).lastName}`.trim() : "");
 
-  const resolvedApplicantAfm = sellerQuery.data?.afm ?? (authUser as any)?.afm ?? "";
-  const sellerTypeNum = Number(sellerQuery.data?.sellerType ?? (authUser as any)?.sellerType ?? 0);
-  const resolvedLicenseCategory = sellerTypeNum === 1 ? "Παραγωγός" : sellerTypeNum === 2 ? "Μεταπωλητής" : String((authUser as any)?.sellerType ?? "");
-  const resolvedLicenseNumber = sellerQuery.data?.licenses?.[0]?.number ?? (authUser as any)?.licenseNumber ?? "";
+  const resolvedApplicantAfm = (matchedSeller as any)?.afm ?? (authUser as any)?.afm ?? "";
+  const sellerTypeNum = Number((matchedSeller as any)?.sellerType ?? (authUser as any)?.sellerType ?? 0);
+  const resolvedLicenseCategory = SellerTypeLabels[sellerTypeNum] ?? String(sellerTypeNum ?? "");
+  const resolvedLicenseNumber = (matchedSeller as any)?.licenses?.[0]?.number ?? (authUser as any)?.licenseNumber ?? "";
 
   const [applicantInfo, setApplicantInfo] = useState({
     name: "",

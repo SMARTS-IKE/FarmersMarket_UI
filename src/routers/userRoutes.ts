@@ -2,7 +2,7 @@ import { createRoute } from '@tanstack/react-router';
 import RoleBasedLayout from '../layouts/RoleBasedLayout';
 import AdminDashboardPage from '../pages/adminPages/AdminDashboardPage';
 import AdminMarketDetailPage from '../pages/adminPages/markets/AdminMarketDetailPage';
-import UserRequestsPage from '../pages/adminPages/requests/UserRequestsPage';
+import UserRequestsPage from '../pages/userPages/UserRequestsPage';
 import UserRequestCreationDetailsPage from '../pages/userPages/UserRequestCreationDetailsPage';
 import UserRequestCreationPage from '../pages/userPages/UserRequestCreationPage';
 import UserMarketsPage from '../pages/userPages/UserMarketsPage';
