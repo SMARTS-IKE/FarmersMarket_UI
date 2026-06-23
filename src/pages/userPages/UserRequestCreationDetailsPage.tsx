@@ -1,10 +1,13 @@
-import { Alert, Chip } from "@mui/material";
+import { Alert, Chip, Box, Tab, Tabs, Divider } from "@mui/material";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
+import { queryClient } from "../../lib/queryClient";
 import CustomButton from "../../shared/components/CustomButton";
+import LayoutTabsSlot from "../../shared/components/LayoutTabsSlot";
 import CustomInputField from "../../shared/components/CustomInputField";
 import type { RequestFormField } from "../../models/request";
 import { useRequestFormByIdQuery } from "../../queries/formsQueries";
+import { useMarketsQuery } from '../../queries/marketQueries';
 import { useSellerQuery, useSellersQuery } from "../../queries/sellerQueries";
 import { useAuthStore } from "../../store/authStore";
 import { TYPE_OF_FIELDS_TO_DESIGN_FIELD } from "../../components/requests/request.utils";
@@ -24,6 +27,7 @@ export default function UserRequestCreationDetailsPage() {
 
   const [activeTab, setActiveTab] = useState(0);
   const [dynamicFieldValues, setDynamicFieldValues] = useState<Record<number, string | number | string[]>>({});
+  const [selectedMarkets, setSelectedMarkets] = useState<string[]>([]);
 
   const requestFormDetailQuery = useRequestFormByIdQuery(formId);
   const authUser = useAuthStore((s) => s.user);
@@ -57,17 +61,6 @@ export default function UserRequestCreationDetailsPage() {
 
   const renderCounter = useRef(0);
   renderCounter.current += 1;
-  // Debug: track renders to help diagnose hooks mismatch
-  // eslint-disable-next-line no-console
-  // Log hook-related statuses to help identify order/availability changes
-  // eslint-disable-next-line no-console
-  console.debug('UserRequestCreationDetailsPage render', renderCounter.current, {
-    formId,
-    authUserId: authUser?.id,
-    requestFormStatus: requestFormDetailQuery?.status,
-    sellerQueryStatus: sellerQuery?.status,
-    createRequestStatus: createRequestMutation?.status,
-  });
 
 
   useEffect(() => {
@@ -102,6 +95,10 @@ export default function UserRequestCreationDetailsPage() {
     });
   }, [resolvedApplicantName, resolvedApplicantAfm, resolvedLicenseCategory, resolvedLicenseNumber]);
 
+  const license = (matchedSeller as any)?.licenses?.[0];
+  const licenseIssuedAt = license?.issuedAt ? new Date(license.issuedAt).toLocaleDateString("el-GR") : "";
+  const licenseExpiresAt = license?.expiresAt ? new Date(license.expiresAt).toLocaleDateString("el-GR") : "";
+
   const isDocumentField = (field: RequestFormField) => {
     const label = field.label.toLowerCase();
     return ATTACHMENT_KEYWORDS.some((keyword) => label.includes(keyword));
@@ -110,6 +107,10 @@ export default function UserRequestCreationDetailsPage() {
   const handleBack = () => {
     navigate({ to: "/users/requests" });
   };
+
+  // load markets for selection
+  const marketsQuery = useMarketsQuery({ name: "", marketType: "", operatingDays: [], page: 1, pageSize: 200 });
+  const marketOptions = (marketsQuery.data?.items ?? []).map((m) => ({ label: m.name, value: String(m.id) }));
 
   if (requestFormDetailQuery.isLoading) {
     return (
@@ -141,6 +142,8 @@ export default function UserRequestCreationDetailsPage() {
   const customFields = selectedForm?.fields ?? [];
   const attachmentFields = customFields.filter((f) => isDocumentField(f));
   const basicFormFields = customFields.filter((f) => !isDocumentField(f));
+
+  // Load available markets for the multiselect
 
   const renderFieldChip = (field: RequestFormField) => {
     const typeLabelMap: Record<number, string> = {
@@ -234,38 +237,27 @@ export default function UserRequestCreationDetailsPage() {
           </div>
         </div>
 
-        <div className="flex border-b border-(--color-border) mb-6">
-          <button
-            onClick={() => setActiveTab(0)}
-            className={`px-4 py-2 font-medium transition ${
-              activeTab === 0 ? 'text-(--color-primary) border-b-2 border-(--color-primary)' : 'text-(--color-text-muted) hover:text-(--color-text-heading)'
-            }`}
-          >
-            Στοιχεία Αιτούντος
-          </button>
-
-          <button
-            onClick={() => setActiveTab(1)}
-            className={`px-4 py-2 font-medium transition ${
-              activeTab === 1 ? 'text-(--color-primary) border-b-2 border-(--color-primary)' : 'text-(--color-text-muted) hover:text-(--color-text-heading)'
-            }`}
-          >
-            Βασικά Στοιχεία Αίτησης
-          </button>
-
-          <button
-            onClick={() => setActiveTab(2)}
-            className={`px-4 py-2 font-medium transition ${
-              activeTab === 2 ? 'text-(--color-primary) border-b-2 border-(--color-primary)' : 'text-(--color-text-muted) hover:text-(--color-text-heading)'
-            }`}
-          >
-            Επισυναπτόμενα Έγγραφα
-          </button>
-        </div>
+        <LayoutTabsSlot>
+          <Box className="flex h-full">
+            <div className="max-w-6xl mx-auto w-full">
+              <Tabs
+                value={activeTab}
+                onChange={(_: any, nextValue: number) => setActiveTab(nextValue)}
+                variant="fullWidth"
+                textColor="inherit"
+                sx={{ width: "100%" }}
+              >
+                <Tab label="Στοιχεία Αιτούντος" />
+                <Tab label="Βασικά Στοιχεία Αίτησης" />
+                <Tab label="Επισυναπτόμενα Έγγραφα" />
+              </Tabs>
+            </div>
+          </Box>
+        </LayoutTabsSlot>
 
         <div className="flex-1">
           {activeTab === 0 && (
-            <div className="space-y-4 bg-white rounded-lg p-6">
+            <div className="space-y-4 rounded-lg">
               <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                 <div className="flex flex-col gap-1">
                   <CustomInputField
@@ -273,6 +265,7 @@ export default function UserRequestCreationDetailsPage() {
                     label="Ονοματεπώνυμο"
                     value={applicantInfo.name}
                     onChange={(nextValue) => setApplicantInfo((p) => ({ ...p, name: String(nextValue) }))}
+                    disabled
                     width="100%"
                   />
                 </div>
@@ -283,6 +276,7 @@ export default function UserRequestCreationDetailsPage() {
                     label="ΑΦΜ"
                     value={applicantInfo.afm}
                     onChange={(nextValue) => setApplicantInfo((p) => ({ ...p, afm: String(nextValue) }))}
+                    disabled
                     width="100%"
                   />
                 </div>
@@ -293,6 +287,7 @@ export default function UserRequestCreationDetailsPage() {
                     label="Κατηγορία Άδειας"
                     value={applicantInfo.licenseCategory}
                     onChange={(nextValue) => setApplicantInfo((p) => ({ ...p, licenseCategory: String(nextValue) }))}
+                    disabled
                     width="100%"
                   />
                 </div>
@@ -303,15 +298,47 @@ export default function UserRequestCreationDetailsPage() {
                     label="Αριθμός Άδειας"
                     value={applicantInfo.licenseNumber}
                     onChange={(nextValue) => setApplicantInfo((p) => ({ ...p, licenseNumber: String(nextValue) }))}
+                    disabled
                     width="100%"
                   />
                 </div>
+
+                <div className="flex flex-col gap-1">
+                  <CustomInputField
+                    type="TEXT"
+                    label="Ημερομηνία Έκδοσης"
+                    value={licenseIssuedAt}
+                    disabled
+                    width="100%"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <CustomInputField
+                    type="TEXT"
+                    label="Ημερομηνία Λήξης"
+                    value={licenseExpiresAt}
+                    disabled
+                    width="100%"
+                  />
+                </div>
+              </div>
+              <div className="pt-4 flex flex-col gap-5">
+                <Divider />
+                <CustomInputField
+                  type="MULTI_SELECT"
+                  label="Επιλέξτε Αγορές"
+                  value={selectedMarkets}
+                  dropdownItems={marketOptions}
+                  onChange={(v) => setSelectedMarkets(Array.isArray(v) ? v as string[] : [String(v)])}
+                  width="100%"
+                />
               </div>
             </div>
           )}
 
           {activeTab === 1 && (
-            <div className="space-y-4 bg-white rounded-lg p-6">
+            <div className="space-y-4 rounded-lg">
               {basicFormFields.length > 0 ? (
                 <div className="grid grid-cols-2 gap-3">
                   {basicFormFields.map((field) => (
@@ -325,7 +352,7 @@ export default function UserRequestCreationDetailsPage() {
           )}
 
           {activeTab === 2 && (
-            <div className="space-y-4 bg-white rounded-lg p-6">
+            <div className="space-y-4 rounded-lg">
               <h3 className="text-base font-semibold">Απαιτούμενα επισυναπτόμενα</h3>
               {attachmentFields.length > 0 ? (
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2">{attachmentFields.map((f) => renderFieldChip(f))}</div>
@@ -335,36 +362,41 @@ export default function UserRequestCreationDetailsPage() {
             </div>
           )}
 
-          <div className="mt-6 flex justify-end">
-            <CustomButton
-              title={createRequestMutation.status === 'pending' ? "Υποβολή..." : "Υποβολή Αίτησης"}
-              backgroundColor="var(--color-primary)"
-              onClick={() => {
-                const fieldValues = Object.keys(dynamicFieldValues).map((k) => ({
-                  fieldId: Number(k),
-                  value: Array.isArray(dynamicFieldValues[Number(k)]) ? (dynamicFieldValues[Number(k)] as string[]).join(",") : String(dynamicFieldValues[Number(k)] ?? ""),
-                }));
+          
 
-                const payload: Record<string, unknown> = {
-                  formId: Number(formId),
-                  sellerId: authUser?.id ? Number(authUser.id) : undefined,
-                  sellerFullName: applicantInfo.name,
-                  sellerAfm: applicantInfo.afm,
-                  fieldValues,
-                  documents: [],
-                  markets: [],
-                };
+          {activeTab === 2 && (
+            <div className="mt-6 flex justify-end">
+              <CustomButton
+                title={createRequestMutation.status === 'pending' ? "Υποβολή..." : "Υποβολή Αίτησης"}
+                backgroundColor="var(--color-primary)"
+                onClick={() => {
+                  const fieldValues = Object.keys(dynamicFieldValues).map((k) => ({
+                    fieldId: Number(k),
+                    value: Array.isArray(dynamicFieldValues[Number(k)]) ? (dynamicFieldValues[Number(k)] as string[]).join(",") : String(dynamicFieldValues[Number(k)] ?? ""),
+                  }));
 
-                createRequestMutation.mutate(payload, {
-                  onSuccess: () => {
-                    navigate({ to: "/users/requests" });
-                  },
-                });
-              }}
-              width="fit-content"
-              disabled={createRequestMutation.status === 'pending'}
-            />
-          </div>
+                  const payload: Record<string, unknown> = {
+                    sellerId: (matchedSeller as any)?.id ? Number((matchedSeller as any).id) : undefined,
+                    marketIds: selectedMarkets.map((m) => Number(m)),
+                    formId: Number(formId),
+                    notes: "",
+                    fieldValues,
+                    documents: [],
+                  };
+
+                  createRequestMutation.mutate(payload, {
+                    onSuccess: async () => {
+                      // Invalidate and refetch all requests queries to avoid returning cached results
+                      await queryClient.invalidateQueries({ queryKey: ['requests'], refetchActive: true, refetchInactive: true });
+                      navigate({ to: "/users/requests" });
+                    },
+                  });
+                }}
+                width="fit-content"
+                disabled={createRequestMutation.status === 'pending'}
+              />
+            </div>
+          )}
         </div>
       </div>
     </div>

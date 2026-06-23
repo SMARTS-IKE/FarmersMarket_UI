@@ -37,7 +37,7 @@ export default function UserRequestsPage() {
       </LayoutTabsSlot>
 
       <div className="flex-1 overflow-y-auto pr-2 max-h-[calc(100svh-300px)]">
-        {activeTab === 0 && <SellerRequests />}
+        {activeTab === 0 && <SellerRequests userMode />}
       </div>
     </div>
   );

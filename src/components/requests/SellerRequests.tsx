@@ -8,7 +8,7 @@ import MoreVertIcon from "@mui/icons-material/MoreVert";
 import type { RequestStatus, SellerRequest, SellerRequestSearchRequest } from "../../models/request";
 import type { SellerSearchRequest } from "../../models/seller";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
-import { useDeleteRequestMutation, useSellerRequestsQuery, useSetRequestStatusMutation } from "../../queries/requestQueries";
+import { useSellerRequestsQuery, useSetRequestStatusMutation } from "../../queries/requestQueries";
 import { useAuthStore } from "../../store/authStore";
 import { useSellersQuery } from "../../queries/sellerQueries";
 import { sellerRequestColumns } from "./request.utils";
@@ -22,7 +22,7 @@ const SELLER_FILTERS: SellerSearchRequest = {
   pageSize: 1000,
 };
 
-export default function FetchedSellerRequests() {
+export default function FetchedSellerRequests({ userMode }: { userMode?: boolean } = {}) {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<SellerRequestSearchRequest>({
     sellerId: undefined,
@@ -63,6 +63,27 @@ export default function FetchedSellerRequests() {
   const { data: sellersData } = useSellersQuery(SELLER_FILTERS);
   const allSellers = sellersData?.items ?? [];
 
+  const matchedSeller = (() => {
+    if (!currentUser) return null;
+    // prefer explicit match by userId
+    const byUserId = allSellers.find((s) => s.userId != null && String(s.userId) === String(currentUser.id));
+    if (byUserId) return byUserId as any;
+
+    // fallback match by AFM
+    const byAfm = allSellers.find((s) => s.afm && (currentUser as any)?.afm && String(s.afm) === String((currentUser as any).afm));
+    if (byAfm) return byAfm as any;
+
+    // fallback match by name
+    const authName = ((currentUser as any)?.name ?? `${(currentUser as any)?.firstName ?? ''} ${(currentUser as any)?.lastName ?? ''}`).trim();
+    const byName = allSellers.find((s) => {
+      const sName = `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim();
+      return sName && authName && sName === authName;
+    });
+    if (byName) return byName as any;
+
+    return null;
+  })();
+
   const sellerDropdownItems = useMemo(
     () =>
       allSellers.map((seller) => {
@@ -79,25 +100,34 @@ export default function FetchedSellerRequests() {
     [RequestStatusLabels]
   );
 
-  const tableFilters: FilterDef[] = useMemo(
-    () => [
-      {
+  const tableFilters: FilterDef[] = useMemo(() => {
+    const defs: FilterDef[] = [];
+    if (!userMode) {
+      defs.push({
         title: "sellerId",
         label: "Πωλητής",
         type: "DROPDOWN",
         dataItems: sellerDropdownItems,
-      },
-      {
-        title: "status",
-        label: "Κατάσταση",
-        type: "DROPDOWN",
-        dataItems: statusDropdownItems,
-      },
-    ],
-    [sellerDropdownItems, statusDropdownItems]
-  );
+      });
+    }
+    defs.push({
+      title: "status",
+      label: "Κατάσταση",
+      type: "DROPDOWN",
+      dataItems: statusDropdownItems,
+    });
+    return defs;
+  }, [sellerDropdownItems, statusDropdownItems, userMode]);
 
-  const { data: sellerRequests = [] } = useSellerRequestsQuery(filters);
+  const effectiveFilters = useMemo(() => {
+    if (userMode && currentUser) {
+      const sellerIdNum = (matchedSeller as any)?.id ? Number((matchedSeller as any).id) : undefined;
+      return { ...filters, sellerId: sellerIdNum } as SellerRequestSearchRequest;
+    }
+    return filters;
+  }, [userMode, currentUser, filters]);
+
+  const { data: sellerRequests = [] } = useSellerRequestsQuery(effectiveFilters);
 
   const visibleRequests = useMemo(() => {
     // If a status filter is applied, show results as returned by the query.
@@ -126,33 +156,38 @@ export default function FetchedSellerRequests() {
   };
 
   const handleRowClick = (row: SellerRequest) => {
-    navigate({
-      to: "/admin/requests/$id",
-      params: { id: String(row.id) },
-    } as any);
+    if (userMode) {
+      navigate({ to: "/users/requests/$id", params: { id: String(row.id) } } as any);
+    } else {
+      navigate({ to: "/admin/requests/$id", params: { id: String(row.id) } } as any);
+    }
   };
 
   return (
     <div className="flex w-full flex-col gap-4">
       <DataTable<SellerRequest>
         rows={visibleRequests}
-        columns={[
-          ...sellerRequestColumns,
-          {
-            key: "actions" as keyof SellerRequest,
-            label: "",
-            filterable: false,
-            render: (row) => (
-              <IconButton
-                size="small"
-                onClick={(e) => handleMenuOpen(e, row)}
-                aria-label="actions"
-              >
-                <MoreVertIcon fontSize="small" />
-              </IconButton>
-            ),
-          },
-        ]}
+        columns={
+          userMode
+            ? [...sellerRequestColumns]
+            : [
+                ...sellerRequestColumns,
+                {
+                  key: "actions" as keyof SellerRequest,
+                  label: "",
+                  filterable: false,
+                  render: (row) => (
+                    <IconButton
+                      size="small"
+                      onClick={(e) => handleMenuOpen(e, row)}
+                      aria-label="actions"
+                    >
+                      <MoreVertIcon fontSize="small" />
+                    </IconButton>
+                  ),
+                },
+              ]
+        }
         rowKey="id"
         showFilter={false}
         filters={tableFilters}

@@ -7,6 +7,7 @@ import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
 import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import { useState } from 'react';
 import logo02 from '../assets/logo-02.svg';
+import logo03 from '../assets/logo-03.svg';
 import { getUserTab, userTabs } from '../lib/userTabs';
 import { useAuthStore } from '../store/authStore';
 import { LayoutSlotProvider, useLayoutSlot } from '../lib/layoutSlotContext';
@@ -36,34 +37,43 @@ function UserAccessLayoutInner() {
   return (
     <div className="min-h-svh">
       <div className="flex min-h-svh w-full flex-col overflow-visible border border-(--color-border) bg-(--color-surface) shadow-[var(--shadow-lg)] md:overflow-hidden">
-        <header className="border-b border-(--color-text-muted) bg-(--color-bg-header-footer)/95 px-4 py-4 backdrop-blur md:px-6">
-          <div className="flex items-center justify-between">
+        <header className="relative z-20 border-b-4 border-[#ef4123] bg-[#C4B5A0] px-4 md:px-6">
+          <div className="flex items-center justify-between gap-4 py-2 xl:py-0">
             <div className="flex items-center gap-4">
-              <img src={logo02} alt="Farmers Market logo" className="h-auto max-h-[64px] w-auto rounded-lg object-contain" />
-              <div className="hidden sm:flex sm:flex-col sm:items-start sm:leading-tight">
+              <img src={logo02} alt="Farmers Market logo" className="h-auto max-h-[70px] w-auto rounded-lg object-contain xl:max-h-[88px]" />
+              <div className="flex flex-col items-start leading-tight">
                 <p className="text-base font-bold text-(--color-text) whitespace-nowrap">Πλατφόρμα Διαχείρισης</p>
-                <p className="text-base font-bold text-(--color-text) whitespace-nowrap">Λαϊκών Αγορών</p>
+                <p className="text-sm text-(--color-text)">Λαϊκών Αγορών</p>
               </div>
             </div>
-            <div className="flex items-center gap-2">
-              <IconButton aria-label="open_menu" onClick={() => setMobileOpen(true)} size="small" className="lg:hidden">
-                <MenuRoundedIcon />
-              </IconButton>
-              <Tooltip title="Account">
-                <IconButton aria-label="account" onClick={() => null} sx={{ width: 32, height: 32, color: 'var(--color-dark)' }}>
+
+            <div className="flex items-center justify-end pr-6">
+              <Tooltip title="Διαχείριση λογαριασμού">
+                <IconButton
+                  aria-label="account_circle"
+                  onClick={() => null}
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    color: '#3D2817',
+                    '&:hover': {
+                      backgroundColor: 'rgba(61, 40, 23, 0.1)',
+                    },
+                  }}
+                >
                   <UserCircleIcon />
                 </IconButton>
               </Tooltip>
-              <Tooltip title="Logout">
+              <Tooltip title="Αποσύνδεση">
                 <IconButton
                   aria-label="logout"
                   onClick={handleLogout}
                   sx={{
-                    width: { xs: '100%', sm: 30 },
-                    height: 30,
-                    color: 'var(--color-dark)',
+                    width: 32,
+                    height: 32,
+                    color: '#3D2817',
                     '&:hover': {
-                      border: '1px solid var(--color-danger-hover)',
+                      backgroundColor: 'rgba(61, 40, 23, 0.1)',
                     },
                   }}
                 >
@@ -74,13 +84,9 @@ function UserAccessLayoutInner() {
           </div>
         </header>
 
-        <div className="grid flex-1 gap-px bg-(--color-border-subtle) lg:grid-cols-[300px_minmax(0,1fr)]">
-          <aside className={`hidden lg:flex flex-col gap-4 bg-(--color-bg-subtle) p-3 transition-all ${collapsed ? 'lg:w-20' : 'lg:w-72'}`}>
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-xs font-bold uppercase text-(--color-text)">ΠΛΑΤΦΟΡΜΑ</p>
-                {!collapsed && <p className="text-sm">Διαχείρισης Λαϊκών Αγορών</p>}
-              </div>
+        <div className="flex flex-1 items-stretch gap-px bg-(--color-border-subtle)">
+          <aside className={`relative z-10 flex flex-col gap-4 bg-(--color-bg-subtle) p-3 transition-all ${collapsed ? 'w-20' : 'w-72'}`}>
+            <div className="flex items-center justify-end">
               <IconButton aria-label="toggle_menu" onClick={() => setCollapsed((s) => !s)} size="small">
                 {collapsed ? <MenuRoundedIcon /> : <CloseRoundedIcon />}
               </IconButton>
@@ -94,7 +100,7 @@ function UserAccessLayoutInner() {
                   <Link
                     key={tab.to}
                     to={tab.to}
-                    className={`flex items-center gap-3 rounded px-3 py-2 text-sm transition ${isActive ? 'bg-(--color-text-muted) text-(--color-surface) border border-(--color-border)' : 'text-(--color-text) hover:bg-(--color-primary-subtle)'}`}
+                    className={`flex items-center gap-3 rounded px-3 py-2 text-sm transition ${isActive ? 'bg-(--color-text-muted) text-(--color-surface) border border-(--color-border) font-bold' : 'text-(--color-text) hover:bg-(--color-primary-subtle)'} `}
                   >
                     <span className="truncate">{!collapsed ? tab.label : tab.label.charAt(0)}</span>
                   </Link>
@@ -104,60 +110,28 @@ function UserAccessLayoutInner() {
 
             {!collapsed && (
               <div className="mt-auto">
-                <div className="text-xs font-semibold text-(--color-text)">{activeTab.title}</div>
+                <img src={logo03} alt="Farmers Market emblem" className="h-auto w-full object-contain" />
               </div>
             )}
           </aside>
 
-          <main className={`bg-(--color-surface) p-5 md:p-7`}>
+          <main className={`flex-1 min-w-0 flex h-full min-h-0 flex-col bg-(--color-surface) p-5 md:p-7 transition-all`}>
             {(tabSlot || filterSlot) && (
               <div className="mb-4 flex min-w-0 flex-col items-stretch justify-start gap-2 overflow-x-auto">
-                {tabSlot && <div className="flex w-full justify-start">{tabSlot}</div>}
+                {tabSlot && (
+                  <div className="w-full">{tabSlot}</div>
+                )}
                 {filterSlot && (
                   <div className="flex min-w-0 items-start justify-center overflow-x-auto py-3 min-h-[56px]">{filterSlot}</div>
                 )}
               </div>
             )}
-            <Outlet />
+
+            <div className="flex flex-1 min-h-0 flex-col">
+              <Outlet />
+            </div>
           </main>
         </div>
-        {mobileOpen && (
-          <div className="fixed inset-0 z-50 flex">
-            <div className="fixed inset-0 bg-black/40" onClick={() => setMobileOpen(false)} />
-            <aside className="relative z-50 flex w-72 flex-col gap-4 bg-(--color-bg-subtle) p-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs font-bold uppercase text-(--color-text)">ΠΛΑΤΦΟΡΜΑ</p>
-                  <p className="text-sm">Διαχείρισης Λαϊκών Αγορών</p>
-                </div>
-                <IconButton aria-label="close_menu" onClick={() => setMobileOpen(false)} size="small">
-                  <CloseRoundedIcon />
-                </IconButton>
-              </div>
-
-              <div className="mt-2 flex flex-1 flex-col gap-1">
-                {userTabs.map((tab) => {
-                  const isActive = activeTab.to === tab.to;
-
-                  return (
-                    <Link
-                      key={tab.to}
-                      to={tab.to}
-                      onClick={() => setMobileOpen(false)}
-                      className={`flex items-center gap-3 rounded px-3 py-2 text-sm transition ${isActive ? 'bg-(--color-text-muted) text-(--color-surface) border border-(--color-border)' : 'text-(--color-text) hover:bg-(--color-primary-subtle)'}`}
-                    >
-                      <span className="truncate">{tab.label}</span>
-                    </Link>
-                  );
-                })}
-              </div>
-
-              <div className="mt-auto">
-                <div className="text-xs font-semibold text-(--color-text)">{activeTab.title}</div>
-              </div>
-            </aside>
-          </div>
-        )}
       </div>
     </div>
   );

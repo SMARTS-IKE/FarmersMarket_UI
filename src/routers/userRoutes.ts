@@ -6,6 +6,7 @@ import UserRequestsPage from '../pages/userPages/UserRequestsPage';
 import UserRequestCreationDetailsPage from '../pages/userPages/UserRequestCreationDetailsPage';
 import UserRequestCreationPage from '../pages/userPages/UserRequestCreationPage';
 import UserMarketsPage from '../pages/userPages/UserMarketsPage';
+import SubmittedRequestDetailedPage from '../pages/adminPages/requests/SubmittedRequestDetailedPage';
 import { requireAuth, requireUserRole, rootRoute } from './baseRoutes';
 
 export const userProtectedRoute = createRoute({
@@ -59,4 +60,9 @@ export const userRouteTree = userProtectedRoute.addChildren([
   userRequestsRoute,
   userRequestCreationRoute,
   userFormCreationDetailsRoute,
+  createRoute({
+    getParentRoute: () => userProtectedRoute,
+    path: '/users/requests/$id',
+    component: SubmittedRequestDetailedPage,
+  }),
 ]);
