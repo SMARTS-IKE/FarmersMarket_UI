@@ -11,6 +11,7 @@ import type {
 } from '../models/request';
 import { createMarketPeriod, getMarketPeriodById, updateMarketPeriod } from '../services/periodService';
 import { approveRequest, createRequest, deleteRequest, getSellerRequests, getSubmittedRequestById, rejectRequest, reviewFieldValue, recalculateFieldReviews, setRequestStatus } from '../services/requestService';
+import { updateRequestScore } from '../services/requestService';
 
 const REQUESTS_STALE_TIME_MS = 5 * 60 * 1000;
 const REQUESTS_GC_TIME_MS = 15 * 60 * 1000;
@@ -29,6 +30,18 @@ export function useSellerRequestsQuery(params: SellerRequestSearchRequest) {
     staleTime: REQUESTS_STALE_TIME_MS,
     gcTime: REQUESTS_GC_TIME_MS,
   });
+}
+
+export function useUpdateRequestScoreMutation() {
+  return useMutation<void, Error, { id: string | number; payload: { score: number | null; note?: string } }>(
+    {
+      mutationFn: ({ id, payload }) => updateRequestScore(id, payload),
+      onSuccess: async (_data, variables) => {
+        await queryClient.invalidateQueries({ queryKey: requestKeys.submittedDetail(variables.id) });
+        await queryClient.invalidateQueries({ queryKey: requestKeys.sellerList({} as any) });
+      },
+    }
+  );
 }
 
 export function useCreateMarketPeriodMutation() {

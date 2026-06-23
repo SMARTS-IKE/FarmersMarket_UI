@@ -127,3 +127,7 @@ export async function recalculateFieldReviews(requestId: string | number): Promi
 export async function setRequestStatus(id: string | number, payload: { status: number; reason: string; processedByUserId: string }): Promise<void> {
   await http.put<void>(`/requests/${id}/status`, payload);
 }
+
+export async function updateRequestScore(id: string | number, payload: { score: number | null; note?: string }): Promise<void> {
+  await http.put<void>(`/requests/${id}/score`, payload);
+}

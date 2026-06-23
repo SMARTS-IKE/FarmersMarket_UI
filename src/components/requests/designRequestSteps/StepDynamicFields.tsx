@@ -1,4 +1,6 @@
 import DeleteIcon from "@mui/icons-material/Delete";
+import EditIcon from "@mui/icons-material/Edit";
+import type { DesignRequestFieldType } from "../../../models/request";
 import { Checkbox, FormControlLabel } from "@mui/material";
 import CustomButton from "../../../shared/components/CustomButton";
 import CustomInputField from "../../../shared/components/CustomInputField";
@@ -10,12 +12,14 @@ export default function StepDynamicFields({
   onRemoveDynamicField,
   onUpdateDynamicFieldWeight,
   onUpdateDynamicFieldRequired,
+  onEditDynamicField,
 }: {
   dynamicFields: DesignRequestDynamicField[];
   onOpenAddFieldModal: () => void;
   onRemoveDynamicField: (id: number) => void;
   onUpdateDynamicFieldWeight: (id: number, weight: number) => void;
   onUpdateDynamicFieldRequired: (id: number, isRequired: boolean) => void;
+  onEditDynamicField?: (id: number) => void;
 }) {
   return (
     <div className="mt-4 flex flex-col gap-4">
@@ -83,6 +87,22 @@ export default function StepDynamicFields({
                 px: 0,
               }}
             />
+            <div className="ml-2 flex items-center gap-2">
+              <div className="text-sm text-(--color-text-muted)">
+                {field.type}
+              </div>
+              <CustomButton
+                title=""
+                prefixIcon={<EditIcon fontSize="small" />}
+                width={34}
+                onClick={() => onEditDynamicField?.(field.id)}
+                sx={{
+                  minWidth: 34,
+                  width: 34,
+                  px: 0,
+                }}
+              />
+            </div>
           </div>
         </div>
       ))}

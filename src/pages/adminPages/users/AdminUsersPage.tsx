@@ -5,20 +5,16 @@ import DataTable, { ColumnDef, FilterDef, FilterValues } from "../../../shared/c
 import type { AppUser, UserSearchRequest } from "../../../models/user";
 import { useUsersQuery } from "../../../queries/userQueries";
 import { USER_ROLE_MAPPING_TITLES } from "../../../shared/mappings/users.mapping";
+import { useGlobalEnums } from '../../../shared/components/GlobalEnums';
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import CustomButton from "../../../shared/components/CustomButton";
 import { consumeAuthNotification } from "../../../lib/authNotifications";
 
-const USER_STATUS_CONFIG = {
-  active: {
-    label: "Ενεργός",
-    color: "#166534",
-  },
-  inactive: {
-    label: "Ανενεργός",
-    color: "#991b1b",
-  },
-} as const;
+// Colors for status display (kept for visual distinction)
+const USER_STATUS_COLORS = {
+  active: '#166534',
+  inactive: '#991b1b',
+};
 
 const userRoleValues = Object.entries(USER_ROLE_MAPPING_TITLES).map(([key, value]) => ({
   label: value,
@@ -26,34 +22,7 @@ const userRoleValues = Object.entries(USER_ROLE_MAPPING_TITLES).map(([key, value
 }));
 
 
-const columns: ColumnDef<AppUser>[] = [
-  { key: "firstName", label: "Όνομα" },
-  { key: "lastName", label: "Επώνυμο" },
-  { key: "email", label: "Email" },
-  {
-    key: "isActive",
-    label: "Κατάσταση",
-    render: (row) => {
-      const statusConfig = row.isActive ? USER_STATUS_CONFIG.active : USER_STATUS_CONFIG.inactive;
 
-      return (
-        <span
-          style={{
-            color: statusConfig.color,
-            fontWeight: 700,
-          }}
-        >
-          {statusConfig.label}
-        </span>
-      );
-    },
-  },
-  {
-    key: "roles",
-    label: "Ρόλοι",
-    render: (row) => row.roles?.join(", ") ?? "—",
-  },
-];
 
 const tableFilters: FilterDef[] = [
   { title: "name", label: "Όνομα", type: "TEXT" },
@@ -70,6 +39,7 @@ const INITIAL_FILTERS: UserSearchRequest = {
   name: "",
   email: "",
   role: "",
+  status: "",
   page: 1,
   pageSize: 25,
 };
@@ -103,12 +73,63 @@ export default function AdminUsersPage() {
     }),
   }));
 
+  const { UserStatusLabels, UserStatus } = useGlobalEnums();
+
+  const columns: ColumnDef<AppUser>[] = [
+    { key: "firstName", label: "Όνομα" },
+    { key: "lastName", label: "Επώνυμο" },
+    { key: "email", label: "Email" },
+    {
+      key: "status",
+      label: "Κατάσταση",
+      render: (row) => {
+        // Prefer numeric `status` from backend; fall back to boolean `isActive` for older payloads
+        const rawStatus = (row as any).status;
+        const statusValue = typeof rawStatus === 'number' ? rawStatus : (row.isActive ? 1 : 0);
+        const label = UserStatusLabels[statusValue] ?? (statusValue === 1 ? 'Ενεργός' : 'Ανενεργός');
+        const color = statusValue === 1 ? USER_STATUS_COLORS.active : USER_STATUS_COLORS.inactive;
+        return <span style={{ color, fontWeight: 700 }}>{label}</span>;
+      },
+    },
+    {
+      key: "roles",
+      label: "Ρόλοι",
+      render: (row) => row.roles?.join(", ") ?? "—",
+    },
+  ];
+
+  const userStatusValues = Object.keys(UserStatus)
+    .filter((k) => isNaN(Number(k)))
+    .map((name) => {
+      const val = (UserStatus as any)[name] as number;
+      const label = UserStatusLabels?.[val] ?? name;
+      return { label, value: String(val) };
+    });
+
+  const tableFilters: FilterDef[] = [
+    { title: "name", label: "Όνομα", type: "TEXT" },
+    { title: "email", label: "Email", type: "TEXT" },
+    {
+      title: "role",
+      label: "Ρόλος",
+      type: "DROPDOWN",
+      dataItems: userRoleValues,
+    },
+    {
+      title: "status",
+      label: "Κατάσταση",
+      type: "DROPDOWN",
+      dataItems: userStatusValues,
+    },
+  ];
+
   const handleSearch = (values: FilterValues) => {
     setFilters((prev) => ({
       ...prev,
       name: String(values["name"] ?? ""),
       email: String(values["email"] ?? ""),
       role: String(values["role"] ?? ""),
+      status: values["status"] === undefined ? prev.status : (values["status"] ?? ""),
       page: 1,
     }));
   };

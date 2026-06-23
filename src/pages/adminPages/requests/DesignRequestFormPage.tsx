@@ -47,6 +47,15 @@ export default function DesignRequestFormPage() {
     weight: 1,
     isRequired: false,
   });
+  const [isEditFieldModalOpen, setIsEditFieldModalOpen] = useState(false);
+  const [editingFieldId, setEditingFieldId] = useState<number | null>(null);
+  const [editingFieldDraft, setEditingFieldDraft] = useState({
+    title: "",
+    type: "TEXT" as DesignRequestFieldType,
+    availableValues: "",
+    weight: 1,
+    isRequired: false,
+  });
   const [submitError, setSubmitError] = useState<string>("");
 
   const DESIGN_FIELD_TO_TYPE_OF_FIELDS: Record<DesignRequestFieldType, number> = {
@@ -142,6 +151,47 @@ export default function DesignRequestFormPage() {
       isRequired: false,
     });
     setIsCreateFieldModalOpen(true);
+  };
+
+  const openEditFieldModal = (id: number) => {
+    const field = draft.dynamicFields.find((f) => f.id === id);
+    if (!field) return;
+    setEditingFieldId(id);
+    setEditingFieldDraft({
+      title: field.title,
+      type: field.type,
+      availableValues: Array.isArray(field.availableValues) ? field.availableValues.join(", ") : "",
+      weight: field.weight,
+      isRequired: field.isRequired,
+    });
+    setIsEditFieldModalOpen(true);
+  };
+
+  const closeEditFieldModal = () => {
+    setIsEditFieldModalOpen(false);
+    setEditingFieldId(null);
+  };
+
+  const saveEditedField = () => {
+    if (editingFieldId === null) return;
+    const availableValues = editingFieldDraft.type === "DROPDOWN"
+      ? editingFieldDraft.availableValues
+          .split(",")
+          .map((v) => v.trim())
+          .filter((v) => v !== "")
+      : [];
+
+    setDraft((prev) => ({
+      ...prev,
+      dynamicFields: prev.dynamicFields.map((f) =>
+        f.id === editingFieldId
+          ? { ...f, title: editingFieldDraft.title.trim(), type: editingFieldDraft.type, availableValues, weight: editingFieldDraft.weight, isRequired: editingFieldDraft.isRequired }
+          : f
+      ),
+    }));
+
+    setIsEditFieldModalOpen(false);
+    setEditingFieldId(null);
   };
 
   const closeCreateFieldModal = () => {
@@ -365,6 +415,7 @@ export default function DesignRequestFormPage() {
           onRemoveDynamicField={removeDynamicField}
           onUpdateDynamicFieldWeight={updateDynamicFieldWeight}
           onUpdateDynamicFieldRequired={updateDynamicFieldRequired}
+          onEditDynamicField={openEditFieldModal}
         />
       );
     }
@@ -501,6 +552,22 @@ export default function DesignRequestFormPage() {
         onClose={closeCreateFieldModal}
         onCreate={createFieldFromModal}
         onFieldDraftChange={setNewFieldDraft}
+      />
+
+      <CreateFieldModal
+        open={isEditFieldModalOpen}
+        fieldTypeOptions={FIELD_TYPE_OPTIONS}
+        newFieldDraft={editingFieldDraft}
+        canCreateField={
+          editingFieldDraft.title.trim() !== "" &&
+          editingFieldDraft.weight > 0 &&
+          (editingFieldDraft.type !== "DROPDOWN" || editingFieldDraft.availableValues.split(",").map((v) => v.trim()).filter((v) => v !== "").length > 0)
+        }
+        onClose={closeEditFieldModal}
+        onCreate={saveEditedField}
+        onFieldDraftChange={setEditingFieldDraft}
+        dialogTitle="Επεξεργασία πεδίου"
+        actionLabel="Αποθήκευση"
       />
     </div>
   );

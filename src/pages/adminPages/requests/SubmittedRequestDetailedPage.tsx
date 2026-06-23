@@ -1,26 +1,31 @@
 import { useState } from "react";
-import { useParams, useNavigate } from "@tanstack/react-router";
-import { CircularProgress, Alert } from "@mui/material";
+import { useParams } from "@tanstack/react-router";
+import { CircularProgress, Alert, Divider } from "@mui/material";
 import CustomInputField from "../../../shared/components/CustomInputField";
+import { useAuthStore } from '../../../store/authStore';
+import { USER_ROLE_MAPPING } from '../../../shared/mappings/users.mapping';
 import { useSubmittedRequestDetailQuery } from "../../../queries/requestQueries";
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
 import type { RequestStatus } from "../../../models/request";
-import { OpenInNew } from "@mui/icons-material";
+import EditRequestScoreModal from "../../../components/requests/EditRequestScoreModal";
+import { useUpdateRequestScoreMutation } from "../../../queries/requestQueries";
+import { IconButton, Tooltip } from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
 
-const inputClass =
-  'w-full px-4 py-3 text-[15px] rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text-heading) placeholder:text-(--color-text-muted) outline-none transition focus:border-(--color-primary) focus:ring-3 focus:ring-(--color-primary-subtle) disabled:opacity-50 disabled:cursor-not-allowed';
 
 const statusLabels: Record<RequestStatus, { label: string; color: string }> = {
   0: { label: "Σε Αναμονή", color: "#f59e0b" },
-  1: { label: "Εγκεκριμένο", color: "#10b981" },
-  2: { label: "Απορριφθέν", color: "#ef4444" },
+  3: { label: "Εγκεκριμένο", color: "#10b981" },
+  4: { label: "Απορριφθέν", color: "#ef4444" },
 };
 
 export default function SubmittedRequestDetailedPage() {
   const [activeTab, setActiveTab] = useState(0);
-  const navigate = useNavigate();
   const { id } = useParams({ strict: false });
   const { data: request, isLoading, error } = useSubmittedRequestDetailQuery(id as string);
+
+  const { role } = useAuthStore();
+  const isAdmin = (role ?? '').trim().toLowerCase() === (USER_ROLE_MAPPING.ADMIN ?? '').trim().toLowerCase();
 
   if (isLoading) {
     return (
@@ -43,7 +48,8 @@ export default function SubmittedRequestDetailedPage() {
   const statusInfo = statusLabels[request.status];
 
   const totalFieldWeight = request.fieldValues.reduce((sum, f) => sum + (Number(f.weight ?? 0)), 0);
-  const fieldsWithComments = request.fieldValues.filter((f) => !!f.reviewComment).length;
+  const [isEditScoreOpen, setIsEditScoreOpen] = useState(false);
+  const updateScoreMutation = useUpdateRequestScoreMutation();
 
   return (
     <div className="w-full p-6">
@@ -254,25 +260,63 @@ export default function SubmittedRequestDetailedPage() {
           </div>
         )}
 
-        <div className="mt-6">
-          <div className="p-4 border border-(--color-border) rounded-lg bg-(--color-bg)">
-            <h3 className="text-lg font-semibold text-(--color-text-heading) mb-2">Σύνοψη Βαθμολογίας</h3>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <div className="text-sm text-(--color-text-muted)">Σύνολο βαρών πεδίων</div>
-                <div className="text-xl font-bold">{totalFieldWeight}</div>
-              </div>
-              <div>
-                <div className="text-sm text-(--color-text-muted)">Βαθμολογία Αίτησης</div>
-                <div className="text-xl font-bold">{request.score ?? '—'}</div>
-              </div>
-              <div>
-                <div className="text-sm text-(--color-text-muted)">Πεδία με σχόλια</div>
-                <div className="text-xl font-bold">{fieldsWithComments}</div>
+        
+      {isAdmin && (
+          <div className="mt-6">
+            <Divider className="my-6" />
+            <div className="p-4 rounded-lg">
+              <h3 className="text-lg font-semibold text-(--color-text-heading) mb-2">Σύνοψη Βαθμολογίας</h3>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                
+                  <div>
+                    <div className="text-sm text-(--color-text-muted)">Σύνολο βαρών πεδίων</div>
+                    <div className="text-xl font-bold">{totalFieldWeight}</div>
+                  </div>
+              
+                <div>
+                  <div className="text-sm text-(--color-text-muted)">Βαθμολογία Αίτησης</div>
+                  <div className="flex items-center gap-2">
+                    <div className="text-xl font-bold">{request.score ?? '—'}</div>
+                    <Tooltip title="Επεξεργασία βαθμολογίας">
+                      <span>
+                        <IconButton
+                          size="small"
+                          onClick={() => setIsEditScoreOpen(true)}
+                          aria-label="edit-score"
+                          sx={{
+                            bgcolor: '#D2B48C',
+                            color: '#1f1f1f',
+                            width: 25,
+                            height: 25,
+                            padding: 0,
+                            '&:hover': { bgcolor: '#c6a77a' },
+                            boxShadow: 'none',
+                          }}
+                        >
+                          <EditIcon sx={{ fontSize: 12 }} />
+                        </IconButton>
+                      </span>
+                    </Tooltip>
+                  </div>
+                </div>
               </div>
             </div>
           </div>
-        </div>
+         )}
+        <EditRequestScoreModal
+          open={isEditScoreOpen}
+          onClose={() => setIsEditScoreOpen(false)}
+          initialScore={request.score ?? null}
+          saving={updateScoreMutation.status === 'pending'}
+          onSave={({ score, note }) => {
+            if (!id) return;
+            updateScoreMutation.mutate({ id: id as string, payload: { score, note } }, {
+              onSuccess: () => {
+                setIsEditScoreOpen(false);
+              },
+            });
+          }}
+        />
       </div>
     </div>
   );

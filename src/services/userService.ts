@@ -7,6 +7,7 @@ export async function getUsers(params: UserSearchRequest): Promise<UserListResul
   if (params.name) query.set('Name', params.name);
   if (params.email) query.set('Email', params.email);
   if (params.role) query.set('Role', params.role);
+  if ((params as any).status !== undefined && (params as any).status !== "") query.set('Status', String((params as any).status));
   query.set('Page', String(params.page));
   query.set('PageSize', String(params.pageSize));
 

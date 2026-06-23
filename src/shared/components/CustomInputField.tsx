@@ -3,7 +3,6 @@ import {
   MenuItem,
   Select,
   FormControl,
-  InputLabel,
   FormHelperText,
   InputAdornment,
   Box,
@@ -149,6 +148,7 @@ function toIsoDateString(date: Date): string {
   if (!year || !month || !day) return "";
   return `${year}-${month}-${day}`;
 }
+
 export default function CustomInputField({
   type = "TEXT",
   label,
@@ -198,6 +198,31 @@ export default function CustomInputField({
     "& .MuiInputLabel-root, & .MuiFormLabel-root": {
       fontWeight: 600,
     },
+  };
+
+  // Overrides for multiline textarea so it doesn't get vertically centered
+  // or forced to a single fixed height from the shared styles.
+  const textareaOverrideSx: SxProps<Theme> = {
+    "& .MuiInputBase-root": {
+      height: 'auto',
+      minHeight: 40,
+      alignItems: 'flex-start',
+      paddingTop: 2,
+      paddingBottom: 2,
+    },
+    "& .MuiInputBase-input, & .MuiOutlinedInput-input, & textarea": {
+      height: 'auto',
+      padding: '4px 16px',
+      paddingRight: '40px',
+      alignItems: 'flex-start',
+      lineHeight: 1.4,
+      whiteSpace: 'pre-wrap',
+    },
+    // position the label a bit higher for multiline boxes
+    "& .MuiInputLabel-root:not(.MuiInputLabel-shrink), & .MuiFormLabel-root:not(.MuiInputLabel-shrink)": {
+      top: '4px',
+      transform: 'translate(16px, 0)'
+    }
   };
 
   const sharedSx: SxProps<Theme> = {
@@ -270,18 +295,16 @@ export default function CustomInputField({
     ...sx,
   };
 
-    const customLabelSx: CSSProperties = {
-      position: "absolute",
-      top: '-10px',
-      left: '15px',
-      zIndex: 1000,
-      fontWeight: 600,
-      color: 'rgba(0, 0, 0, 0.6)',
-      fontSize: '12px',
-      fontFamily: "Roboto, Helvetica, Arial, sans-serif",
-    };
-
-  
+  const customLabelSx: CSSProperties = {
+    position: "absolute",
+    top: '-10px',
+    left: '15px',
+    zIndex: 1000,
+    fontWeight: 600,
+    color: 'rgba(0, 0, 0, 0.6)',
+    fontSize: '12px',
+    fontFamily: "Roboto, Helvetica, Arial, sans-serif",
+  };
 
   // Remove MUI "standard" variant underline so custom borders are used instead
   const removeUnderlineSx: SxProps<Theme> = {
@@ -416,7 +439,7 @@ export default function CustomInputField({
             "&:hover:not(.Mui-disabled):before": { borderBottom: 'none' },
             "&:after": { borderBottom: 'none' },
             ...sx,
-          }}
+          } as any}
         >
           {dropdownItems.map((item) => (
             <MenuItem
@@ -531,6 +554,7 @@ export default function CustomInputField({
           onChange={(e) => onChange?.(e.target.value)}
           onBlur={onBlur}
           slotProps={{
+            inputLabel: { shrink: true },
             input: {
               className: inputClass,
               startAdornment: prefixIcon ? (
@@ -547,8 +571,9 @@ export default function CustomInputField({
             "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-dark)" },
             "& .MuiFormLabel-root.Mui-focused": { color: "var(--color-dark)" },
             ...sharedSx,
+            ...textareaOverrideSx,
             ...sx,
-          }}
+          } as any}
         />
       </Box>
     );
@@ -576,7 +601,7 @@ export default function CustomInputField({
           slotProps={{
             textField: {
               variant: "outlined",
-              placeholder,
+              
               error: !!internalError,
               helperText: internalError,
               onBlur,
@@ -610,9 +635,8 @@ export default function CustomInputField({
                 "& .MuiSvgIcon-root": { fontSize: '20px' },
                 "& .MuiInput-underline:before": { borderBottom: 'none' },
                 "& .MuiInput-underline:after": { borderBottom: 'none' },
-                // Remove outlined notched outline if present
-                "& .MuiOutlinedInput-notchedOutline": { border: 'none' },
-              },
+                // (removed duplicate notchedOutline override)
+              } as any,
               slotProps: {
                 inputLabel: { shrink: true },
                 input: {
@@ -653,7 +677,7 @@ export default function CustomInputField({
           ) : undefined,
         },
       }}
-      sx={sharedSx}
+      sx={sharedSx as any}
     />
   );
 }

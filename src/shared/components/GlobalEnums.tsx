@@ -25,11 +25,13 @@ export const RequestStatusLabels: Record<number, string> = {
 export enum UserStatus {
   Inactive = 0,
   Active = 1,
+  Pending = 2,
 }
 
 export const UserStatusLabels: Record<number, string> = {
   [UserStatus.Inactive]: 'Ανενεργός',
   [UserStatus.Active]: 'Ενεργός',
+  [UserStatus.Pending]: 'Υπό Εξέταση',
 };
 
 export enum UserRole {

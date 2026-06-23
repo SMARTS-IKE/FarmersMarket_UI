@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
+import { USER_ROLE_MAPPING } from '../shared/mappings/users.mapping';
 // Small local JWT decoder fallback to avoid import/export mismatches with jwt-decode
 function safeJwtDecode<T = any>(token: string): T {
   try {
@@ -27,6 +28,7 @@ interface AuthState {
   role: string | null;
   setAuth: (data: AuthResponse) => void;
   clearAuth: () => void;
+  isAdmin: () => boolean;
 }
 
 // ── Try to restore remembered session from localStorage on store creation ──
@@ -59,7 +61,7 @@ function getInitialState() {
 
 export const useAuthStore = create<AuthState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       ...getInitialState(),
 
       setAuth: (data: AuthResponse) => {
@@ -100,6 +102,11 @@ export const useAuthStore = create<AuthState>()(
             role: data.role ?? data.roles?.[0] ?? data.user?.role ?? null,
           });
         }
+      },
+
+      isAdmin: () => {
+        const role = get().role;
+        return (role ?? '').trim().toLowerCase() === (USER_ROLE_MAPPING.ADMIN ?? '').trim().toLowerCase();
       },
 
       clearAuth: () => {

@@ -11,6 +11,8 @@ export default function CreateFieldModal({
   onClose,
   onCreate,
   onFieldDraftChange,
+  dialogTitle = "Προσθήκη νέου πεδίου",
+  actionLabel = "Προσθήκη",
 }: {
   open: boolean;
   fieldTypeOptions: Array<{ label: string; value: DesignRequestFieldType }>;
@@ -31,10 +33,12 @@ export default function CreateFieldModal({
     weight: number;
     isRequired: boolean;
   }) => void;
+  dialogTitle?: string;
+  actionLabel?: string;
 }) {
   return (
     <Dialog open={open} onClose={onClose} fullWidth maxWidth="md">
-      <DialogTitle>Προσθήκη νέου πεδίου</DialogTitle>
+      <DialogTitle>{dialogTitle}</DialogTitle>
       <DialogContent>
         <div className="grid grid-cols-1 gap-4 pt-2 md:grid-cols-2">
           <CustomInputField
@@ -115,7 +119,7 @@ export default function CreateFieldModal({
             onClick={onClose}
           />
           <CustomButton
-            title="Προσθήκη"
+            title={actionLabel}
             width="fit-content"
             disabled={!canCreateField}
             onClick={onCreate}
