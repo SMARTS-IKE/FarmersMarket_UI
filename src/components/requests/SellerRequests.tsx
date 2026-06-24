@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { Alert } from "@mui/material";
 import { useNavigate } from "@tanstack/react-router";
 import DataTable, { FilterDef, FilterValues } from "../../shared/components/DataTable";
 import IconButton from "@mui/material/IconButton";
@@ -11,6 +12,7 @@ import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import { useSellerRequestsQuery, useSetRequestStatusMutation } from "../../queries/requestQueries";
 import { useAuthStore } from "../../store/authStore";
 import { useSellersQuery } from "../../queries/sellerQueries";
+import { useRequestFormsQuery } from "../../queries/formsQueries";
 import { sellerRequestColumns } from "./request.utils";
 import { useGlobalEnums } from "../../shared/components/GlobalEnums";
 
@@ -129,7 +131,19 @@ export default function FetchedSellerRequests({ userMode }: { userMode?: boolean
 
   const { data: sellerRequests = [] } = useSellerRequestsQuery(effectiveFilters);
 
+  const { data: requestFormsData } = useRequestFormsQuery();
+  const formTitleById = useMemo(() => {
+    const map = new Map<number, string>();
+    if (!requestFormsData || !Array.isArray((requestFormsData as any).items)) return map;
+    for (const f of (requestFormsData as any).items) {
+      if (f && typeof f === 'object' && f.id != null) map.set(Number(f.id), String(f.title ?? ''));
+    }
+    return map;
+  }, [requestFormsData]);
+
   const visibleRequests = useMemo(() => {
+    // If in userMode but we couldn't resolve a connected seller, show no requests
+    if (userMode && currentUser && !matchedSeller) return [];
     // If a status filter is applied, show results as returned by the query.
     if (filters.status !== undefined && filters.status !== null) return sellerRequests;
 
@@ -165,11 +179,24 @@ export default function FetchedSellerRequests({ userMode }: { userMode?: boolean
 
   return (
     <div className="flex w-full flex-col gap-4">
+      {userMode && currentUser && !matchedSeller && (
+        <Alert severity="info">Δεν βρέθηκε συνδεδεμένος πωλητής για τον λογαριασμό σας.</Alert>
+      )}
       <DataTable<SellerRequest>
         rows={visibleRequests}
         columns={
           userMode
-            ? [...sellerRequestColumns]
+            ? sellerRequestColumns.map((col, idx) => {
+                if (idx !== 0) return col;
+                return {
+                  ...col,
+                  label: 'Τίτλος Αίτησης',
+                  render: (row: SellerRequest) => {
+                    const title = row.formId ? formTitleById.get(Number(row.formId)) : undefined;
+                    return title && title.length > 0 ? title : (row.sellerFullName || row.sellerName || '-');
+                  },
+                };
+              })
             : [
                 ...sellerRequestColumns,
                 {

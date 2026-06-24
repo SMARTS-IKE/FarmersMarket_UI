@@ -112,8 +112,14 @@ export async function deleteRequest(id: number): Promise<void> {
   await http.delete<void>(`/requests/${id}`);
 }
 
-export async function createRequest(payload: Record<string, unknown>): Promise<void> {
-  await http.post<void>('/requests', payload);
+export async function createRequest(payload: Record<string, unknown> | FormData): Promise<void> {
+  // If caller passed a FormData instance, send it as multipart/form-data
+  if (typeof FormData !== 'undefined' && payload instanceof FormData) {
+    await http.post<void, FormData>('/requests', payload);
+  } else {
+    // Fallback: convert plain object to JSON body
+    await http.post<void, Record<string, unknown>>('/requests', payload as Record<string, unknown>);
+  }
 }
 
 export async function reviewFieldValue(requestId: string | number, fieldValueId: string | number, payload: { isApproved: boolean; adjustedScore: number; reviewNote: string }): Promise<void> {

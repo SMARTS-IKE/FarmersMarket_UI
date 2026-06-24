@@ -28,6 +28,7 @@ export default function UserRequestCreationDetailsPage() {
   const [activeTab, setActiveTab] = useState(0);
   const [dynamicFieldValues, setDynamicFieldValues] = useState<Record<number, string | number | string[]>>({});
   const [selectedMarkets, setSelectedMarkets] = useState<string[]>([]);
+  const [attachmentFiles, setAttachmentFiles] = useState<Record<number, File | null>>({});
 
   const requestFormDetailQuery = useRequestFormByIdQuery(formId);
   const authUser = useAuthStore((s) => s.user);
@@ -355,7 +356,31 @@ export default function UserRequestCreationDetailsPage() {
             <div className="space-y-4 rounded-lg">
               <h3 className="text-base font-semibold">Απαιτούμενα επισυναπτόμενα</h3>
               {attachmentFields.length > 0 ? (
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">{attachmentFields.map((f) => renderFieldChip(f))}</div>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                  {attachmentFields.map((f) => (
+                    <div key={f.id} className="flex flex-col gap-2 p-3 border border-(--color-border) rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium text-(--color-text-heading)">{f.label}</div>
+                          <div className="text-sm text-(--color-text-muted)">{f.isRequired ? 'Υποχρεωτικό' : 'Προαιρετικό'}</div>
+                        </div>
+                        <div>
+                          <input
+                            type="file"
+                            accept="*/*"
+                            onChange={(e) => {
+                              const file = e.target.files && e.target.files.length > 0 ? e.target.files[0] : null;
+                              setAttachmentFiles((p) => ({ ...p, [f.id]: file }));
+                            }}
+                          />
+                        </div>
+                      </div>
+                      {attachmentFiles[f.id] && (
+                        <div className="text-sm text-(--color-text-muted)">Επιλεγμένο αρχείο: {attachmentFiles[f.id]?.name}</div>
+                      )}
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <Alert severity="info">Δεν βρέθηκαν πεδία επισυναπτόμενων εγγράφων για τη συγκεκριμένη φόρμα.</Alert>
               )}
@@ -366,7 +391,7 @@ export default function UserRequestCreationDetailsPage() {
 
           {activeTab === 2 && (
             <div className="mt-6 flex justify-end">
-              <CustomButton
+                <CustomButton
                 title={createRequestMutation.status === 'pending' ? "Υποβολή..." : "Υποβολή Αίτησης"}
                 backgroundColor="var(--color-primary)"
                 onClick={() => {
@@ -375,16 +400,37 @@ export default function UserRequestCreationDetailsPage() {
                     value: Array.isArray(dynamicFieldValues[Number(k)]) ? (dynamicFieldValues[Number(k)] as string[]).join(",") : String(dynamicFieldValues[Number(k)] ?? ""),
                   }));
 
-                  const payload: Record<string, unknown> = {
-                    sellerId: (matchedSeller as any)?.id ? Number((matchedSeller as any).id) : undefined,
-                    marketIds: selectedMarkets.map((m) => Number(m)),
-                    formId: Number(formId),
-                    notes: "",
-                    fieldValues,
-                    documents: [],
-                  };
+                  // Build multipart FormData following the API expectations
+                  const formData = new FormData();
+                  const sellerId = (matchedSeller as any)?.id ? Number((matchedSeller as any).id) : undefined;
+                  if (sellerId != null) formData.append('SellerId', String(sellerId));
 
-                  createRequestMutation.mutate(payload, {
+                  // MarketIds: append one field per selected market
+                  for (const m of selectedMarkets) {
+                    formData.append('MarketIds', String(Number(m)));
+                  }
+
+                  // AllowAutoScoring - include default true
+                  formData.append('AllowAutoScoring', 'true');
+
+                  formData.append('FormId', String(Number(formId)));
+                  formData.append('Notes', String(''));
+
+                  // FieldValues: append multiple fields named 'FieldValues' containing JSON strings
+                  for (const fv of fieldValues) {
+                    formData.append('FieldValues', JSON.stringify({ fieldId: fv.fieldId, value: fv.value }));
+                  }
+
+                  // Documents & Files: append per-attachment field if a file was selected
+                  for (const f of attachmentFields) {
+                    const file = attachmentFiles[f.id];
+                    if (file) {
+                      formData.append('Documents', JSON.stringify({ fileName: file.name }));
+                      formData.append('Files', file, file.name);
+                    }
+                  }
+
+                  createRequestMutation.mutate(formData as any, {
                     onSuccess: async () => {
                       // Invalidate and refetch all requests queries to avoid returning cached results
                       await queryClient.invalidateQueries({ queryKey: ['requests'], refetchActive: true, refetchInactive: true });

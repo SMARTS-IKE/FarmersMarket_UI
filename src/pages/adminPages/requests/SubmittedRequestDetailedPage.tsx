@@ -27,6 +27,9 @@ export default function SubmittedRequestDetailedPage() {
   const { role } = useAuthStore();
   const isAdmin = (role ?? '').trim().toLowerCase() === (USER_ROLE_MAPPING.ADMIN ?? '').trim().toLowerCase();
 
+  const [isEditScoreOpen, setIsEditScoreOpen] = useState(false);
+  const updateScoreMutation = useUpdateRequestScoreMutation();
+
   if (isLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center">
@@ -48,8 +51,6 @@ export default function SubmittedRequestDetailedPage() {
   const statusInfo = statusLabels[request.status];
 
   const totalFieldWeight = request.fieldValues.reduce((sum, f) => sum + (Number(f.weight ?? 0)), 0);
-  const [isEditScoreOpen, setIsEditScoreOpen] = useState(false);
-  const updateScoreMutation = useUpdateRequestScoreMutation();
 
   return (
     <div className="w-full p-6">

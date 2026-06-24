@@ -43,7 +43,7 @@ export default function CreateFieldModal({
         <div className="grid grid-cols-1 gap-4 pt-2 md:grid-cols-2">
           <CustomInputField
             type="TEXT"
-            label="Title"
+            label="Τίτλος"
             value={newFieldDraft.title}
             onChange={(value) =>
               onFieldDraftChange({ ...newFieldDraft, title: String(value) })
@@ -71,7 +71,7 @@ export default function CreateFieldModal({
             <div className="md:col-span-2">
               <CustomInputField
                 type="TEXT"
-                label="Available values"
+                label="Προσθέστε τιμές (διαχωρισμένες με κόμμα)"
                 value={newFieldDraft.availableValues}
                 placeholder="π.χ. Ναι, Όχι, Εκκρεμεί"
                 onChange={(value) =>
@@ -84,7 +84,7 @@ export default function CreateFieldModal({
 
           <CustomInputField
             type="NUMBER"
-            label="Weight"
+            label="Βάρος"
             value={newFieldDraft.weight}
             onChange={(value) =>
               onFieldDraftChange({ ...newFieldDraft, weight: Number(value) })

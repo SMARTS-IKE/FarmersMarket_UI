@@ -126,8 +126,8 @@ export function useUpdateMarketPeriodMutation(id: string) {
 }
 
 export function useCreateRequestMutation() {
-  return useMutation<void, Error, Record<string, unknown>>({
-    mutationFn: (payload) => createRequest(payload),
+  return useMutation<void, Error, any>({
+    mutationFn: (payload) => createRequest(payload as any),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['requests', 'seller-list'] });
     },

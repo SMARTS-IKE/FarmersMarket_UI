@@ -4,11 +4,10 @@ import { Alert, Box } from "@mui/material";
 import CustomButton from "../../../shared/components/CustomButton";
 import CreateFieldModal from "../../../components/requests/CreateFieldModal";
 import SelectReadyFieldModal from "../../../components/requests/SelectReadyFieldModal";
-import { useCreateRequestFormMutation, useRequestFormsQuery } from "../../../queries/formsQueries";
+import { useCreateRequestFormMutation, useRequestFormsQuery, useFormFieldsQuery, useUpdateFormFieldMutation, useCreateFormFieldMutation } from "../../../queries/formsQueries";
 import {
   ADD_NEW_FIELD_OPTION_VALUE,
   FIELD_TYPE_OPTIONS,
-  READY_TO_USE_FIELDS,
   STEPS,
   TYPE_OF_FIELDS_TO_DESIGN_FIELD,
 } from "../../../components/requests/request.utils";
@@ -32,6 +31,8 @@ export default function DesignRequestFormPage() {
   const navigate = useNavigate();
   const { data: requestFormsData } = useRequestFormsQuery();
   const createRequestFormMutation = useCreateRequestFormMutation();
+  const updateFormFieldMutation = useUpdateFormFieldMutation();
+  const createFormFieldMutation = useCreateFormFieldMutation();
   const [selectedStep, setSelectedStep] = useState(0);
   const [draft, setDraft] = useState<DesignRequestDraft>(INITIAL_DRAFT);
   const [nextFieldId, setNextFieldId] = useState(1);
@@ -102,6 +103,7 @@ export default function DesignRequestFormPage() {
   };
 
   const addDynamicField = (field: {
+    id?: number;
     title: string;
     type: DesignRequestFieldType;
     availableValues: string;
@@ -114,13 +116,14 @@ export default function DesignRequestFormPage() {
           .map((value) => value.trim())
           .filter((value) => value !== "")
       : [];
+    const assignedId = field.id ?? nextFieldId;
 
     setDraft((prev) => ({
       ...prev,
       dynamicFields: [
         ...prev.dynamicFields,
         {
-          id: nextFieldId,
+          id: assignedId,
           title: field.title.trim(),
           type: field.type,
           availableValues,
@@ -129,7 +132,8 @@ export default function DesignRequestFormPage() {
         },
       ],
     }));
-    setNextFieldId((prev) => prev + 1);
+
+    setNextFieldId((prev) => Math.max(prev, assignedId + 1));
   };
 
   const openAddFieldModal = () => {
@@ -181,17 +185,50 @@ export default function DesignRequestFormPage() {
           .filter((v) => v !== "")
       : [];
 
-    setDraft((prev) => ({
-      ...prev,
-      dynamicFields: prev.dynamicFields.map((f) =>
-        f.id === editingFieldId
-          ? { ...f, title: editingFieldDraft.title.trim(), type: editingFieldDraft.type, availableValues, weight: editingFieldDraft.weight, isRequired: editingFieldDraft.isRequired }
-          : f
-      ),
-    }));
 
-    setIsEditFieldModalOpen(false);
-    setEditingFieldId(null);
+    // If this field came from the server (id less than nextFieldId when initialized), call API
+    const isServerField = editingFieldId < nextFieldId;
+    if (isServerField) {
+      const payload: Record<string, unknown> = {
+        label: editingFieldDraft.title.trim(),
+        typeOfFields: DESIGN_FIELD_TO_TYPE_OF_FIELDS[editingFieldDraft.type],
+        isRequired: !!editingFieldDraft.isRequired,
+        weight: editingFieldDraft.weight ?? 0,
+        helpText: "",
+        order: 0,
+        options: editingFieldDraft.type === "DROPDOWN" ? availableValues : null,
+      };
+
+      updateFormFieldMutation.mutate({ id: editingFieldId, payload }, {
+        onSuccess: () => {
+          setDraft((prev) => ({
+            ...prev,
+            dynamicFields: prev.dynamicFields.map((f) =>
+              f.id === editingFieldId
+                ? { ...f, title: editingFieldDraft.title.trim(), type: editingFieldDraft.type, availableValues, weight: editingFieldDraft.weight, isRequired: editingFieldDraft.isRequired }
+                : f
+            ),
+          }));
+          setIsEditFieldModalOpen(false);
+          setEditingFieldId(null);
+        },
+        onError: (err: any) => {
+          setSubmitError(err?.message ?? 'Σφάλμα κατά την ενημέρωση πεδίου.');
+        },
+      });
+    } else {
+      setDraft((prev) => ({
+        ...prev,
+        dynamicFields: prev.dynamicFields.map((f) =>
+          f.id === editingFieldId
+            ? { ...f, title: editingFieldDraft.title.trim(), type: editingFieldDraft.type, availableValues, weight: editingFieldDraft.weight, isRequired: editingFieldDraft.isRequired }
+            : f
+        ),
+      }));
+
+      setIsEditFieldModalOpen(false);
+      setEditingFieldId(null);
+    }
   };
 
   const closeCreateFieldModal = () => {
@@ -199,20 +236,56 @@ export default function DesignRequestFormPage() {
   };
 
   const createFieldFromModal = () => {
-    addDynamicField(newFieldDraft);
-    setIsCreateFieldModalOpen(false);
+    const createMutation = createFormFieldMutation;
+
+    const options = newFieldDraft.type === 'DROPDOWN'
+      ? newFieldDraft.availableValues.split(',').map((v) => v.trim()).filter((v) => v !== '')
+      : null;
+
+    const payload: Record<string, unknown> = {
+      label: newFieldDraft.title.trim(),
+      typeOfFields: DESIGN_FIELD_TO_TYPE_OF_FIELDS[newFieldDraft.type],
+      isRequired: !!newFieldDraft.isRequired,
+      weight: newFieldDraft.weight ?? 0,
+      helpText: "",
+      order: 0,
+      options,
+    };
+
+    createMutation.mutate(payload, {
+      onSuccess: (created) => {
+        const id = Number((created as any).id ?? nextFieldId);
+        const typeOfFields = Number((created as any).typeOfFields ?? DESIGN_FIELD_TO_TYPE_OF_FIELDS[newFieldDraft.type]);
+        const type = TYPE_OF_FIELDS_TO_DESIGN_FIELD[typeOfFields] ?? newFieldDraft.type;
+
+        addDynamicField({
+          id,
+          title: String((created as any).label ?? newFieldDraft.title.trim()),
+          type,
+          availableValues: Array.isArray((created as any).options) ? (created as any).options.join(',') : (newFieldDraft.availableValues ?? ''),
+          weight: (created as any).weight ?? newFieldDraft.weight,
+          isRequired: (created as any).isRequired ?? newFieldDraft.isRequired,
+        });
+
+        setIsCreateFieldModalOpen(false);
+      },
+      onError: (err: any) => {
+        setSubmitError(err?.message ?? 'Σφάλμα κατά τη δημιουργία πεδίου.');
+      },
+    });
   };
 
   const addReadyFieldFromModal = () => {
-    const selectedTemplate = READY_TO_USE_FIELDS.find((field) => field.id === selectedReadyFieldId);
-    if (!selectedTemplate) return;
+    const idNum = Number(selectedReadyFieldId);
+    const selectedField = (formFields ?? []).find((f) => Number(f.id) === idNum);
+    if (!selectedField) return;
 
     addDynamicField({
-      title: selectedTemplate.title,
-      type: selectedTemplate.type,
-      availableValues: selectedTemplate.availableValues,
-      weight: selectedTemplate.weight,
-      isRequired: selectedTemplate.isRequired,
+      title: selectedField.label ?? String(selectedField.id),
+      type: TYPE_OF_FIELDS_TO_DESIGN_FIELD[selectedField.typeOfFields] ?? "TEXT",
+      availableValues: Array.isArray(selectedField.options) ? selectedField.options.join(",") : (selectedField.options ? String(selectedField.options) : ""),
+      weight: selectedField.weight ?? 1,
+      isRequired: !!selectedField.isRequired,
     });
 
     setIsSelectFieldModalOpen(false);
@@ -229,13 +302,17 @@ export default function DesignRequestFormPage() {
     setSelectedReadyFieldId(selectedValue);
   };
 
-  const readyFieldDropdownItems = useMemo(
-    () => [
+  const { data: formFields } = useFormFieldsQuery(isSelectFieldModalOpen);
+
+  const readyFieldDropdownItems = useMemo(() => {
+    const items: Array<{ label: string; value: string | number }> = [
       { label: "+Προσθήκη νέου", value: ADD_NEW_FIELD_OPTION_VALUE },
-      ...READY_TO_USE_FIELDS.map((field) => ({ label: field.title, value: field.id })),
-    ],
-    []
-  );
+    ];
+    if (Array.isArray(formFields)) {
+      items.push(...formFields.map((f) => ({ label: f.label ?? String(f.id), value: f.id })));
+    }
+    return items;
+  }, [formFields]);
 
   const removeDynamicField = (id: number) => {
     setDraft((prev) => ({

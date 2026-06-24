@@ -52,7 +52,10 @@ export async function apiRequest<TResponse = unknown, TBody = unknown>(
     }
   }
 
-  if (body !== undefined) {
+  const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
+  const isUrlSearchParams = typeof URLSearchParams !== 'undefined' && body instanceof URLSearchParams;
+
+  if (body !== undefined && !isFormData && !isUrlSearchParams) {
     headers['Content-Type'] = 'application/json';
   }
 
@@ -61,7 +64,7 @@ export async function apiRequest<TResponse = unknown, TBody = unknown>(
     const response = await fetch(`${BASE_URL}${path}`, {
       method,
       headers,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
+      body: body !== undefined ? (isFormData || isUrlSearchParams ? (body as any) : JSON.stringify(body)) : undefined,
     });
 
     // ── 401 → clear session and redirect to login ───────────────
