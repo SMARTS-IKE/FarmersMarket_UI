@@ -1,4 +1,4 @@
-import { Alert, Chip, Box, Tab, Tabs, Divider } from "@mui/material";
+import { Alert, Chip, Box, Tab, Tabs, Divider, IconButton, Button } from "@mui/material";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { queryClient } from "../../lib/queryClient";
@@ -13,6 +13,8 @@ import { useAuthStore } from "../../store/authStore";
 import { TYPE_OF_FIELDS_TO_DESIGN_FIELD } from "../../components/requests/request.utils";
 import { useCreateRequestMutation } from "../../queries/requestQueries";
 import { useGlobalEnums } from '../../shared/components/GlobalEnums';
+import CheckIcon from '@mui/icons-material/Check';
+import CloseIcon from '@mui/icons-material/Close';
 
 const ATTACHMENT_KEYWORDS = ["έγγρα", "δικαιολογ", "επισυνα", "attachment", "document", "pdf"] as const;
 const BOOLEAN_OPTIONS = [
@@ -86,6 +88,7 @@ export default function UserRequestCreationDetailsPage() {
     licenseCategory: "",
     licenseNumber: "",
   });
+  const [validationError, setValidationError] = useState<string | null>(null);
 
   useEffect(() => {
     setApplicantInfo({
@@ -141,7 +144,14 @@ export default function UserRequestCreationDetailsPage() {
 
   const selectedForm = requestFormDetailQuery.data;
   const customFields = selectedForm?.fields ?? [];
-  const attachmentFields = customFields.filter((f) => isDocumentField(f));
+  // Support forms that include an `other` or `documentRequirements` array in the response (e.g. required documents)
+  const otherRaw = (selectedForm as any)?.other ?? (selectedForm as any)?.documentRequirements ?? [];
+  const documentRequirements: any[] = Array.isArray(otherRaw)
+    ? otherRaw.map((o: any) => ({ id: Number(o.id), label: o.label ?? o.title ?? String(o.id), isRequired: Boolean(o.isRequired), order: Number(o.order ?? 0) }))
+    : [];
+
+  // Attachment fields detected from dynamic fields (by keyword)
+  const attachmentFields: any[] = customFields.filter((f) => isDocumentField(f));
   const basicFormFields = customFields.filter((f) => !isDocumentField(f));
 
   // Load available markets for the multiselect
@@ -355,19 +365,39 @@ export default function UserRequestCreationDetailsPage() {
           {activeTab === 2 && (
             <div className="space-y-4 rounded-lg">
               <h3 className="text-base font-semibold">Απαιτούμενα επισυναπτόμενα</h3>
-              {attachmentFields.length > 0 ? (
-                <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+              {attachmentFields.length + documentRequirements.length > 0 ? (
+                <div className="flex flex-col gap-3">
                   {attachmentFields.map((f) => (
-                    <div key={f.id} className="flex flex-col gap-2 p-3 border border-(--color-border) rounded-lg">
+                    <div
+                      key={`att-${f.id}`}
+                      className="w-full flex flex-col gap-2 p-3 border rounded-lg"
+                    >
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="font-medium text-(--color-text-heading)">{f.label}</div>
-                          <div className="text-sm text-(--color-text-muted)">{f.isRequired ? 'Υποχρεωτικό' : 'Προαιρετικό'}</div>
+                          <div className="font-medium" >{f.label}</div>
+                          <div className="text-sm" style={f.isRequired ? { color: '#ef4123' } : undefined}>{f.isRequired ? 'Υποχρεωτικό *' : 'Προαιρετικό'}</div>
                         </div>
                         <div>
+                          <label htmlFor={`file-input-att-${f.id}`} className="inline-block cursor-pointer">
+                            <Button
+                              variant="outlined"
+                              component="span"
+                              sx={{
+                                color: '#5a3f2b',
+                                borderColor: '#5a3f2b',
+                                textTransform: 'capitalize',
+                                fontWeight: 600,
+                                '&:hover': { borderColor: '#5a3f2b', backgroundColor: 'rgba(90,63,43,0.04)' },
+                              }}
+                            >
+                              {'Επιλογή Αρχείου'}
+                            </Button>
+                          </label>
                           <input
+                            id={`file-input-att-${f.id}`}
                             type="file"
                             accept="*/*"
+                            className="hidden"
                             onChange={(e) => {
                               const file = e.target.files && e.target.files.length > 0 ? e.target.files[0] : null;
                               setAttachmentFiles((p) => ({ ...p, [f.id]: file }));
@@ -375,9 +405,87 @@ export default function UserRequestCreationDetailsPage() {
                           />
                         </div>
                       </div>
-                      {attachmentFiles[f.id] && (
-                        <div className="text-sm text-(--color-text-muted)">Επιλεγμένο αρχείο: {attachmentFiles[f.id]?.name}</div>
-                      )}
+                      <div className="flex justify-end items-center gap-2">
+                        <span className="text-sm text-(--color-text-muted)">{attachmentFiles[f.id]?.name ?? 'Δεν έχει επιλεγεί αρχείο'}</span>
+                        {attachmentFiles[f.id] && (
+                          <div className="flex items-center gap-2">
+                            <CheckIcon sx={{ color: '#28a745', fontSize: 16 }} />
+                            <IconButton
+                              aria-label="Διαγραφή αρχείου"
+                              title="Διαγραφή αρχείου"
+                              onClick={() => {
+                                setAttachmentFiles((p) => ({ ...p, [f.id]: null }));
+                                const el = document.getElementById(`file-input-att-${f.id}`) as HTMLInputElement | null;
+                                if (el) el.value = '';
+                              }}
+                              sx={{ bgcolor: '#ef4123', border: '1px solid #ef4123', width: 24, height: 24 }}
+                            >
+                              <CloseIcon sx={{ color: '#ffffff', fontSize: 12 }} />
+                            </IconButton>
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+
+                  {documentRequirements.map((d) => (
+                    <div
+                      key={`doc-${d.id}`}
+                      className="w-full flex flex-col gap-2 p-3 border rounded-lg"
+                    >
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium">{d.label}</div>
+                          <div className="text-sm" style={d.isRequired ? { color: '#ef4123' } : undefined}>{d.isRequired ? 'Υποχρεωτικό *' : 'Προαιρετικό'}</div>
+                        </div>
+                        <div>
+                          <label htmlFor={`file-input-doc-${d.id}`} className="inline-block cursor-pointer">
+                            <Button
+                              variant="outlined"
+                              component="span"
+                              sx={{
+                                color: '#5a3f2b',
+                                borderColor: '#5a3f2b',
+                                textTransform: 'capitalize',
+                                fontWeight: 600,
+                                '&:hover': { borderColor: '#5a3f2b', backgroundColor: 'rgba(90,63,43,0.04)' },
+                              }}
+                            >
+                              {'Επιλογή Αρχείου'}
+                            </Button>
+                          </label>
+                          <input
+                            id={`file-input-doc-${d.id}`}
+                            type="file"
+                            accept="*/*"
+                            className="hidden"
+                            onChange={(e) => {
+                              const file = e.target.files && e.target.files.length > 0 ? e.target.files[0] : null;
+                              setAttachmentFiles((p) => ({ ...p, [d.id]: file }));
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex justify-end items-center gap-2">
+                        <span className="text-sm text-(--color-text-muted)">{attachmentFiles[d.id]?.name ?? 'Δεν έχει επιλεγεί αρχείο'}</span>
+                        {attachmentFiles[d.id] && (
+                          <div className="flex items-center gap-2">
+                            <CheckIcon sx={{ color: '#28a745', fontSize: 16 }} />
+                            <IconButton
+                              aria-label="Διαγραφή αρχείου"
+                              title="Διαγραφή αρχείου"
+                              onClick={() => {
+                                setAttachmentFiles((p) => ({ ...p, [d.id]: null }));
+                                const el = document.getElementById(`file-input-doc-${d.id}`) as HTMLInputElement | null;
+                                if (el) el.value = '';
+                              }}
+                              sx={{ bgcolor: '#ef4123', border: '1px solid #ef4123', width: 24, height: 24 }}
+                            >
+                              <CloseIcon sx={{ color: '#ffffff', fontSize: 12 }} />
+                            </IconButton>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
@@ -391,13 +499,50 @@ export default function UserRequestCreationDetailsPage() {
 
           {activeTab === 2 && (
             <div className="mt-6 flex justify-end">
+                {validationError && (
+                  <div className="mr-4">
+                    <Alert severity="error">{validationError}</Alert>
+                  </div>
+                )}
                 <CustomButton
                 title={createRequestMutation.status === 'pending' ? "Υποβολή..." : "Υποβολή Αίτησης"}
                 backgroundColor="var(--color-primary)"
                 onClick={() => {
+                  setValidationError(null);
+
+                  // Validate required dynamic fields
+                  const missingDynamicFields: string[] = [];
+                  for (const f of basicFormFields) {
+                    if (f.isRequired) {
+                      const val = dynamicFieldValues[f.id];
+                      const empty = val === undefined || val === null || (typeof val === 'string' && val.trim() === '') || (Array.isArray(val) && val.length === 0);
+                      if (empty) missingDynamicFields.push(f.label || `Πεδίο ${f.id}`);
+                    }
+                  }
+
+                  // Validate required attachments / document requirements
+                  const missingAttachments: string[] = [];
+                  for (const d of [...attachmentFields, ...documentRequirements]) {
+                    if (d.isRequired) {
+                      const file = attachmentFiles[d.id];
+                      if (!file) missingAttachments.push(d.label || `Έγγραφο ${d.id}`);
+                    }
+                  }
+
+                  if (missingDynamicFields.length > 0 || missingAttachments.length > 0) {
+                    const parts: string[] = [];
+                    if (missingDynamicFields.length > 0) parts.push(`Συμπληρώστε υποχρεωτικά πεδία: ${missingDynamicFields.join(', ')}`);
+                    if (missingAttachments.length > 0) parts.push(`Επιλέξτε τα απαιτούμενα αρχεία: ${missingAttachments.join(', ')}`);
+                    setValidationError(parts.join(' — '));
+                    // switch to appropriate tab for user convenience
+                    if (missingDynamicFields.length > 0) setActiveTab(1);
+                    else if (missingAttachments.length > 0) setActiveTab(2);
+                    return;
+                  }
+
                   const fieldValues = Object.keys(dynamicFieldValues).map((k) => ({
                     fieldId: Number(k),
-                    value: Array.isArray(dynamicFieldValues[Number(k)]) ? (dynamicFieldValues[Number(k)] as string[]).join(",") : String(dynamicFieldValues[Number(k)] ?? ""),
+                    value: Array.isArray(dynamicFieldValues[Number(k)]) ? (dynamicFieldValues[Number(k)] as string[]).join(',') : String(dynamicFieldValues[Number(k)] ?? ''),
                   }));
 
                   // Build multipart FormData following the API expectations
@@ -422,7 +567,7 @@ export default function UserRequestCreationDetailsPage() {
                   }
 
                   // Documents & Files: append per-attachment field if a file was selected
-                  for (const f of attachmentFields) {
+                  for (const f of [...attachmentFields, ...documentRequirements]) {
                     const file = attachmentFiles[f.id];
                     if (file) {
                       formData.append('Documents', JSON.stringify({ fileName: file.name }));

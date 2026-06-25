@@ -30,7 +30,7 @@ export type UserListResult = AppUser[] | UserListResponse;
 export interface UpdateUserRequest {
   firstName: string;
   lastName: string;
-  isActive: boolean;
+  status: number;
 }
 
 export interface AssignRoleRequest {

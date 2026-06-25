@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
 import { useBlocker, useNavigate, useParams } from '@tanstack/react-router';
 import { setAuthNotification } from '../../lib/authNotifications';
 import {
@@ -8,6 +8,7 @@ import {
   useUpdateUserMutation,
   useUserQuery,
 } from '../../queries/userQueries';
+import { useGlobalEnums } from '../../shared/components/GlobalEnums';
 import CustomInputField from '../../shared/components/CustomInputField';
 import { USER_ROLE_MAPPING_TITLES } from '../../shared/mappings/users.mapping';
 
@@ -28,10 +29,10 @@ export default function UserPage() {
   const reinitializePasswordMutation = useReinitializeUserPasswordMutation(userId);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
-  const [isActive, setIsActive] = useState(false);
+  const [status, setStatus] = useState<number>(0);
   const [initialFirstName, setInitialFirstName] = useState('');
   const [initialLastName, setInitialLastName] = useState('');
-  const [initialIsActive, setInitialIsActive] = useState(false);
+  const [initialStatus, setInitialStatus] = useState<number>(0);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [initialSelectedRoles, setInitialSelectedRoles] = useState<string[]>([]);
   const [isNavigationLocked, setIsNavigationLocked] = useState(false);
@@ -43,15 +44,15 @@ export default function UserPage() {
     if (!user) return;
     const nextFirstName = user.firstName ?? '';
     const nextLastName = user.lastName ?? '';
-    const nextIsActive = Boolean(user.isActive);
+    const nextStatus = typeof user.status === 'number' ? Number(user.status) : 0;
     const nextRoles = user.roles ?? [];
     setFirstName(nextFirstName);
     setLastName(nextLastName);
-    setIsActive(nextIsActive);
+    setStatus(nextStatus);
     setSelectedRoles(nextRoles);
     setInitialFirstName(nextFirstName);
     setInitialLastName(nextLastName);
-    setInitialIsActive(nextIsActive);
+    setInitialStatus(nextStatus);
     setInitialSelectedRoles(nextRoles);
     setIsNavigationLocked(false);
     allowProgrammaticNavigationRef.current = false;
@@ -72,7 +73,7 @@ export default function UserPage() {
   const hasUserChanges =
     firstName !== initialFirstName ||
     lastName !== initialLastName ||
-    isActive !== initialIsActive;
+    status !== initialStatus;
   const hasPendingChanges = hasUserChanges || hasRoleChanges;
   const currentRoleKey = selectedRoles[0] ?? initialSelectedRoles[0] ?? '';
   const currentRoleTitle = currentRoleKey
@@ -108,7 +109,7 @@ export default function UserPage() {
       await updateUserMutation.mutateAsync({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
-        isActive,
+        status,
       });
 
       await Promise.all([
@@ -118,7 +119,7 @@ export default function UserPage() {
 
       setInitialFirstName(firstName);
       setInitialLastName(lastName);
-      setInitialIsActive(isActive);
+      setInitialStatus(status);
       setInitialSelectedRoles(selectedRoles);
       setIsNavigationLocked(false);
       setAuthNotification({
@@ -135,7 +136,7 @@ export default function UserPage() {
   function handleCancel() {
     setFirstName(initialFirstName);
     setLastName(initialLastName);
-    setIsActive(initialIsActive);
+    setStatus(initialStatus);
     setSelectedRoles(initialSelectedRoles);
     setErrors({});
     setIsNavigationLocked(false);
@@ -290,9 +291,18 @@ export default function UserPage() {
               <CustomInputField
                 type="DROPDOWN"
                 label="Κατάσταση"
-                value={isActive ? 'active' : 'inactive'}
-                dropdownItems={[{ value: 'active', label: 'Ενεργός' }, { value: 'inactive', label: 'Ανενεργός' }]}
-                onChange={(v) => setIsActive(String(v) === 'active')}
+                value={String(status)}
+                dropdownItems={(() => {
+                  const { UserStatus, UserStatusLabels } = useGlobalEnums();
+                  const keys = Object.keys(UserStatus) as string[];
+                  return keys
+                    .filter((k) => isNaN(Number(k)))
+                    .map((name) => {
+                      const val = (UserStatus as any)[name] as number;
+                      return { value: String(val), label: UserStatusLabels?.[val] ?? name };
+                    });
+                })()}
+                onChange={(v) => setStatus(Number(v ?? 0))}
                 width="100%"
               />
             </div>

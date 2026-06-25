@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { Alert } from "@mui/material";
 import { useNavigate } from "@tanstack/react-router";
 import DataTable, { FilterDef, FilterValues } from "../../shared/components/DataTable";
@@ -27,6 +27,7 @@ const SELLER_FILTERS: SellerSearchRequest = {
 export default function FetchedSellerRequests({ userMode }: { userMode?: boolean } = {}) {
   const navigate = useNavigate();
   const [filters, setFilters] = useState<SellerRequestSearchRequest>({
+    formId: undefined,
     sellerId: undefined,
     status: undefined,
   });
@@ -68,23 +69,34 @@ export default function FetchedSellerRequests({ userMode }: { userMode?: boolean
   const matchedSeller = (() => {
     if (!currentUser) return null;
     // prefer explicit match by userId
-    const byUserId = allSellers.find((s) => s.userId != null && String(s.userId) === String(currentUser.id));
+    const byUserId = allSellers.find((s) => (s as any).userId != null && String((s as any).userId) === String(currentUser.id));
     if (byUserId) return byUserId as any;
 
     // fallback match by AFM
-    const byAfm = allSellers.find((s) => s.afm && (currentUser as any)?.afm && String(s.afm) === String((currentUser as any).afm));
+    const byAfm = allSellers.find((s) => (s as any).afm && (currentUser as any)?.afm && String((s as any).afm) === String((currentUser as any).afm));
     if (byAfm) return byAfm as any;
 
     // fallback match by name
     const authName = ((currentUser as any)?.name ?? `${(currentUser as any)?.firstName ?? ''} ${(currentUser as any)?.lastName ?? ''}`).trim();
     const byName = allSellers.find((s) => {
-      const sName = `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim();
+      const sAny = s as any;
+      const sName = `${sAny.firstName ?? ''} ${sAny.lastName ?? ''}`.trim();
       return sName && authName && sName === authName;
     });
     if (byName) return byName as any;
 
     return null;
   })();
+
+  useEffect(() => {
+    if (userMode && currentUser && matchedSeller) {
+      const sellerIdNum = (matchedSeller as any)?.id ? Number((matchedSeller as any).id) : undefined;
+      setFilters((prev) => {
+        if (prev.sellerId === sellerIdNum) return prev;
+        return { ...prev, sellerId: sellerIdNum } as SellerRequestSearchRequest;
+      });
+    }
+  }, [userMode, currentUser, matchedSeller]);
 
   const sellerDropdownItems = useMemo(
     () =>
@@ -102,6 +114,21 @@ export default function FetchedSellerRequests({ userMode }: { userMode?: boolean
     [RequestStatusLabels]
   );
 
+  const { data: requestFormsData } = useRequestFormsQuery();
+  const formTitleById = useMemo(() => {
+    const map = new Map<number, string>();
+    if (!requestFormsData || !Array.isArray((requestFormsData as any).items)) return map;
+    for (const f of (requestFormsData as any).items) {
+      if (f && typeof f === 'object' && f.id != null) map.set(Number(f.id), String(f.title ?? ''));
+    }
+    return map;
+  }, [requestFormsData]);
+
+  const formDropdownItems = useMemo(() => {
+    if (!requestFormsData || !Array.isArray((requestFormsData as any).items)) return [];
+    return (requestFormsData as any).items.map((f: any) => ({ label: String(f.title ?? ''), value: Number(f.id) }));
+  }, [requestFormsData]);
+
   const tableFilters: FilterDef[] = useMemo(() => {
     const defs: FilterDef[] = [];
     if (!userMode) {
@@ -112,6 +139,13 @@ export default function FetchedSellerRequests({ userMode }: { userMode?: boolean
         dataItems: sellerDropdownItems,
       });
     }
+    // form filter
+    defs.push({
+      title: "formId",
+      label: "Φόρμα",
+      type: "DROPDOWN",
+      dataItems: formDropdownItems,
+    });
     defs.push({
       title: "status",
       label: "Κατάσταση",
@@ -131,16 +165,6 @@ export default function FetchedSellerRequests({ userMode }: { userMode?: boolean
 
   const { data: sellerRequests = [] } = useSellerRequestsQuery(effectiveFilters);
 
-  const { data: requestFormsData } = useRequestFormsQuery();
-  const formTitleById = useMemo(() => {
-    const map = new Map<number, string>();
-    if (!requestFormsData || !Array.isArray((requestFormsData as any).items)) return map;
-    for (const f of (requestFormsData as any).items) {
-      if (f && typeof f === 'object' && f.id != null) map.set(Number(f.id), String(f.title ?? ''));
-    }
-    return map;
-  }, [requestFormsData]);
-
   const visibleRequests = useMemo(() => {
     // If in userMode but we couldn't resolve a connected seller, show no requests
     if (userMode && currentUser && !matchedSeller) return [];
@@ -156,6 +180,9 @@ export default function FetchedSellerRequests({ userMode }: { userMode?: boolean
       sellerId: values["sellerId"] === "" || values["sellerId"] === undefined
         ? undefined
         : Number(values["sellerId"]),
+      formId: values["formId"] === "" || values["formId"] === undefined
+        ? undefined
+        : Number(values["formId"]),
       status: values["status"] === "" || values["status"] === undefined
         ? undefined
         : (Number(values["status"]) as RequestStatus),
@@ -171,7 +198,7 @@ export default function FetchedSellerRequests({ userMode }: { userMode?: boolean
 
   const handleRowClick = (row: SellerRequest) => {
     if (userMode) {
-      navigate({ to: "/users/requests/$id", params: { id: String(row.id) } } as any);
+      navigate({ to: "/users/requests/{$id}", params: { id: String(row.id) } } as any);
     } else {
       navigate({ to: "/admin/requests/$id", params: { id: String(row.id) } } as any);
     }
@@ -198,6 +225,14 @@ export default function FetchedSellerRequests({ userMode }: { userMode?: boolean
                 };
               })
             : [
+                {
+                  key: "formId" as keyof SellerRequest,
+                  label: "Τίτλος Αίτησης",
+                  render: (row: SellerRequest) => {
+                    const title = row.formId ? formTitleById.get(Number(row.formId)) : undefined;
+                    return title && title.length > 0 ? title : "-";
+                  },
+                },
                 ...sellerRequestColumns,
                 {
                   key: "actions" as keyof SellerRequest,

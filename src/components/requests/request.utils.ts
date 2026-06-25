@@ -105,16 +105,16 @@ export const sellerRequestColumns: ColumnDef<SellerRequest>[] = [
     render: (row) => row.sellerFullName || row.sellerName || "-",
   },
   {
+    key: "submittedAt",
+    label: "Ημερομηνία Υποβολής",
+    render: (row) => formatDateTime(row.submittedAt),
+  },
+  {
     key: "status",
     label: "Κατάσταση",
     render: (row) => {
       return RequestStatusLabels[row.status] ?? "Άγνωστο";
     },
-  },
-  {
-    key: "submittedAt",
-    label: "Ημερομηνία Υποβολής",
-    render: (row) => formatDateTime(row.submittedAt),
   },
 ];
 

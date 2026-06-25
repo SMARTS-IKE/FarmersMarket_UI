@@ -33,6 +33,7 @@ export interface SellerRequest {
 export interface SellerRequestSearchRequest {
   sellerId?: number;
   status?: RequestStatus;
+  formId?: number;
 }
 
 export interface SellerRequestListResponse {
@@ -147,6 +148,18 @@ export interface RequestFormItem {
   createdAt: string;
   updatedAt: string;
   fields: RequestFormField[];
+  // Optional additional fields returned by the API (e.g. documents / "other" section)
+  other?: RequestFormOtherField[];
+}
+
+export interface RequestFormOtherField {
+  id: number;
+  // some APIs may use `label` or `title` for display text
+  label?: string;
+  title?: string;
+  isRequired: boolean;
+  order?: number;
+  [key: string]: unknown;
 }
 
 export interface RequestFormListResponse {

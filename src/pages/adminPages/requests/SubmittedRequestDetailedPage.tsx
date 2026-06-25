@@ -9,7 +9,7 @@ import { useSubmittedRequestDetailQuery } from "../../../queries/requestQueries"
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
 import type { RequestStatus } from "../../../models/request";
 import EditRequestScoreModal from "../../../components/requests/EditRequestScoreModal";
-import { useUpdateRequestScoreMutation } from "../../../queries/requestQueries";
+import { useUpdateRequestScoreMutation, useSetRequestStatusMutation } from "../../../queries/requestQueries";
 import { IconButton, Tooltip } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
 
@@ -26,11 +26,22 @@ export default function SubmittedRequestDetailedPage() {
   const navigate = useNavigate();
   const { data: request, isLoading, error } = useSubmittedRequestDetailQuery(id as string);
 
-  const { role } = useAuthStore();
+  const { role, user } = useAuthStore();
   const isAdmin = (role ?? '').trim().toLowerCase() === (USER_ROLE_MAPPING.ADMIN ?? '').trim().toLowerCase();
 
   const [isEditScoreOpen, setIsEditScoreOpen] = useState(false);
   const updateScoreMutation = useUpdateRequestScoreMutation();
+  const setStatusMutation = useSetRequestStatusMutation();
+
+  const handleApprove = () => {
+    if (!request) return;
+    setStatusMutation.mutate({ id: request.id, payload: { reason: '', processedByUserId: String(user?.id ?? ''), status: 3 } });
+  };
+
+  const handleReject = () => {
+    if (!request) return;
+    setStatusMutation.mutate({ id: request.id, payload: { reason: '', processedByUserId: String(user?.id ?? ''), status: 4 } });
+  };
 
   if (isLoading) {
     return (
@@ -51,6 +62,7 @@ export default function SubmittedRequestDetailedPage() {
   }
 
   const statusInfo = statusLabels[request.status];
+  const isFinalStatus = request.status === 3 || request.status === 4;
 
   const totalFieldWeight = request.fieldValues.reduce((sum, f) => sum + (Number(f.weight ?? 0)), 0);
 
@@ -76,11 +88,33 @@ export default function SubmittedRequestDetailedPage() {
           </div>
         ) : (
           <div className="flex items-center justify-between mb-8">
-            <h2 className="text-2xl font-semibold text-(--color-text-heading)">Στοιχεία Αίτησης #{request.id}</h2>
-            <div className="px-3 py-1 rounded-md text-white font-semibold text-sm" style={{ backgroundColor: statusInfo.color }}>
-              {statusInfo.label}
+              <div className="flex items-center gap-4">
+                <div className="px-3 py-1 rounded-md text-white font-semibold text-sm" style={{ backgroundColor: statusInfo.color }}>
+                  {statusInfo.label}
+                </div>
+                <h2 className="text-2xl font-semibold text-(--color-text-heading)">Στοιχεία Αίτησης #{request.id}</h2>
+              </div>
+              <div className="flex items-center gap-2">
+                {!isFinalStatus && (
+                  <>
+                    <CustomButton
+                      title="Έγκριση"
+                      onClick={handleApprove}
+                      backgroundColor="#10b981"
+                      width={120}
+                      disabled={setStatusMutation.status === 'pending'}
+                    />
+                    <CustomButton
+                      title="Απόρριψη"
+                      onClick={handleReject}
+                      backgroundColor="#ef4444"
+                      width={120}
+                      disabled={setStatusMutation.status === 'pending'}
+                    />
+                  </>
+                )}
+              </div>
             </div>
-          </div>
         )}
 
         <div className="flex border-b border-(--color-border) mb-6">
@@ -299,26 +333,28 @@ export default function SubmittedRequestDetailedPage() {
                   <div className="text-sm text-(--color-text-muted)">Βαθμολογία Αίτησης</div>
                   <div className="flex items-center gap-2">
                     <div className="text-xl font-bold">{request.score ?? '—'}</div>
-                    <Tooltip title="Επεξεργασία βαθμολογίας">
-                      <span>
-                        <IconButton
-                          size="small"
-                          onClick={() => setIsEditScoreOpen(true)}
-                          aria-label="edit-score"
-                          sx={{
-                            bgcolor: '#D2B48C',
-                            color: '#1f1f1f',
-                            width: 25,
-                            height: 25,
-                            padding: 0,
-                            '&:hover': { bgcolor: '#c6a77a' },
-                            boxShadow: 'none',
-                          }}
-                        >
-                          <EditIcon sx={{ fontSize: 12 }} />
-                        </IconButton>
-                      </span>
-                    </Tooltip>
+                    {!isFinalStatus && (
+                      <Tooltip title="Επεξεργασία βαθμολογίας">
+                        <span>
+                          <IconButton
+                            size="small"
+                            onClick={() => setIsEditScoreOpen(true)}
+                            aria-label="edit-score"
+                            sx={{
+                              bgcolor: '#D2B48C',
+                              color: '#1f1f1f',
+                              width: 25,
+                              height: 25,
+                              padding: 0,
+                              '&:hover': { bgcolor: '#c6a77a' },
+                              boxShadow: 'none',
+                            }}
+                          >
+                            <EditIcon sx={{ fontSize: 12 }} />
+                          </IconButton>
+                        </span>
+                      </Tooltip>
+                    )}
                   </div>
                 </div>
               </div>
@@ -326,7 +362,7 @@ export default function SubmittedRequestDetailedPage() {
           </div>
          )}
         <EditRequestScoreModal
-          open={isEditScoreOpen}
+          open={isEditScoreOpen && !isFinalStatus}
           onClose={() => setIsEditScoreOpen(false)}
           initialScore={request.score ?? null}
           saving={updateScoreMutation.status === 'pending'}

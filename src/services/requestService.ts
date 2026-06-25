@@ -12,6 +12,7 @@ export async function getSellerRequests(params: SellerRequestSearchRequest): Pro
 
   if (params.sellerId !== undefined) query.set('SellerId', String(params.sellerId));
   if (params.status !== undefined) query.set('Status', String(params.status));
+  if ((params as any).formId !== undefined) query.set('FormId', String((params as any).formId));
 
   const qs = query.toString();
   const response = await http.get<SellerRequestListResponse | SellerRequest[]>(`/Requests${qs ? `?${qs}` : ''}`);
