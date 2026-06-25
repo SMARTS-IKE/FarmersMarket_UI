@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useParams } from "@tanstack/react-router";
+import { useParams, useNavigate } from "@tanstack/react-router";
 import { CircularProgress, Alert, Divider } from "@mui/material";
 import CustomInputField from "../../../shared/components/CustomInputField";
+import CustomButton from "../../../shared/components/CustomButton";
 import { useAuthStore } from '../../../store/authStore';
 import { USER_ROLE_MAPPING } from '../../../shared/mappings/users.mapping';
 import { useSubmittedRequestDetailQuery } from "../../../queries/requestQueries";
@@ -22,6 +23,7 @@ const statusLabels: Record<RequestStatus, { label: string; color: string }> = {
 export default function SubmittedRequestDetailedPage() {
   const [activeTab, setActiveTab] = useState(0);
   const { id } = useParams({ strict: false });
+  const navigate = useNavigate();
   const { data: request, isLoading, error } = useSubmittedRequestDetailQuery(id as string);
 
   const { role } = useAuthStore();
@@ -55,12 +57,31 @@ export default function SubmittedRequestDetailedPage() {
   return (
     <div className="w-full p-6">
       <div className="max-w-6xl mx-auto">
-        <div className="flex items-center justify-between mb-8">
-          <h2 className="text-2xl font-semibold text-(--color-text-heading)">Στοιχεία Αίτησης #{request.id}</h2>
-          <div className="px-4 py-2 rounded-lg text-white font-bold" style={{ backgroundColor: statusInfo.color }}>
-            {statusInfo.label}
+        {!isAdmin ? (
+          <div className="flex items-center justify-between mb-8">
+            <div className="flex items-center gap-4">
+              <div className="px-3 py-1 rounded-md text-white font-semibold text-sm" style={{ backgroundColor: statusInfo.color }}>
+                {statusInfo.label}
+              </div>
+              <h2 className="text-2xl font-semibold text-(--color-text-heading)">Στοιχεία Αίτησης #{request.id}</h2>
+            </div>
+            <div className="flex-shrink-0">
+              <CustomButton
+                title="Επιστροφή"
+                onClick={() => navigate({ to: "/users/requests" } as any)}
+                backgroundColor="var(--color-text-muted)"
+                width={180}
+              />
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="flex items-center justify-between mb-8">
+            <h2 className="text-2xl font-semibold text-(--color-text-heading)">Στοιχεία Αίτησης #{request.id}</h2>
+            <div className="px-3 py-1 rounded-md text-white font-semibold text-sm" style={{ backgroundColor: statusInfo.color }}>
+              {statusInfo.label}
+            </div>
+          </div>
+        )}
 
         <div className="flex border-b border-(--color-border) mb-6">
           <button

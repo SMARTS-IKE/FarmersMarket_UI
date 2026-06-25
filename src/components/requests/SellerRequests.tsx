@@ -28,7 +28,7 @@ export default function FetchedSellerRequests({ userMode }: { userMode?: boolean
   const navigate = useNavigate();
   const [filters, setFilters] = useState<SellerRequestSearchRequest>({
     sellerId: undefined,
-    status: 0,
+    status: undefined,
   });
 
   const [menuState, setMenuState] = useState<{ anchorEl: HTMLElement; rowId: number } | null>(null);
