@@ -1,9 +1,13 @@
 import { useMemo, useState } from "react";
+import { useEffect } from "react";
+import RestartAltIcon from '@mui/icons-material/RestartAlt';
 import { useNavigate } from "@tanstack/react-router";
 import { Alert } from "@mui/material";
 import DataTable, { FilterDef, FilterValues } from "../../shared/components/DataTable";
 import type { Market, MarketSearchRequest } from "../../models/market";
 import { useMarketsQuery } from "../../queries/marketQueries";
+import { useSellerQuery, useSellerMarketsQuery } from "../../queries/sellerQueries";
+import { getMarketById } from "../../services/marketService";
 import type { Seller, SellerSearchRequest } from "../../models/seller";
 import { useSellersQuery } from "../../queries/sellerQueries";
 import { columns, DAYS } from "../../components/markets/market.utils";
@@ -120,18 +124,65 @@ export default function UserMarketsPage() {
 
   const connectedEmail = user?.email ?? email ?? "";
 
-  const connectedSeller = useMemo(
-    () => resolveConnectedSeller(sellersData?.items ?? [], connectedEmail),
-    [connectedEmail, sellersData?.items]
-  );
+  const sellerByUserQuery = useSellerQuery(user?.id ? String(user.id) : "");
+
+  const connectedSeller = useMemo(() => {
+    if (sellerByUserQuery.data) return sellerByUserQuery.data;
+    return resolveConnectedSeller(sellersData?.items ?? [], connectedEmail);
+  }, [connectedEmail, sellersData?.items, sellerByUserQuery.data]);
+
+  const sellerMarketsQuery = useSellerMarketsQuery(connectedSeller ? String(connectedSeller.id) : "");
+
+  const [extraMarkets, setExtraMarkets] = useState<Market[]>([]);
+  const [extraLoading, setExtraLoading] = useState(false);
 
   const connectedMarkets = useMemo(() => {
     if (!connectedSeller) return [];
 
+    const connectedIds = sellerMarketsQuery.data?.items?.map((cm) => Number(cm.marketId)).filter(Boolean) ?? [];
+
+    if (connectedIds.length > 0) {
+      const available = (marketsData?.items ?? []) as Market[];
+      const map = new Map<number, Market>(available.map((m) => [Number(m.id), m]));
+      const results: Market[] = [];
+      for (const id of connectedIds) {
+        const m = map.get(Number(id)) ?? extraMarkets.find((em) => Number(em.id) === Number(id));
+        if (m) results.push(m);
+      }
+      return results;
+    }
+
     return (marketsData?.items ?? []).filter((market) =>
       getMarketSellers(market).some((marketSeller) => extractSellerId(marketSeller) === connectedSeller.id)
     );
-  }, [connectedSeller, marketsData?.items]);
+  }, [connectedSeller, marketsData?.items, sellerMarketsQuery.data, extraMarkets]);
+
+  useEffect(() => {
+    const connectedIds = sellerMarketsQuery.data?.items?.map((cm) => Number(cm.marketId)).filter(Boolean) ?? [];
+    if (connectedIds.length === 0) return;
+    const availableIds = new Set((marketsData?.items ?? []).map((m) => Number(m.id)));
+    const missing = connectedIds.filter((id) => !availableIds.has(Number(id)));
+    if (missing.length === 0) return;
+
+    let cancelled = false;
+    setExtraLoading(true);
+    Promise.all(missing.map((id) => getMarketById(String(id)).catch(() => null)))
+      .then((responses) => {
+        if (cancelled) return;
+        const fetched = responses.filter(Boolean) as Market[];
+        setExtraMarkets((prev) => {
+          const existing = new Set(prev.map((p) => Number(p.id)));
+          const out = [...prev];
+          for (const f of fetched) {
+            if (!existing.has(Number(f.id))) out.push(f);
+          }
+          return out;
+        });
+      })
+      .finally(() => { if (!cancelled) setExtraLoading(false); });
+
+    return () => { cancelled = true; };
+  }, [sellerMarketsQuery.data, marketsData?.items]);
 
   const rows = useMemo(() => applyMarketFilters(connectedMarkets, filters), [connectedMarkets, filters]);
 
@@ -174,7 +225,7 @@ export default function UserMarketsPage() {
     navigate({ to: "/users/markets/$marketId", params: { marketId: String(market.id) } });
   };
 
-  if (isMarketsLoading || isSellersLoading) {
+  if (isMarketsLoading || isSellersLoading || sellerMarketsQuery.isLoading || sellerByUserQuery.isLoading || extraLoading) {
     return (
       <div className="flex h-full w-full items-center justify-center text-(--color-text-muted)">
         Φόρτωση αγορών...
@@ -193,11 +244,29 @@ export default function UserMarketsPage() {
   }
 
   if (!connectedSeller) {
+    console.debug('UserMarketsPage: user, sellerByUserQuery.data, sellersData', user, sellerByUserQuery.data, sellersData?.items?.slice(0,50));
     return (
       <div className="flex h-full w-full flex-col gap-4 text-left">
         <Alert severity="warning">
           Δεν βρέθηκε συνδεδεμένος πωλητής για το email {connectedEmail || "(χωρίς email)"}.
         </Alert>
+        <div>
+          <Alert severity="info">
+            <div style={{ marginBottom: 8 }}>Debug: current auth `user` and seller lookups.</div>
+            <div style={{ fontSize: 13, marginBottom: 8 }}>
+              <strong>User:</strong>
+              <pre style={{ whiteSpace: 'pre-wrap', margin: 0 }}>{JSON.stringify(user ?? {}, null, 2)}</pre>
+            </div>
+            <div style={{ fontSize: 13, marginBottom: 8 }}>
+              <strong>Seller by userId (`useSellerQuery`):</strong>
+              <pre style={{ whiteSpace: 'pre-wrap', maxHeight: 120, overflow: 'auto', margin: 0 }}>{JSON.stringify(sellerByUserQuery.data ?? null, null, 2)}</pre>
+            </div>
+            <div style={{ fontSize: 13 }}>
+              <strong>First sellers from API (`sellersData.items` up to 50):</strong>
+              <pre style={{ whiteSpace: 'pre-wrap', maxHeight: 300, overflow: 'auto', margin: 0 }}>{JSON.stringify(sellersData?.items?.slice(0, 50) ?? [], null, 2)}</pre>
+            </div>
+          </Alert>
+        </div>
       </div>
     );
   }
