@@ -264,10 +264,6 @@ export default function SellerPage() {
           <h3 className="text-lg text-(--color-text-heading)">
             {seller.fullName ? seller.fullName : `${firstName} ${lastName}`}
           </h3>
-          <div className="text-sm text-(--color-text-muted) mt-1">
-            {userId !== null && <span className="mr-4">User ID: {userId}</span>}
-            {createdAt && <span>Created: {new Date(createdAt).toLocaleString()}</span>}
-          </div>
         </div>
         <CustomButton
           title="Επιστροφή στη λίστα πωλητών"
@@ -292,45 +288,7 @@ export default function SellerPage() {
 
       <div className="flex-1 overflow-y-auto pr-2 max-h-[calc(100svh-300px)]">
         <div className="flex flex-col gap-6 pt-2">
-          {activeTab === 0 && (
-            <div className="flex flex-wrap gap-3">
-              <CustomButton
-                title="Ενεργός"
-                onClick={() => setIsActive(true)}
-                width={120}
-                backgroundColor={isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)"}
-                sx={{
-                  minHeight: 32,
-                  borderRadius: "0.75rem",
-                  border: isActive ? "1px solid transparent" : "1px solid var(--color-text-muted)",
-                  color: isActive ? "#ffffff" : "var(--color-text-muted)",
-                  boxShadow: isActive ? "0 6px 16px rgba(74,63,53,0.18)" : "0 1px 2px rgba(60,40,10,0.08)",
-                  "&:hover": {
-                    backgroundColor: isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)",
-                    filter: "none",
-                  },
-                }}
-              />
-              <CustomButton
-                title="Ανενεργός"
-                onClick={() => setIsActive(false)}
-                width={120}
-                backgroundColor={!isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)"}
-                sx={{
-                  minHeight: 32,
-                  borderRadius: "0.75rem",
-                  border: !isActive ? "1px solid transparent" : "1px solid var(--color-text-muted)",
-                  color: !isActive ? "#ffffff" : "var(--color-text-muted)",
-                  boxShadow: !isActive ? "0 6px 16px rgba(74,63,53,0.18)" : "0 1px 2px rgba(60,40,10,0.08)",
-                  "&:hover": {
-                    backgroundColor: !isActive ? "var(--color-dark)" : "rgba(255,255,255,0.85)",
-                    filter: "none",
-                  },
-                }}
-              />
-            </div>
-          )}
-
+        
           {activeTab === 0 ? (
             <div className="flex flex-col gap-6">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

@@ -13,6 +13,8 @@ import AdminMarketCreatePage from '../pages/adminPages/markets/AdminMarketCreate
 import AdminMarketDetailPage from '../pages/adminPages/markets/AdminMarketDetailPage';
 import AdminReportsPage from '../pages/adminPages/AdminReportsPage';
 import AdminFeesPaymentsPage from '../pages/adminPages/FeesAndPayments/AdminFeesPaymentsPage';
+import FeeCreationPage from '../pages/adminPages/FeesAndPayments/FeeCreationPage';
+import FeeEditPage from '../pages/adminPages/FeesAndPayments/FeeEditPage';
 import AdminRequestsPage from '../pages/adminPages/requests/AdminRequestsPage';
 import SubmittedRequestDetailedPage from '../pages/adminPages/requests/SubmittedRequestDetailedPage';
 import DesignRequestFormPage from '../pages/adminPages/requests/DesignRequestFormPage';
@@ -104,6 +106,18 @@ export const feesPaymentsRoute = createRoute({
   component: AdminFeesPaymentsPage,
 });
 
+export const feeCreationRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/admin/fees-payments/new',
+  component: FeeCreationPage,
+});
+
+export const feeEditRoute = createRoute({
+  getParentRoute: () => protectedRoute,
+  path: '/admin/fees-payments/$feeRuleId',
+  component: FeeEditPage,
+});
+
 export const requestsRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/admin/requests',
@@ -146,6 +160,8 @@ export const adminRouteTree = protectedRoute.addChildren([
   userCreateRoute,
   userDetailRoute,
   feesPaymentsRoute,
+  feeCreationRoute,
+  feeEditRoute,
   sellersRoute,
   sellerCreateRoute,
   sellerDetailRoute,

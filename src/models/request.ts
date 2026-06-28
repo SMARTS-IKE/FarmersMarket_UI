@@ -227,6 +227,11 @@ export interface CreateRequestFormRequest {
   title: string;
   description: string;
   fields: CreateRequestFormFieldRequest[];
+  // Optional array for document requirements (label + isRequired)
+  documentRequirements?: {
+    label: string;
+    isRequired: boolean;
+  }[];
 }
 
 export type DesignRequestFieldType = "TEXT" | "NUMBER" | "DATE" | "TEXTAREA" | "DROPDOWN" | "BOOLEAN";

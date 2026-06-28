@@ -462,6 +462,10 @@ export default function DesignRequestFormPage() {
         order: index,
         options: field.type === "DROPDOWN" ? field.availableValues : [],
       })),
+      documentRequirements: draft.requiredDocuments.map((d) => ({
+        label: d.title.trim(),
+        isRequired: !!d.isRequired,
+      })),
     };
 
     try {

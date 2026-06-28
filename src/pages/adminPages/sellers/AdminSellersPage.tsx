@@ -6,18 +6,6 @@ import { useSellersQuery } from "../../../queries/sellerQueries";
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 
-const SELLER_STATUS_CONFIG = {
-  active: {
-    label: "Ενεργός",
-    backgroundColor: "transparent",
-    color: "#166534",
-  },
-  inactive: {
-    label: "Ανενεργός",
-    backgroundColor: "transparent",
-    color: "#991b1b",
-  },
-} as const;
 
 const columns: ColumnDef<Seller>[] = [
   { key: "firstName", label: "Όνομα" },
@@ -29,25 +17,6 @@ const columns: ColumnDef<Seller>[] = [
     label: "Τύπος Πωλητή",
     filterable: false,
     render: (row) => SELLER_TYPE_LABELS[Number(row.sellerType)] ?? row.sellerType,
-  },
-  {
-    key: "status",
-    label: "Κατάσταση",
-    filterable: false,
-    render: (row) => {
-      const statusConfig = row.isActive ? SELLER_STATUS_CONFIG.active : SELLER_STATUS_CONFIG.inactive;
-
-      return (
-        <span
-          style={{
-            color: statusConfig.color,
-            fontWeight: 700,
-          }}
-        >
-          {statusConfig.label}
-        </span>
-      );
-    },
   },
 ];
 
@@ -87,7 +56,11 @@ export default function AdminSellersPage() {
       ...prev,
       name: String(values["name"] ?? ""),
       afm: String(values["afm"] ?? ""),
-      sellerType: (Number(values["sellerType"]) || "") as SellerType,
+      // Preserve numeric 0 value (falsy) — only set empty string when no selection
+      sellerType:
+        values["sellerType"] === undefined || values["sellerType"] === "" || values["sellerType"] === null
+          ? ("" as any)
+          : (Number(values["sellerType"]) as SellerType),
       page: 1,
     }));
   };

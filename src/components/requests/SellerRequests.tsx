@@ -6,6 +6,7 @@ import IconButton from "@mui/material/IconButton";
 import Menu from "@mui/material/Menu";
 import MenuItem from "@mui/material/MenuItem";
 import MoreVertIcon from "@mui/icons-material/MoreVert";
+import RequestActionConfirmDialog from "./RequestActionConfirmDialog";
 import type { RequestStatus, SellerRequest, SellerRequestSearchRequest } from "../../models/request";
 import type { SellerSearchRequest } from "../../models/seller";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
@@ -32,8 +33,13 @@ export default function FetchedSellerRequests({ userMode }: { userMode?: boolean
     status: undefined,
   });
 
+  type Action = "accept" | "reject" | null;
+
   const [menuState, setMenuState] = useState<{ anchorEl: HTMLElement; rowId: number } | null>(null);
   const menuRowRef = useRef<SellerRequest | null>(null);
+
+  const [confirmDialogOpen, setConfirmDialogOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<Action>(null);
 
   const setStatusMutation = useSetRequestStatusMutation();
   const currentUser = useAuthStore((s) => s.user);
@@ -49,18 +55,40 @@ export default function FetchedSellerRequests({ userMode }: { userMode?: boolean
     menuRowRef.current = null;
   };
 
-  const handleApprove = () => {
+  const handleApprove = (reason?: string) => {
     if (menuRowRef.current) {
-      setStatusMutation.mutate({ id: menuRowRef.current.id, payload: { reason: '', processedByUserId: String(currentUser?.id ?? ''), status: 3 } });
+      setStatusMutation.mutate({ id: menuRowRef.current.id, payload: { reason: reason ?? '', processedByUserId: String(currentUser?.id ?? ''), status: RequestStatus.Approved } });
     }
+    menuRowRef.current = null;
+  };
+
+  const handleReject = (reason?: string) => {
+    if (menuRowRef.current) {
+      setStatusMutation.mutate({ id: menuRowRef.current.id, payload: { reason: reason ?? '', processedByUserId: String(currentUser?.id ?? ''), status: RequestStatus.Rejected } });
+    }
+    menuRowRef.current = null;
+  };
+
+  const handleApproveClick = () => {
+    setConfirmAction('accept');
+    setConfirmDialogOpen(true);
     handleMenuClose();
   };
 
-  const handleReject = () => {
-    if (menuRowRef.current) {
-      setStatusMutation.mutate({ id: menuRowRef.current.id, payload: { reason: '', processedByUserId: String(currentUser?.id ?? ''), status: 4 } });
-    }
+  const handleRejectClick = () => {
+    setConfirmAction('reject');
+    setConfirmDialogOpen(true);
     handleMenuClose();
+  };
+
+  const handleConfirm = (reason?: string) => {
+    if (confirmAction === 'reject') {
+      handleReject(reason);
+    } else if (confirmAction === 'accept') {
+      handleApprove(reason);
+    }
+    setConfirmAction(null);
+    setConfirmDialogOpen(false);
   };
 
   const { data: sellersData } = useSellersQuery(SELLER_FILTERS);
@@ -142,7 +170,7 @@ export default function FetchedSellerRequests({ userMode }: { userMode?: boolean
     // form filter
     defs.push({
       title: "formId",
-      label: "Φόρμα",
+      label: "Τίτλος Αίτησης",
       type: "DROPDOWN",
       dataItems: formDropdownItems,
     });
@@ -243,6 +271,7 @@ export default function FetchedSellerRequests({ userMode }: { userMode?: boolean
                       size="small"
                       onClick={(e) => handleMenuOpen(e, row)}
                       aria-label="actions"
+                      disabled={row.status === RequestStatus.Approved}
                     >
                       <MoreVertIcon fontSize="small" />
                     </IconButton>
@@ -265,10 +294,27 @@ export default function FetchedSellerRequests({ userMode }: { userMode?: boolean
         open={Boolean(menuState)}
         onClose={handleMenuClose}
       >
-        <MenuItem onClick={handleApprove}>Έγκριση Αιτήματος</MenuItem>
-        <MenuItem onClick={handleReject}>Απόρριψη Αιτήματος</MenuItem>
+        {menuRowRef.current?.status === RequestStatus.Rejected ? (
+          <MenuItem disabled>
+            {menuRowRef.current?.rejectionReason && menuRowRef.current.rejectionReason.length > 0
+              ?  `${'Λόγος Απόρριψης: ' + menuRowRef.current.rejectionReason}`
+              : 'Χωρίς λόγο απόρριψης'}
+          </MenuItem>
+        ) : (
+          <>
+            <MenuItem onClick={handleApproveClick}>Έγκριση Αιτήματος</MenuItem>
+            <MenuItem onClick={handleRejectClick}>Απόρριψη Αιτήματος</MenuItem>
+          </>
+        )}
 
       </Menu>
+
+      <RequestActionConfirmDialog
+        open={confirmDialogOpen}
+        action={confirmAction}
+        onClose={() => { setConfirmDialogOpen(false); setConfirmAction(null); }}
+        onConfirm={(reason?: string) => handleConfirm(reason)}
+      />
     </div>
   );
 }

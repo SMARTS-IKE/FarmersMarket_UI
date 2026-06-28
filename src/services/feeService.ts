@@ -40,3 +40,16 @@ export async function getFeeRules(params: FeeRuleSearchRequest): Promise<FeeRule
 
   return response;
 }
+
+export async function createFeeRule(payload: FeeRule): Promise<void> {
+  await http.post('/fee-rules', payload);
+}
+
+export async function getFeeRule(id: string | number): Promise<FeeRule> {
+  const response = await http.get<FeeRule>(`/fee-rules/${id}`);
+  return response as FeeRule;
+}
+
+export async function updateFeeRule(id: string | number, payload: FeeRule): Promise<void> {
+  await http.put(`/fee-rules/${id}`, payload);
+}

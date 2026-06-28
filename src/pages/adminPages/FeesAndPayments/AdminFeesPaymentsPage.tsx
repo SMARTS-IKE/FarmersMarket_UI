@@ -1,5 +1,7 @@
 import { useState, useMemo } from "react";
 import { Tab, Tabs, Box } from "@mui/material";
+import CustomButton from "../../../shared/components/CustomButton";
+import { useNavigate } from '@tanstack/react-router';
 import DataTable, { ColumnDef, FilterDef, FilterValues, DropdownItem } from "../../../shared/components/DataTable";
 import type { FeeRule, FeeRuleSearchRequest } from "../../../models/fee";
 import { useFeesQuery } from "../../../queries/feesQueries";
@@ -16,7 +18,6 @@ const columns: ColumnDef<FeeRule>[] = [
     filterable: false,
     render: (row) => SELLER_TYPE_LABELS[row.sellerType] ?? row.sellerType,
   },
-  { key: "licenseCategory", label: "Κατηγορία Άδειας" },
   {
     key: "amount",
     label: "Ποσό",
@@ -25,9 +26,7 @@ const columns: ColumnDef<FeeRule>[] = [
   },
   { key: "basis", label: "Βάση" },
   { key: "validFrom", label: "Ισχύει από" },
-  { key: "validTo", label: "Ισχύει έως" },
-  { key: "priority", label: "Προτεραιότητα" },
-  { key: "legalReference", label: "Νομική Αναφορά" },
+  { key: "validTo", label: "Ισχύει έως" }
 ];
 
 export default function AdminFeesPaymentsPage() {
@@ -101,33 +100,42 @@ export default function AdminFeesPaymentsPage() {
     });
   };
 
+  const navigate = useNavigate();
+
   return (
     <div className="flex h-full w-full flex-col gap-6 text-left overflow-hidden">
       <LayoutTabsSlot>
-        <Box sx={{height: '100%', display: 'flex', justifyContent: 'center'}}>
-          <Tabs
-            value={activeTab}
-            onChange={(_, v) => setActiveTab(v)}
-            variant="fullWidth"
-            textColor="inherit"
-            sx={{
-              width: "100%",
-            }}
-          >
-            <Tab label="Λίστα Τελών" />
-            <Tab label="Πληρωμές" />
-          </Tabs>
+        <Box sx={{height: '100%', display: 'flex', alignItems: 'center', gap: 2}}>
+          <Box sx={{ flex: 1 }}>
+            <Tabs
+              value={activeTab}
+              onChange={(_, v) => setActiveTab(v)}
+              variant="fullWidth"
+              textColor="inherit"
+              sx={{
+                width: "100%",
+              }}
+            >
+              <Tab label="Λίστα Τελών" />
+              <Tab label="Πληρωμές" />
+            </Tabs>
+          </Box>
         </Box>
       </LayoutTabsSlot>
 
       <div className="flex-1 overflow-y-auto pr-2 max-h-[calc(100svh-300px)]">
         {activeTab === 0 && (
           <div className="flex flex-col gap-4">
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
+              <CustomButton title="Νέο Τέλος" onClick={() => navigate({ to: '/admin/fees-payments/new' } as any)} />
+            </Box>
+
             <DataTable<FeeRule>
               rows={fees}
               columns={columns}
               rowKey="name"
-              showFilter={false}
+              showFilter={true}
+              showGlobalSearch={false}
               filters={tableFilters}
               onSearch={handleSearch}
               onClearFilters={handleClearFilters}

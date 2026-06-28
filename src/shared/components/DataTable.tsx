@@ -14,7 +14,7 @@ import {
 } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 import InputAdornment from "@mui/material/InputAdornment";
-import TableFilterBar from "./TableFilterBar";
+import FilterBar from "./FilterBar";
 import type { FilterDef, FilterValues } from "./TableFilterBar";
 import { useLayoutSlot } from "../../lib/layoutSlotContext";
 
@@ -48,8 +48,12 @@ interface DataTableProps<T> {
   defaultRowsPerPage?: number;
   /** Whether to show the global text filter input (default: true) */
   showFilter?: boolean;
+  /** Whether to show the small global search input at the top (default: true) */
+  showGlobalSearch?: boolean;
   /** Declarative filter bar above the table */
   filters?: FilterDef[];
+  /** Optional actions rendered to the right of the filter bar in the layout filter slot */
+  filterActions?: React.ReactNode;
   /** Initial values for declarative filters */
   initialFilterValues?: FilterValues;
   /** Called when the user clicks the Search button; receives filter title→value map */
@@ -90,7 +94,9 @@ export default function DataTable<T extends object>({
   rowsPerPageOptions = [10, 25, 50],
   defaultRowsPerPage = 10,
   showFilter = true,
+  showGlobalSearch = true,
   filters,
+  filterActions,
   initialFilterValues,
   onSearch,
   onClearFilters,
@@ -122,17 +128,35 @@ export default function DataTable<T extends object>({
 
   useEffect(() => {
     if (filters && filters.length > 0 && onSearch) {
-      setFilterSlot(
-        <TableFilterBar
-          filters={filters}
+      const mappedFields = filters.map((f) => ({
+        name: f.title,
+        label: f.label,
+        type: f.type === "DROPDOWN" ? "select" : f.type === "DATE" ? "date" : "text",
+        options: f.dataItems,
+        value: initialFilterValues?.[f.title] ?? "",
+      }));
+
+      const filterBar = (
+        <FilterBar
+          fields={mappedFields as any}
           onSearch={onSearch}
           onClear={onClearFilters}
-          clearButtonTitle={clearFiltersButtonTitle}
-          clearButtonBackgroundColor={clearFiltersButtonBackgroundColor}
-          clearButtonPrefixIcon={clearFiltersPrefixIcon}
-          initialValues={initialFilterValues}
+          invalidateAllOnSearch={true}
+          searchLabel="Αναζήτηση"
+          clearLabel={clearFiltersButtonTitle ?? "Καθαρισμός"}
         />
       );
+
+      if (filterActions) {
+        setFilterSlot(
+          <Box sx={{ width: '100%', display: 'flex', flexDirection: 'column', gap: 1 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'center' }}>{filterBar}</Box>
+            <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>{filterActions}</Box>
+          </Box>
+        );
+      } else {
+        setFilterSlot(<Box sx={{ width: '100%', display: 'flex', justifyContent: 'center' }}>{filterBar}</Box>);
+      }
     }
     return () => setFilterSlot(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -201,33 +225,15 @@ export default function DataTable<T extends object>({
   return (
     <Box className="flex flex-col gap-4">
       {/* Title + global search row */}
-      {(title || showFilter) && (
-        <Box className="flex items-center justify-between gap-4 flex-wrap">
-          {title && (
-            <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
-              {title}
-            </Typography>
+          {(title || showGlobalSearch) && (
+            <Box className="flex items-center justify-between gap-4 flex-wrap">
+              {title && (
+                <Typography variant="subtitle1" sx={{ fontWeight: 600 }}>
+                  {title}
+                </Typography>
+              )}
+            </Box>
           )}
-          {showFilter && (
-            <TextField
-              size="small"
-              placeholder={filterPlaceholder}
-              value={filterText}
-              onChange={handleFilterChange}
-              slotProps={{
-                input: {
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <SearchIcon fontSize="small" />
-                    </InputAdornment>
-                  ),
-                },
-              }}
-              sx={{ minWidth: 220 }}
-            />
-          )}
-        </Box>
-      )}
 
       <Paper variant="outlined">
         <TableContainer>

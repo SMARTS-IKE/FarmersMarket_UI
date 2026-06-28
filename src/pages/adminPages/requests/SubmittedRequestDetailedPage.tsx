@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, type SyntheticEvent } from "react";
 import { useParams, useNavigate } from "@tanstack/react-router";
-import { CircularProgress, Alert, Divider } from "@mui/material";
+import { CircularProgress, Alert, Divider, Tabs, Tab, Box } from "@mui/material";
 import CustomInputField from "../../../shared/components/CustomInputField";
 import CustomButton from "../../../shared/components/CustomButton";
 import { useAuthStore } from '../../../store/authStore';
@@ -9,6 +9,7 @@ import { useSubmittedRequestDetailQuery } from "../../../queries/requestQueries"
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
 import type { RequestStatus } from "../../../models/request";
 import EditRequestScoreModal from "../../../components/requests/EditRequestScoreModal";
+import ConfirmActionDialog from "../../../components/requests/RequestActionConfirmDialog";
 import { useUpdateRequestScoreMutation, useSetRequestStatusMutation } from "../../../queries/requestQueries";
 import { IconButton, Tooltip } from "@mui/material";
 import EditIcon from "@mui/icons-material/Edit";
@@ -35,12 +36,30 @@ export default function SubmittedRequestDetailedPage() {
 
   const handleApprove = () => {
     if (!request) return;
-    setStatusMutation.mutate({ id: request.id, payload: { reason: '', processedByUserId: String(user?.id ?? ''), status: 3 } });
+    setConfirmAction('accept');
+    setConfirmOpen(true);
   };
 
   const handleReject = () => {
     if (!request) return;
-    setStatusMutation.mutate({ id: request.id, payload: { reason: '', processedByUserId: String(user?.id ?? ''), status: 4 } });
+    setConfirmAction('reject');
+    setConfirmOpen(true);
+  };
+
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmAction, setConfirmAction] = useState<"accept" | "reject" | null>(null);
+
+  const handleConfirmAction = (reason?: string) => {
+    if (!request || !confirmAction) return;
+    const processedByUserId = String(user?.id ?? '');
+    const payloadBase = { processedByUserId } as any;
+    if (confirmAction === 'accept') {
+      setStatusMutation.mutate({ id: request.id, payload: { ...payloadBase, reason: '', status: 3 } });
+    } else if (confirmAction === 'reject') {
+      setStatusMutation.mutate({ id: request.id, payload: { ...payloadBase, reason: reason ?? '', status: 4 } });
+    }
+    setConfirmOpen(false);
+    setConfirmAction(null);
   };
 
   if (isLoading) {
@@ -92,7 +111,7 @@ export default function SubmittedRequestDetailedPage() {
                 <div className="px-3 py-1 rounded-md text-white font-semibold text-sm" style={{ backgroundColor: statusInfo.color }}>
                   {statusInfo.label}
                 </div>
-                <h2 className="text-2xl font-semibold text-(--color-text-heading)">Στοιχεία Αίτησης #{request.id}</h2>
+                  <h2 className="text-2xl font-semibold text-(--color-text-heading)">Στοιχεία Αίτησης #{request.id}</h2>
               </div>
               <div className="flex items-center gap-2">
                 {!isFinalStatus && (
@@ -117,38 +136,28 @@ export default function SubmittedRequestDetailedPage() {
             </div>
         )}
 
-        <div className="flex border-b border-(--color-border) mb-6">
-          <button
-            onClick={() => setActiveTab(0)}
-            className={`px-4 py-2 font-medium transition ${
-              activeTab === 0
-                ? 'text-(--color-primary) border-b-2 border-(--color-primary)'
-                : 'text-(--color-text-muted) hover:text-(--color-text-heading)'
-            }`}
+        {request.status === 4 && request.rejectionReason && (
+          <div className="mb-4 flex flex-row items-center gap-2 font-bold">
+            <span className="text-sm ">Λόγος απόρριψης:</span>
+            <span className="text-sm text-(--color-danger)">{request.rejectionReason}</span>
+          </div>
+        )}
+
+        
+
+        <Box className="w-full self-start mb-4">
+          <Tabs
+            value={activeTab}
+            onChange={(_event: SyntheticEvent, nextTab: number) => setActiveTab(nextTab)}
+            variant="fullWidth"
+            textColor="inherit"
+            sx={{ width: "100%" }}
           >
-            Στοιχεία Πωλητή
-          </button>
-          <button
-            onClick={() => setActiveTab(1)}
-            className={`px-4 py-2 font-medium transition ${
-              activeTab === 1
-                ? 'text-(--color-primary) border-b-2 border-(--color-primary)'
-                : 'text-(--color-text-muted) hover:text-(--color-text-heading)'
-            }`}
-          >
-            Συμπληρωμένα Πεδία
-          </button>
-          <button
-            onClick={() => setActiveTab(2)}
-            className={`px-4 py-2 font-medium transition ${
-              activeTab === 2
-                ? 'text-(--color-primary) border-b-2 border-(--color-primary)'
-                : 'text-(--color-text-muted) hover:text-(--color-text-heading)'
-            }`}
-          >
-            Συνημένα Έγγραφα
-          </button>
-        </div>
+            <Tab label="Στοιχεία Πωλητή" />
+            <Tab label="Συμπληρωμένα Πεδία" />
+            <Tab label="Συνημένα Έγγραφα" />
+          </Tabs>
+        </Box>
 
         {activeTab === 0 && (
           <div className="space-y-4 rounded-lg">
@@ -279,42 +288,6 @@ export default function SubmittedRequestDetailedPage() {
           </div>
         )}
 
-        {activeTab === 3 && (
-          <div className="space-y-4 rounded-lg">
-            {request.processedAt || request.notes || request.rejectionReason ? (
-              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
-                {request.processedAt && (
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm font-semibold text-(--color-text-heading)">
-                      Ημερομηνία Επεξεργασίας
-                    </label>
-                    <CustomInputField value={new Date(request.processedAt).toLocaleString("el-GR")} disabled width="100%" />
-                  </div>
-                )}
-                {request.notes && (
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm font-semibold text-(--color-text-heading)">
-                      Σημειώσεις
-                    </label>
-                    <CustomInputField type="TEXTAREA" value={request.notes} disabled width="100%" />
-                  </div>
-                )}
-                {request.rejectionReason && (
-                  <div className="flex flex-col gap-1">
-                    <label className="text-sm font-semibold text-(--color-danger)">
-                      Λόγος Απόρριψης
-                    </label>
-                    <CustomInputField type="TEXTAREA" value={request.rejectionReason} disabled width="100%" />
-                  </div>
-                )}
-              </div>
-            ) : (
-              <p className="text-sm text-(--color-text-muted)">
-                Δεν υπάρχουν σημειώσεις επεξεργασίας.
-              </p>
-            )}
-          </div>
-        )}
 
         
       {isAdmin && (
@@ -374,6 +347,15 @@ export default function SubmittedRequestDetailedPage() {
               },
             });
           }}
+        />
+        <ConfirmActionDialog
+          open={confirmOpen}
+          action={confirmAction}
+          onClose={() => {
+            setConfirmOpen(false);
+            setConfirmAction(null);
+          }}
+          onConfirm={handleConfirmAction}
         />
       </div>
     </div>

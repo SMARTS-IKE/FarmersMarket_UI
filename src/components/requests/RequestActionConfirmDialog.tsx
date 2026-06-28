@@ -3,20 +3,20 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, Button, TextField, T
 
 type Action = "accept" | "reject" | null;
 
-interface ConfirmActionDialogProps {
+interface RequestActionConfirmDialogProps {
   open: boolean;
   action: Action;
   onClose: () => void;
   onConfirm: (reason?: string) => void;
 }
 
-export default function ConfirmActionDialog({ open, action, onClose, onConfirm }: ConfirmActionDialogProps) {
+export default function RequestActionConfirmDialog({ open, action, onClose, onConfirm }: RequestActionConfirmDialogProps) {
   const [reason, setReason] = useState("");
-
-  const title = action === "accept" ? "Επιβεβαίωση αποδοχής" : "Επιβεβαίωση απόρριψης";
 
   const isReject = action === 'reject';
   const isConfirmDisabled = isReject && reason.trim() === '';
+
+  const title = action === "accept" ? "Επιβεβαίωση αποδοχής" : "Επιβεβαίωση απόρριψης";
 
   const handleConfirm = () => {
     if (isReject && reason.trim() === '') return;
@@ -36,7 +36,7 @@ export default function ConfirmActionDialog({ open, action, onClose, onConfirm }
           <Typography>Είστε βέβαιοι ότι θέλετε να εγκρίνετε αυτή την αίτηση;</Typography>
         ) : (
           <>
-            <Typography>Παρακαλώ εισάγετε τον λόγο της απόρριψης (προαιρετικό):</Typography>
+            <Typography>Παρακαλώ εισάγετε τον λόγο της απόρριψης:</Typography>
             <TextField
               value={reason}
               onChange={(e) => setReason(e.target.value)}
