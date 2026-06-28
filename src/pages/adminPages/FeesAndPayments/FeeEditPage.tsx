@@ -19,7 +19,7 @@ export default function FeeEditPage() {
   const [fee, setFee] = useState<FeeRule>({
     name: '',
     description: '',
-    marketId: 0,
+    marketId: null,
     sellerType: '',
     licenseCategory: '',
     amount: 0,
@@ -33,7 +33,7 @@ export default function FeeEditPage() {
   const { data: marketsData } = useMarketsQuery({ name: '', marketType: '' as const, operatingDays: [], page: 1, pageSize: 1000 });
   const markets = marketsData?.items ?? [];
 
-  const marketOptions = useMemo(() => markets.map((m) => ({ label: m.name, value: String(m.id) })), [markets]);
+  const marketOptions = useMemo(() => markets.map((m) => ({ label: m.name, value: m.id })), [markets]);
   const sellerTypeOptions = useMemo(() => Object.entries(SELLER_TYPE_LABELS).map(([value, label]) => ({ label, value })), []);
 
   const { data: fetchedFee, isLoading } = useFeeRuleQuery(feeId as string | number | undefined);
@@ -44,7 +44,7 @@ export default function FeeEditPage() {
     setFee({
       name: fetchedFee.name ?? '',
       description: fetchedFee.description ?? '',
-      marketId: typeof fetchedFee.marketId === 'number' ? fetchedFee.marketId : Number(fetchedFee.marketId ?? 0),
+      marketId: typeof fetchedFee.marketId === 'number' ? fetchedFee.marketId : (fetchedFee.marketId ? Number(fetchedFee.marketId) : null),
       sellerType: fetchedFee.sellerType ?? '',
       licenseCategory: fetchedFee.licenseCategory ?? '',
       amount: fetchedFee.amount ?? 0,
@@ -64,7 +64,7 @@ export default function FeeEditPage() {
     setError(null);
     setSuccess(null);
 
-    if (!fee.name || !fee.marketId || !fee.validFrom || !fee.validTo) {
+    if (!fee.name || fee.marketId == null || !fee.validFrom || !fee.validTo) {
       setError('Παρακαλώ συμπληρώστε όλα τα υποχρεωτικά πεδία.');
       return;
     }
@@ -101,8 +101,8 @@ export default function FeeEditPage() {
               type="DROPDOWN"
               label="Αγορά"
               dropdownItems={marketOptions.map((m) => ({ label: m.label, value: m.value }))}
-              value={fee.marketId ? String(fee.marketId) : ''}
-              onChange={(v) => handleChange('marketId', Number(v))}
+              value={fee.marketId ?? ''}
+              onChange={(v) => handleChange('marketId', (v === '' || v === undefined) ? null : Number(v))}
               validation={{ required: true }}
             />
           </Grid>

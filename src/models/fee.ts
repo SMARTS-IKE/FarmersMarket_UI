@@ -2,7 +2,7 @@ export interface FeeRule {
   id?: string | number; // Optional ID for table identification
   name: string;
   description: string;
-  marketId: number;
+  marketId: number | null;
   sellerType: string;
   licenseCategory: string;
   amount: number;

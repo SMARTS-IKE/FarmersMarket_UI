@@ -260,7 +260,7 @@ export default function CustomInputField({
     },
     // vertically center labels when not shrunk so label overlaps input centered vertically
     "& .MuiInputLabel-root:not(.MuiInputLabel-shrink), & .MuiFormLabel-root:not(.MuiInputLabel-shrink)": {
-      top: '50%',
+      top: '40%',
       transform: 'translate(16px, -50%)',
       pointerEvents: 'none',
     },
@@ -278,6 +278,19 @@ export default function CustomInputField({
       display: 'flex',
       alignItems: 'center',
       pointerEvents: 'auto',
+    },
+    // ensure helper/error text is vertically centered (not baseline-aligned)
+    "& .MuiFormHelperText-root": {
+      display: 'flex',
+      alignItems: 'center',
+      marginTop: '6px',
+      minHeight: '20px',
+    },
+    // move the error helper a bit upward so it sits closer to the input/label
+    "& .MuiFormHelperText-root.Mui-error": {
+      marginTop: '-20px',
+      transform: 'translateY(90%)',
+      marginBottom: '10px',
     },
     "& .MuiSelect-icon": {
       right: 8,
@@ -573,6 +586,7 @@ export default function CustomInputField({
             ...sharedSx,
             ...textareaOverrideSx,
             ...sx,
+            height: 'auto',
           } as any}
         />
       </Box>
