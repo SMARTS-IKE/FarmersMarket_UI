@@ -235,8 +235,8 @@ export default function DataTable<T extends object>({
             </Box>
           )}
 
-      <Paper variant="outlined">
-        <TableContainer>
+      <Paper variant="outlined" sx={{ overflow: 'visible' }}>
+        <TableContainer sx={{ maxHeight: 'none', overflow: 'visible' }}>
           <Table size="small">
             <TableHead sx={{ backgroundColor: 'var(--color-text-muted)', }}>
               <TableRow>

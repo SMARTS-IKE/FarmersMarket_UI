@@ -82,7 +82,7 @@ export default function FilterBar({
   };
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, mb: 2, flexWrap: "wrap" }}>
+    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
       <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap", flex: "1 1 auto", minWidth: 0 }}>
         {customFilters}
         {fields.map((f) => {
@@ -91,8 +91,9 @@ export default function FilterBar({
           const inputType = mapType(f.type);
 
           return (
-            <div key={f.name} style={{ minWidth: 180, flex: '0 0 auto' }}>
+            <div key={f.name} style={{ minWidth: 120, flex: '0 0 auto' }}>
               <CustomInputField
+                width="250px"
                 type={inputType as any}
                 label={f.label}
                 placeholder={f.placeholder}

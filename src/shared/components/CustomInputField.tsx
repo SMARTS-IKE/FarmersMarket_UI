@@ -238,7 +238,7 @@ export default function CustomInputField({
           "& .MuiInputBase-root": {
             borderRadius: 0,
             border: 'none',
-            borderBottom: '1px solid var(--color-border)',
+            borderBottom: '2px solid var(--color-dark)',
             height: 40,
             padding: 0,
             display: 'flex',
@@ -256,7 +256,7 @@ export default function CustomInputField({
             '&:focus': {
               outline: 'none',
               boxShadow: 'none',
-              borderBottom: '1px solid var(--color-border)',
+              borderBottom: '2px solid var(--color-dark)',
             },
           },
                   // Prevent MUI from drawing additional focus outlines/notches
@@ -272,7 +272,7 @@ export default function CustomInputField({
           }),
           "& .MuiInputBase-root": {
             borderRadius: 8,
-            border: '1px solid var(--color-border)',
+            border: '2px solid var(--color-dark)',
             height: 40,
             padding: 0,
             display: 'flex',
@@ -615,14 +615,13 @@ export default function CustomInputField({
   }
 
   if (type === "TEXTAREA") {
-    if (bottomOnly) {
+      if (bottomOnly) {
       const inputId = `custom-textarea-${Math.random().toString(36).slice(2, 9)}`;
-      const hasValue = String(value ?? defaultValue ?? '').length > 0;
       return (
         <Box sx={sharedSx}>
           <Box sx={{ position: 'relative' }}>
             {label && (
-              <label htmlFor={inputId} style={{ position: 'absolute', left: 16, top: nativeFocused || hasValue ? -10 : '10px', transform: nativeFocused || hasValue ? 'translate(0,0) scale(0.85)' : 'translate(0,0)', pointerEvents: 'none', fontWeight: 600, fontSize: nativeFocused || hasValue ? 12 : 14 }}>
+              <label htmlFor={inputId} style={{ position: 'absolute', left: 16, top: -10, transform: 'translate(0,0) scale(0.85)', pointerEvents: 'none', fontWeight: 600, fontSize: 12 }}>
                 {label}
               </label>
             )}
@@ -640,7 +639,7 @@ export default function CustomInputField({
                 minHeight: 80,
                 padding: '8px 16px',
                 border: 'none',
-                borderBottom: '1px solid var(--color-border)',
+                borderBottom: '2px solid var(--color-dark)',
                 background: 'transparent',
                 outline: 'none',
                 fontFamily: 'inherit',
@@ -683,7 +682,7 @@ export default function CustomInputField({
                   "& .MuiInputBase-root": {
                     backgroundColor: 'transparent',
                     border: 'none',
-                    borderBottom: '1px solid var(--color-border)',
+                    borderBottom: '2px solid var(--color-dark)',
                     borderRadius: 0,
                   },
                 }
@@ -718,7 +717,7 @@ export default function CustomInputField({
         <Box sx={sharedSx}>
           <Box sx={{ position: 'relative' }}>
             {label && (
-              <label htmlFor={inputId} style={{ position: 'absolute', left: 16, top: nativeFocused || currentValue !== '' ? -10 : '45%', transform: nativeFocused || currentValue !== '' ? 'translate(0,0) scale(0.85)' : 'translate(0,-50%)', pointerEvents: 'none', fontWeight: 600, fontSize: nativeFocused || currentValue !== '' ? 12 : 14 }}>
+              <label htmlFor={inputId} style={{ position: 'absolute', left: 16, top: -10, transform: 'translate(0,0) scale(0.85)', pointerEvents: 'none', fontWeight: 600, fontSize: 12 }}>
                 {label}
               </label>
             )}
@@ -735,7 +734,7 @@ export default function CustomInputField({
                 height: 40,
                 padding: '8px 16px',
                 border: 'none',
-                borderBottom: '1px solid var(--color-border)',
+                borderBottom: '2px solid var(--color-dark)',
                 background: 'transparent',
                 outline: 'none',
                 fontFamily: 'inherit',
@@ -778,7 +777,7 @@ export default function CustomInputField({
                           "& .MuiOutlinedInput-root": {
                             borderRadius: 0,
                             border: 'none',
-                            borderBottom: '1px solid var(--color-border)',
+                            borderBottom: '2px solid var(--color-dark)',
                             boxShadow: 'none',
                             height: 40,
                             padding: 0,
@@ -798,7 +797,7 @@ export default function CustomInputField({
                       : {
                           "& .MuiOutlinedInput-root": {
                             borderRadius: 8,
-                            border: '1px solid var(--color-border)',
+                            border: '2px solid var(--color-border)',
                             boxShadow: 'none',
                             height: 40,
                             padding: 0,
@@ -814,7 +813,7 @@ export default function CustomInputField({
                           },
                           // ensure the notched outline matches the border
                           "& .MuiOutlinedInput-notchedOutline": {
-                            border: '1px solid var(--color-border)'
+                            border: '2px solid var(--color-border)'
                           },
                         }
                     ),
@@ -847,16 +846,15 @@ export default function CustomInputField({
   if (bottomOnly) {
     // Render a plain native input for bottom-only style to avoid MUI focus artifacts
     const inputId = `custom-input-${Math.random().toString(36).slice(2, 9)}`;
-    const hasValue = String(normalizedDateValue ?? "").length > 0;
     const labelStyle: CSSProperties = {
       position: 'absolute',
       left: prefixIcon ? 40 : 16,
-      top: nativeFocused || hasValue ? -10 : '45%',
-      transform: nativeFocused || hasValue ? 'translate(0, 0) scale(0.85)' : 'translate(0, -50%)',
+      top: -10,
+      transform: 'translate(0,0) scale(0.85)',
       transformOrigin: 'left top',
       fontWeight: 600,
       color: 'rgba(0,0,0,0.6)',
-      fontSize: nativeFocused || hasValue ? '12px' : '14px',
+      fontSize: '12px',
       backgroundColor: 'transparent',
       padding: '0 4px',
       pointerEvents: 'none',
@@ -889,7 +887,7 @@ export default function CustomInputField({
               height: 40,
               padding: prefixIcon ? '8px 16px 8px 40px' : '8px 16px',
               border: 'none',
-              borderBottom: '1px solid var(--color-border)',
+              borderBottom: '2px solid var(--color-dark)',
               background: 'transparent',
               outline: 'none',
               fontFamily: 'inherit',
@@ -906,6 +904,7 @@ export default function CustomInputField({
     <TextField
       variant="outlined"
       label={label}
+      InputLabelProps={{ shrink: true }}
       placeholder={placeholder}
       type={type === "NUMBER" ? "number" : "text"}
       value={normalizedDateValue}

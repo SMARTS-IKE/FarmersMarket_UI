@@ -133,7 +133,7 @@ export default function MarketForm({
   return (
     <Box className="mb-4 flex h-full min-h-0 flex-col gap-6 overflow-y-auto">
       <Box className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        <Box className="lg:col-span-12">
+        <Box className="lg:col-span-12 mt-2">
           <CustomInputField
             type="TEXT"
             label="Όνομα"

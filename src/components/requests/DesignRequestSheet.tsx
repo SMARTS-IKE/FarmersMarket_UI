@@ -30,7 +30,7 @@ export default function DesignRequestSheet() {
   };
 
   return (
-    <div className="flex w-full flex-col gap-4">
+    <div className="flex w-full flex-col">
       <DataTable<RequestSheet>
         rows={rows}
         columns={designRequestColumns}
