@@ -25,7 +25,6 @@ const userRoleValues = Object.entries(USER_ROLE_MAPPING_TITLES).map(([key, value
 
 
 const tableFilters: FilterDef[] = [
-  { title: "name", label: "Όνομα", type: "TEXT" },
   { title: "email", label: "Email", type: "TEXT" },
   {
     title: "role",
@@ -36,7 +35,6 @@ const tableFilters: FilterDef[] = [
 ];
 
 const INITIAL_FILTERS: UserSearchRequest = {
-  name: "",
   email: "",
   role: "",
   status: "",
@@ -107,7 +105,6 @@ export default function AdminUsersPage() {
     });
 
   const tableFilters: FilterDef[] = [
-    { title: "name", label: "Όνομα", type: "TEXT" },
     { title: "email", label: "Email", type: "TEXT" },
     {
       title: "role",

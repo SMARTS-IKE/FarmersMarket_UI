@@ -20,10 +20,10 @@ export const systemAdminTabs: SystemAdminTab[] = [
     title: 'Αρχική Σελίδα',
     description: '',
   },
-  {
+   {
     to: '/admin/users',
-    label: 'Διαχείριση Χρηστών',
-    title: 'Διαχείριση Χρηστών',
+    label: 'Μητρώο Χρηστών',
+    title: 'Μητρώο Χρηστών',
     description: '',
     hasList: true,
   },

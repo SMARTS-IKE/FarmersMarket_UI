@@ -44,6 +44,8 @@ interface CustomInputFieldProps {
   disabled?: boolean;
   backgroundColor?: string;
   width?: number | string;
+  /** When true, render inputs with transparent background and only a bottom border */
+  bottomOnly?: boolean;
   prefixIcon?: React.ReactNode;
   dropdownItems?: DropdownOption[];
   disabledDropdownValues?: Array<string | number>;
@@ -158,6 +160,7 @@ export default function CustomInputField({
   disabled = false,
   backgroundColor,
   width = 240,
+  bottomOnly = true,
   prefixIcon,
   dropdownItems = [],
   disabledDropdownValues = [],
@@ -168,8 +171,10 @@ export default function CustomInputField({
   onBlur,
   sx,
 }: CustomInputFieldProps) {
-  const inputClass =
-    'w-full px-4 py-0 h-10 text-[15px] rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text-heading) placeholder:text-(--color-text-muted) outline-none transition focus:border-(--color-primary) focus:ring-3 focus:ring-(--color-primary-subtle) disabled:opacity-50 disabled:cursor-not-allowed flex items-center';
+  // Keep inputClass empty — styling is provided via MUI `sx` below.
+  // Previous Tailwind-like string contained invalid tokens (e.g. border-(--color-border))
+  // which prevented correct rendering. Use MUI sx rules instead.
+  const inputClass = '';
   const normalizedDateValue = type === "DATE"
     ? toDateInputValue((value ?? defaultValue) as string)
     : (value ?? defaultValue ?? "");
@@ -227,41 +232,76 @@ export default function CustomInputField({
 
   const sharedSx: SxProps<Theme> = {
     width: computedWidth,
-    // Ensure the root input container matches the custom box style
-    ...(backgroundColor && {
-      "& .MuiInputBase-root": { backgroundColor },
-    }),
-    "& .MuiInputBase-root": {
-      borderRadius: 8,
-      border: '1px solid var(--color-border)',
-      height: 40,
-      padding: 0,
-      display: 'flex',
-      alignItems: 'center',
-      position: 'relative',
-      backgroundColor: backgroundColor ?? 'var(--color-bg)'
-    },
-    "& .MuiInputBase-input, & .MuiSelect-select, & input": {
-      height: 40,
-      padding: '0 16px',
-      paddingRight: '40px',
-      display: 'flex',
-      alignItems: 'center',
-      lineHeight: '1',
-      '&:focus': {
-        outline: 'none',
-        boxShadow: 'none',
-        borderBottom: 'none',
-      },
-    },
+    // When bottomOnly is true render transparent background + only bottom border
+    ...(bottomOnly
+      ? {
+          "& .MuiInputBase-root": {
+            borderRadius: 0,
+            border: 'none',
+            borderBottom: '1px solid var(--color-border)',
+            height: 40,
+            padding: 0,
+            display: 'flex',
+            alignItems: 'center',
+            position: 'relative',
+            backgroundColor: 'transparent',
+          },
+          "& .MuiInputBase-input, & .MuiSelect-select, & input": {
+            height: 40,
+            padding: '8px 16px',
+            paddingRight: '40px',
+            display: 'flex',
+            alignItems: 'center',
+            lineHeight: '1',
+            '&:focus': {
+              outline: 'none',
+              boxShadow: 'none',
+              borderBottom: '1px solid var(--color-border)',
+            },
+          },
+                  // Prevent MUI from drawing additional focus outlines/notches
+                  "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": { border: 'none' },
+                  "& .MuiOutlinedInput-root.Mui-focused": { boxShadow: 'none' },
+                  "& .MuiInputBase-root.Mui-focused": { boxShadow: 'none' },
+                  "& .MuiInputBase-input:focus": { outline: 'none', boxShadow: 'none' },
+        }
+      : {
+          // Ensure the root input container matches the custom box style
+          ...(backgroundColor && {
+            "& .MuiInputBase-root": { backgroundColor },
+          }),
+          "& .MuiInputBase-root": {
+            borderRadius: 8,
+            border: '1px solid var(--color-border)',
+            height: 40,
+            padding: 0,
+            display: 'flex',
+            alignItems: 'center',
+            position: 'relative',
+            backgroundColor: backgroundColor ?? 'var(--color-bg)',
+          },
+          "& .MuiInputBase-input, & .MuiSelect-select, & input": {
+            height: 40,
+            padding: '0 16px',
+            paddingRight: '40px',
+            display: 'flex',
+            alignItems: 'center',
+            lineHeight: '1',
+            '&:focus': {
+              outline: 'none',
+              boxShadow: 'none',
+              borderBottom: 'none',
+            },
+          },
+        }),
     // ensure placeholder text is left-aligned
     "& .MuiOutlinedInput-input::placeholder, & .MuiInputBase-input::placeholder, & input::placeholder": {
       textAlign: 'left',
     },
     // vertically center labels when not shrunk so label overlaps input centered vertically
     "& .MuiInputLabel-root:not(.MuiInputLabel-shrink), & .MuiFormLabel-root:not(.MuiInputLabel-shrink)": {
-      top: '40%',
-      transform: 'translate(16px, -50%)',
+      top: bottomOnly ? '45%' : '40%',
+      transform: bottomOnly ? 'translate(16px, -50%)' : 'translate(16px, -50%)',
       pointerEvents: 'none',
     },
     // ensure shrunk label uses default small transform (include FormLabel)
@@ -302,6 +342,17 @@ export default function CustomInputField({
       outline: 'none',
       boxShadow: 'none'
     },
+    // Aggressively disable MUI focus pseudo-elements/outlines that can draw
+    // an extra underline or outline on focus. This targets underline pseudo
+    // elements and notched outlines across Input/OutlinedInput/Select.
+    "& .MuiInput-underline:before, & .MuiInput-underline:after, & .MuiInputBase-root:before, & .MuiInputBase-root:after, & .MuiOutlinedInput-root:before, & .MuiOutlinedInput-root:after, & .MuiOutlinedInput-notchedOutline": {
+      border: 'none',
+      borderBottom: 'none',
+      display: 'none',
+    },
+    // Remove any residual focus shadows/outlines on focused elements
+    "& .Mui-focused, & .Mui-focused *": { boxShadow: 'none', outline: 'none' },
+    "& input:focus, & textarea:focus, & .MuiInputBase-input:focus": { outline: 'none', boxShadow: 'none' },
     ...focusSx,
     ...placeholderSx,
     ...labelSx,
@@ -329,10 +380,16 @@ export default function CustomInputField({
     "& .MuiSelect-root:after": { borderBottom: 'none' },
     "& .MuiFormControl-root .MuiInput-underline:before": { borderBottom: 'none' },
     "& .MuiFormControl-root .MuiInput-underline:after": { borderBottom: 'none' },
-    "& .MuiOutlinedInput-notchedOutline": { border: 'none' },
-    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": { border: 'none' },
-    "& .MuiInputBase-root.Mui-focused:before": { borderBottom: 'none' },
-    "& .MuiInputBase-root.Mui-focused:after": { borderBottom: 'none' },
+    "& .MuiOutlinedInput-notchedOutline": { border: 'none !important', display: 'none !important' },
+    "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": { border: 'none !important', display: 'none !important' },
+    // Also remove any ::before/::after pseudo underlines used by MUI variants
+    "& .MuiOutlinedInput-root::before, & .MuiOutlinedInput-root::after, & .MuiInput-root::before, & .MuiInput-root::after, & .MuiInput-underline:before, & .MuiInput-underline:after": {
+      border: 'none !important',
+      display: 'none !important',
+      boxShadow: 'none !important',
+    },
+    "& .MuiInputBase-root.Mui-focused:before": { borderBottom: 'none !important' },
+    "& .MuiInputBase-root.Mui-focused:after": { borderBottom: 'none !important' },
     "& .MuiSelect-select:focus": { backgroundColor: 'transparent' },
   };
 
@@ -341,6 +398,7 @@ export default function CustomInputField({
 
   const [dropdownOpen, setDropdownOpen] = useState(false);
   const [multiOpen, setMultiOpen] = useState(false);
+  const [nativeFocused, setNativeFocused] = useState(false);
 
   const dropdownMenuProps = {
     slotProps: {
@@ -402,7 +460,7 @@ export default function CustomInputField({
           onChange={(e) => onChange?.(e.target.value as string[])}
           onBlur={onBlur}
           MenuProps={dropdownMenuProps}
-          input={<Input className={inputClass} />}
+          input={<Input className={inputClass} disableUnderline />}
           IconComponent={() => null}
           endAdornment={
             <InputAdornment
@@ -448,9 +506,9 @@ export default function CustomInputField({
             );
           }}
           sx={{
-            "&:before": { borderBottom: 'none' },
-            "&:hover:not(.Mui-disabled):before": { borderBottom: 'none' },
-            "&:after": { borderBottom: 'none' },
+            "& .MuiInput-underline:before, & .MuiInput-underline:after": { borderBottom: 'none !important', display: 'none !important' },
+            "& .MuiSelect-select:focus": { outline: 'none', boxShadow: 'none' },
+            "& .MuiOutlinedInput-notchedOutline": { border: 'none !important', display: 'none !important' },
             ...sx,
           } as any}
         >
@@ -523,13 +581,19 @@ export default function CustomInputField({
               <InputAdornment position="start">{prefixIcon}</InputAdornment>
             ) : undefined
           }
-          input={<Input className={inputClass} />}
+          input={<Input className={inputClass} disableUnderline />}
           renderValue={(selected) => {
             const sel = selected as string | number | undefined;
             if (sel === undefined || sel === "") return <em>{placeholder ?? "Επιλέξτε…"}</em>;
             const found = dropdownItems.find((d) => d.value == sel);
             return found ? String(found.label) : String(sel);
           }}
+          sx={{
+            "& .MuiInput-underline:before, & .MuiInput-underline:after": { borderBottom: 'none !important', display: 'none !important' },
+            "& .MuiSelect-select:focus": { outline: 'none', boxShadow: 'none' },
+            "& .MuiOutlinedInput-notchedOutline": { border: 'none !important', display: 'none !important' },
+            ...sx,
+          } as any}
         >
           <MenuItem value="" sx={dropdownMenuItemSx}>
             <em>Επιλέξτε…</em>
@@ -551,6 +615,44 @@ export default function CustomInputField({
   }
 
   if (type === "TEXTAREA") {
+    if (bottomOnly) {
+      const inputId = `custom-textarea-${Math.random().toString(36).slice(2, 9)}`;
+      const hasValue = String(value ?? defaultValue ?? '').length > 0;
+      return (
+        <Box sx={sharedSx}>
+          <Box sx={{ position: 'relative' }}>
+            {label && (
+              <label htmlFor={inputId} style={{ position: 'absolute', left: 16, top: nativeFocused || hasValue ? -10 : '10px', transform: nativeFocused || hasValue ? 'translate(0,0) scale(0.85)' : 'translate(0,0)', pointerEvents: 'none', fontWeight: 600, fontSize: nativeFocused || hasValue ? 12 : 14 }}>
+                {label}
+              </label>
+            )}
+            <textarea
+              id={inputId}
+              value={value ?? defaultValue ?? ''}
+              onChange={(e) => onChange?.(e.target.value)}
+              onFocus={() => setNativeFocused(true)}
+              onBlur={() => { setNativeFocused(false); onBlur?.(); }}
+              disabled={disabled}
+              placeholder={placeholder}
+              rows={3}
+              style={{
+                width: '100%',
+                minHeight: 80,
+                padding: '8px 16px',
+                border: 'none',
+                borderBottom: '1px solid var(--color-border)',
+                background: 'transparent',
+                outline: 'none',
+                fontFamily: 'inherit',
+                resize: 'vertical',
+              }}
+            />
+          </Box>
+          {internalError && <FormHelperText error>{internalError}</FormHelperText>}
+        </Box>
+      );
+    }
+
     return (
       <Box sx={sharedSx}>
         <TextField
@@ -576,12 +678,27 @@ export default function CustomInputField({
             },
           }}
           sx={{
-            ...(backgroundColor && {
-              "& .MuiInputBase-root": { backgroundColor },
-            }),
+            ...(bottomOnly
+              ? {
+                  "& .MuiInputBase-root": {
+                    backgroundColor: 'transparent',
+                    border: 'none',
+                    borderBottom: '1px solid var(--color-border)',
+                    borderRadius: 0,
+                  },
+                }
+              : {
+                  ...(backgroundColor && {
+                    "& .MuiInputBase-root": { backgroundColor },
+                  }),
+                }),
             ...placeholderSx,
             ...labelSx,
-            "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-dark)" },
+            ...(bottomOnly
+              ? {
+                  "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": { border: 'none' },
+                }
+              : { "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "var(--color-dark)" } }),
             "& .MuiFormLabel-root.Mui-focused": { color: "var(--color-dark)" },
             ...sharedSx,
             ...textareaOverrideSx,
@@ -594,6 +711,42 @@ export default function CustomInputField({
   }
 
   if (type === "DATE") {
+    if (bottomOnly) {
+      const inputId = `custom-date-${Math.random().toString(36).slice(2, 9)}`;
+      const currentValue = toDateInputValue(value ?? defaultValue);
+      return (
+        <Box sx={sharedSx}>
+          <Box sx={{ position: 'relative' }}>
+            {label && (
+              <label htmlFor={inputId} style={{ position: 'absolute', left: 16, top: nativeFocused || currentValue !== '' ? -10 : '45%', transform: nativeFocused || currentValue !== '' ? 'translate(0,0) scale(0.85)' : 'translate(0,-50%)', pointerEvents: 'none', fontWeight: 600, fontSize: nativeFocused || currentValue !== '' ? 12 : 14 }}>
+                {label}
+              </label>
+            )}
+            <input
+              id={inputId}
+              type="date"
+              value={currentValue}
+              onChange={(e) => onChange?.(e.target.value)}
+              onFocus={() => setNativeFocused(true)}
+              onBlur={() => { setNativeFocused(false); onBlur?.(); }}
+              disabled={disabled}
+              style={{
+                width: '100%',
+                height: 40,
+                padding: '8px 16px',
+                border: 'none',
+                borderBottom: '1px solid var(--color-border)',
+                background: 'transparent',
+                outline: 'none',
+                fontFamily: 'inherit',
+              }}
+            />
+          </Box>
+          {internalError && <FormHelperText error>{internalError}</FormHelperText>}
+        </Box>
+      );
+    }
+
     return (
       <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={el}>
         <DatePicker
@@ -619,38 +772,61 @@ export default function CustomInputField({
               error: !!internalError,
               helperText: internalError,
               onBlur,
-              sx: {
-                ...sharedSx,
-                "& .MuiOutlinedInput-root": {
-                  borderRadius: 8,
-                  border: '1px solid var(--color-border)',
-                  boxShadow: 'none',
-                  height: 40,
-                  padding: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  backgroundColor: backgroundColor ?? 'var(--color-bg)'
-                },
-                "& .MuiOutlinedInput-input": {
-                  height: 40,
-                  padding: '0 16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                },
-                // ensure the notched outline matches the border
-                "& .MuiOutlinedInput-notchedOutline": {
-                  border: '1px solid var(--color-border)'
-                },
-                "& .MuiInputAdornment-root": {
-                  margin: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                },
-                "& .MuiSvgIcon-root": { fontSize: '20px' },
-                "& .MuiInput-underline:before": { borderBottom: 'none' },
-                "& .MuiInput-underline:after": { borderBottom: 'none' },
-                // (removed duplicate notchedOutline override)
-              } as any,
+                  sx: ({ ...sharedSx,
+                    ...(bottomOnly
+                      ? {
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 0,
+                            border: 'none',
+                            borderBottom: '1px solid var(--color-border)',
+                            boxShadow: 'none',
+                            height: 40,
+                            padding: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            backgroundColor: 'transparent',
+                          },
+                          "& .MuiOutlinedInput-input": {
+                            height: 40,
+                            padding: '8px 16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                          },
+                          // ensure the notched outline does not draw
+                          "& .MuiOutlinedInput-notchedOutline": { border: 'none' },
+                        }
+                      : {
+                          "& .MuiOutlinedInput-root": {
+                            borderRadius: 8,
+                            border: '1px solid var(--color-border)',
+                            boxShadow: 'none',
+                            height: 40,
+                            padding: 0,
+                            display: 'flex',
+                            alignItems: 'center',
+                            backgroundColor: backgroundColor ?? 'var(--color-bg)'
+                          },
+                          "& .MuiOutlinedInput-input": {
+                            height: 40,
+                            padding: '0 16px',
+                            display: 'flex',
+                            alignItems: 'center',
+                          },
+                          // ensure the notched outline matches the border
+                          "& .MuiOutlinedInput-notchedOutline": {
+                            border: '1px solid var(--color-border)'
+                          },
+                        }
+                    ),
+                    "& .MuiInputAdornment-root": {
+                      margin: 0,
+                      display: 'flex',
+                      alignItems: 'center',
+                    },
+                    "& .MuiSvgIcon-root": { fontSize: '20px' },
+                    "& .MuiInput-underline:before": { borderBottom: 'none' },
+                    "& .MuiInput-underline:after": { borderBottom: 'none' },
+                  } as any),
               slotProps: {
                 inputLabel: { shrink: true },
                 input: {
@@ -665,6 +841,64 @@ export default function CustomInputField({
           }}
         />
       </LocalizationProvider>
+    );
+  }
+
+  if (bottomOnly) {
+    // Render a plain native input for bottom-only style to avoid MUI focus artifacts
+    const inputId = `custom-input-${Math.random().toString(36).slice(2, 9)}`;
+    const hasValue = String(normalizedDateValue ?? "").length > 0;
+    const labelStyle: CSSProperties = {
+      position: 'absolute',
+      left: prefixIcon ? 40 : 16,
+      top: nativeFocused || hasValue ? -10 : '45%',
+      transform: nativeFocused || hasValue ? 'translate(0, 0) scale(0.85)' : 'translate(0, -50%)',
+      transformOrigin: 'left top',
+      fontWeight: 600,
+      color: 'rgba(0,0,0,0.6)',
+      fontSize: nativeFocused || hasValue ? '12px' : '14px',
+      backgroundColor: 'transparent',
+      padding: '0 4px',
+      pointerEvents: 'none',
+    };
+
+    return (
+      <Box sx={sharedSx}>
+        <Box sx={{ position: 'relative' }}>
+          {label && (
+            <label htmlFor={inputId} style={labelStyle}>
+              {label}
+            </label>
+          )}
+          {prefixIcon && (
+            <InputAdornment position="start" sx={{ position: 'absolute', left: 8, top: '50%', transform: 'translateY(-50%)' }}>
+              {prefixIcon}
+            </InputAdornment>
+          )}
+          <input
+            id={inputId}
+            value={normalizedDateValue as string}
+            onChange={(e) => onChange?.(e.target.value)}
+            onBlur={(e) => { setNativeFocused(false); onBlur?.(); }}
+            onFocus={() => setNativeFocused(true)}
+            disabled={disabled}
+            placeholder={placeholder}
+            type={type === 'NUMBER' ? 'number' : 'text'}
+            style={{
+              width: '100%',
+              height: 40,
+              padding: prefixIcon ? '8px 16px 8px 40px' : '8px 16px',
+              border: 'none',
+              borderBottom: '1px solid var(--color-border)',
+              background: 'transparent',
+              outline: 'none',
+              fontFamily: 'inherit',
+              fontSize: '0.95rem',
+            }}
+          />
+        </Box>
+        {internalError && <FormHelperText error>{internalError}</FormHelperText>}
+      </Box>
     );
   }
 
@@ -691,7 +925,20 @@ export default function CustomInputField({
           ) : undefined,
         },
       }}
-      sx={sharedSx as any}
+      sx={{
+        // apply shared styles then add textfield-specific focus overrides
+        ...sharedSx,
+        // Target the OutlinedInput root to remove any notched outline / pseudo-elements
+        "& .MuiOutlinedInput-root": {
+          "& .MuiOutlinedInput-notchedOutline": { border: 'none', display: 'none' },
+          "&::before, &::after": { border: 'none', display: 'none' },
+          "&.Mui-focused": { boxShadow: 'none', outline: 'none' },
+        },
+        // Ensure the input itself has no native focus outline/shadow
+        "& input": { outline: 'none', boxShadow: 'none' },
+        // Also ensure helper text/focus color doesn't introduce borders
+        "& .MuiFormHelperText-root": { boxShadow: 'none' },
+      } as any}
     />
   );
 }

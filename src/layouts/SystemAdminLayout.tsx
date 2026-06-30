@@ -1,14 +1,13 @@
-import { Link, Outlet, useLocation, useNavigate } from '@tanstack/react-router';
+import { Outlet, useLocation } from '@tanstack/react-router';
+import { router } from '../routers/router';
 import { useState } from 'react';
 import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import UserCircleIcon from '@mui/icons-material/AccountCircleOutlined';
-import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
-import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import logo02 from '../assets/logo-02.svg';
-import logo03 from '../assets/logo-03.svg';
-import { getSystemAdminTab, systemAdminTabs } from '../lib/systemAdminTabs';
+import { getSystemAdminTab } from '../lib/systemAdminTabs';
+import Sidebar from '../shared/components/Sidebar';
 import { useAuthStore } from '../store/authStore';
 import { LayoutSlotProvider, useLayoutSlot } from '../lib/layoutSlotContext';
 
@@ -24,7 +23,7 @@ export default function SystemAdminLayout() {
 
 function SystemAdminLayoutInner() {
   const location = useLocation();
-  const navigate = useNavigate();
+  // use router.navigate directly to ensure navigation succeeds from layouts
   const { user, email, clearAuth } = useAuthStore();
   const activeTab = getSystemAdminTab(location.pathname);
   const { filterSlot, tabSlot } = useLayoutSlot();
@@ -33,7 +32,7 @@ function SystemAdminLayoutInner() {
 
   function handleLogout() {
     clearAuth();
-    navigate({ to: '/auth/login' });
+    void router.navigate({ to: '/auth/login' });
   }
 
   return (
@@ -87,35 +86,7 @@ function SystemAdminLayoutInner() {
         </header>
 
         <div className="flex flex-1 items-stretch gap-px bg-(--color-border-subtle)">
-          <aside className={`relative z-10 flex flex-col gap-4 bg-(--color-bg-subtle) p-3 transition-all ${collapsed ? 'w-20' : 'w-72'}`}>
-            <div className="flex items-center justify-end">
-              <IconButton aria-label="toggle_menu" onClick={() => setCollapsed((s) => !s)} size="small">
-                {collapsed ? <MenuRoundedIcon /> : <CloseRoundedIcon />}
-              </IconButton>
-            </div>
-
-            <div className="mt-2 flex flex-1 flex-col gap-1">
-              {systemAdminTabs.map((tab) => {
-                const isActive = activeTab.to === tab.to;
-
-                return (
-                  <Link
-                    key={tab.to}
-                    to={tab.to}
-                    className={`flex items-center gap-3 rounded px-3 py-2 text-sm transition font-medium ${isActive ? 'bg-(--color-text-muted) text-(--color-surface) border border-(--color-border) font-bold' : 'text-(--color-text) hover:bg-(--color-primary-subtle)'} `}
-                  >
-                    <span className="truncate">{!collapsed ? tab.label : tab.label.charAt(0)}</span>
-                  </Link>
-                );
-              })}
-            </div>
-
-            {!collapsed && (
-              <div className="mt-auto">
-                <img src={logo03} alt="Farmers Market emblem" className="h-auto w-full object-contain" />
-              </div>
-            )}
-          </aside>
+          <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} activeTab={activeTab} />
 
           <main className={`flex-1 min-w-0 flex h-full min-h-0 flex-col bg-(--color-surface) p-5 md:p-7 transition-all`}>
             {(tabSlot || filterSlot) && (
