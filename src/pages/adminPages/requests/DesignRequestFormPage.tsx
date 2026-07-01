@@ -88,13 +88,30 @@ export default function DesignRequestFormPage() {
         ? Math.max(...mappedDynamicFields.map((field) => field.id)) + 1
         : 1;
 
+    // Map any server-provided "other" or "documentRequirements" into requiredDocuments
+    const otherRaw = (requestForm as any).other ?? (requestForm as any).documentRequirements ?? [];
+    const mappedRequiredDocuments: any[] = Array.isArray(otherRaw)
+      ? otherRaw.map((d: any) => ({
+          id: Number(d.id),
+          title: d.label ?? d.title ?? String(d.id),
+          isRequired: Boolean(d.isRequired),
+        }))
+      : [];
+
+    const nextMappedDocumentId =
+      mappedRequiredDocuments.length > 0
+        ? Math.max(...mappedRequiredDocuments.map((d) => d.id)) + 1
+        : 1;
+
     setDraft((prev) => ({
       ...prev,
       title: requestForm.title,
       description: requestForm.description,
       dynamicFields: mappedDynamicFields.length > 0 ? mappedDynamicFields : prev.dynamicFields,
+      requiredDocuments: mappedRequiredDocuments.length > 0 ? mappedRequiredDocuments : prev.requiredDocuments,
     }));
     setNextFieldId(nextMappedFieldId);
+    setNextDocumentId(nextMappedDocumentId);
     setIsEditDraftInitialized(true);
   }, [isEditMode, isEditDraftInitialized, requestFormId, requestFormsData]);
 

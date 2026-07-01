@@ -187,6 +187,8 @@ export default function CustomInputField({
 
   const computedWidth = (width === 240 && (type === "DROPDOWN" || type === "MULTI_SELECT")) ? 320 : width;
 
+  const labelFontSize = type === "TEXT" ? '15px' : '12px';
+
   const focusSx: SxProps<Theme> = {
     "& .MuiFormLabel-root.Mui-focused": { color: "var(--color-dark)" },
   };
@@ -201,7 +203,14 @@ export default function CustomInputField({
 
   const labelSx: SxProps<Theme> = {
     "& .MuiInputLabel-root, & .MuiFormLabel-root": {
+      position: 'absolute',
+      top: '-10px',
+      left: '-4px',
+      zIndex: 1000,
       fontWeight: 600,
+      color: 'rgba(0, 0, 0, 0.6)',
+      fontSize: '12px',
+      fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
     },
   };
 
@@ -246,19 +255,21 @@ export default function CustomInputField({
             position: 'relative',
             backgroundColor: 'transparent',
           },
-          "& .MuiInputBase-input, & .MuiSelect-select, & input": {
+          "& .MuiInputBase-input:not(.MuiSelect-select), & .MuiOutlinedInput-input:not(.MuiSelect-select), & input:not(.MuiSelect-select), & textarea": {
             height: 40,
             padding: '8px 16px',
             paddingRight: '40px',
             display: 'flex',
             alignItems: 'center',
             lineHeight: '1',
+            fontSize: 'inherit',
             '&:focus': {
               outline: 'none',
               boxShadow: 'none',
               borderBottom: '2px solid var(--color-dark)',
             },
           },
+          "& .MuiSelect-select": { fontSize: '14px' },
                   // Prevent MUI from drawing additional focus outlines/notches
                   "& .MuiOutlinedInput-root.Mui-focused .MuiOutlinedInput-notchedOutline": { border: 'none' },
                   "& .MuiOutlinedInput-root.Mui-focused": { boxShadow: 'none' },
@@ -280,19 +291,21 @@ export default function CustomInputField({
             position: 'relative',
             backgroundColor: backgroundColor ?? 'var(--color-bg)',
           },
-          "& .MuiInputBase-input, & .MuiSelect-select, & input": {
+          "& .MuiInputBase-input:not(.MuiSelect-select), & .MuiOutlinedInput-input:not(.MuiSelect-select), & input:not(.MuiSelect-select), & textarea": {
             height: 40,
             padding: '0 16px',
             paddingRight: '40px',
             display: 'flex',
             alignItems: 'center',
             lineHeight: '1',
+            fontSize: 'inherit',
             '&:focus': {
               outline: 'none',
               boxShadow: 'none',
               borderBottom: 'none',
             },
           },
+          "& .MuiSelect-select": { fontSize: '14px' },
         }),
     // ensure placeholder text is left-aligned
     "& .MuiOutlinedInput-input::placeholder, & .MuiInputBase-input::placeholder, & input::placeholder": {
@@ -302,11 +315,15 @@ export default function CustomInputField({
     "& .MuiInputLabel-root:not(.MuiInputLabel-shrink), & .MuiFormLabel-root:not(.MuiInputLabel-shrink)": {
       top: bottomOnly ? '45%' : '40%',
       transform: bottomOnly ? 'translate(16px, -50%)' : 'translate(16px, -50%)',
+      fontSize: 'inherit',
+      fontFamily: 'inherit',
       pointerEvents: 'none',
     },
     // ensure shrunk label uses default small transform (include FormLabel)
     "& .MuiInputLabel-root.MuiInputLabel-shrink, & .MuiFormLabel-root.MuiInputLabel-shrink": {
-      transform: 'translate(16px, -9px) scale(0.75)'
+      transform: 'translate(16px, -9px) scale(1)',
+      fontSize: labelFontSize,
+      fontFamily: 'Roboto, Helvetica, Arial, sans-serif',
     },
     // place adornments inside the input box on the right
     "& .MuiInputAdornment-root": {
@@ -318,13 +335,6 @@ export default function CustomInputField({
       display: 'flex',
       alignItems: 'center',
       pointerEvents: 'auto',
-    },
-    // ensure helper/error text is vertically centered (not baseline-aligned)
-    "& .MuiFormHelperText-root": {
-      display: 'flex',
-      alignItems: 'center',
-      marginTop: '6px',
-      minHeight: '20px',
     },
     // move the error helper a bit upward so it sits closer to the input/label
     "& .MuiFormHelperText-root.Mui-error": {
@@ -341,6 +351,17 @@ export default function CustomInputField({
       backgroundColor: 'transparent',
       outline: 'none',
       boxShadow: 'none'
+    },
+    // Ensure native date inputs and their picker icons match the input text color
+    "& input[type='date']": {
+      color: 'var(--color-dark)'
+    },
+    "& input[type='date']::-webkit-calendar-picker-indicator": {
+      /* Make the calendar icon dark to match input text. */
+      filter: 'invert(1) grayscale(1)',
+      opacity: 1,
+      // Ensure the indicator uses the theme dark color where possible
+      color: 'var(--color-dark)'
     },
     // Aggressively disable MUI focus pseudo-elements/outlines that can draw
     // an extra underline or outline on focus. This targets underline pseudo
@@ -362,11 +383,10 @@ export default function CustomInputField({
   const customLabelSx: CSSProperties = {
     position: "absolute",
     top: '-10px',
-    left: '15px',
     zIndex: 1000,
     fontWeight: 600,
     color: 'rgba(0, 0, 0, 0.6)',
-    fontSize: '12px',
+    fontSize: labelFontSize,
     fontFamily: "Roboto, Helvetica, Arial, sans-serif",
   };
 
@@ -431,7 +451,7 @@ export default function CustomInputField({
     "&.Mui-selected": {
       backgroundColor: "#C4B5A0",
       color: "#ffffff",
-      fontWeight: 700,
+      fontSize: labelFontSize,
     },
     "&.Mui-selected:hover": {
       backgroundColor: "#ECE5DC",
@@ -615,13 +635,26 @@ export default function CustomInputField({
   }
 
   if (type === "TEXTAREA") {
+     const labelStyle: CSSProperties = {
+      position: 'absolute',
+      left: -4,
+      top: -12,
+      transform: 'translate(0,0) scale(0.85)',
+      transformOrigin: 'left top',
+      fontWeight: 600,
+      color: 'rgba(0,0,0,0.6)',
+      fontSize: '15px',
+      backgroundColor: 'transparent',
+      padding: '0 4px',
+      pointerEvents: 'none',
+    };
       if (bottomOnly) {
       const inputId = `custom-textarea-${Math.random().toString(36).slice(2, 9)}`;
       return (
         <Box sx={sharedSx}>
           <Box sx={{ position: 'relative' }}>
             {label && (
-              <label htmlFor={inputId} style={{ position: 'absolute', left: 16, top: -10, transform: 'translate(0,0) scale(0.85)', pointerEvents: 'none', fontWeight: 600, fontSize: 12 }}>
+              <label htmlFor={inputId} style={labelStyle}>
                 {label}
               </label>
             )}
@@ -637,7 +670,7 @@ export default function CustomInputField({
               style={{
                 width: '100%',
                 minHeight: 80,
-                padding: '8px 16px',
+                padding: '8px 0',
                 border: 'none',
                 borderBottom: '2px solid var(--color-dark)',
                 background: 'transparent',
@@ -710,6 +743,20 @@ export default function CustomInputField({
   }
 
   if (type === "DATE") {
+     const labelStyle: CSSProperties = {
+      position: 'absolute',
+      left: '-2px',
+      top: -10,
+      transform: 'translate(0,0) scale(0.85)',
+      transformOrigin: 'left top',
+      fontWeight: 600,
+      color: 'rgba(0,0,0,0.6)',
+      fontSize: '15px',
+      backgroundColor: 'transparent',
+      padding: '0 4px',
+      pointerEvents: 'none',
+    };
+
     if (bottomOnly) {
       const inputId = `custom-date-${Math.random().toString(36).slice(2, 9)}`;
       const currentValue = toDateInputValue(value ?? defaultValue);
@@ -717,7 +764,7 @@ export default function CustomInputField({
         <Box sx={sharedSx}>
           <Box sx={{ position: 'relative' }}>
             {label && (
-              <label htmlFor={inputId} style={{ position: 'absolute', left: 16, top: -10, transform: 'translate(0,0) scale(0.85)', pointerEvents: 'none', fontWeight: 600, fontSize: 12 }}>
+              <label htmlFor={inputId} style={labelStyle}>
                 {label}
               </label>
             )}
@@ -732,11 +779,12 @@ export default function CustomInputField({
               style={{
                 width: '100%',
                 height: 40,
-                padding: '8px 16px',
+                padding: '8px 0',
                 border: 'none',
                 borderBottom: '2px solid var(--color-dark)',
                 background: 'transparent',
                 outline: 'none',
+                color: 'var(--color-dark)',
                 fontFamily: 'inherit',
               }}
             />
@@ -822,7 +870,7 @@ export default function CustomInputField({
                       display: 'flex',
                       alignItems: 'center',
                     },
-                    "& .MuiSvgIcon-root": { fontSize: '20px' },
+                    "& .MuiSvgIcon-root": { fontSize: '20px', color: 'var(--color-dark)' },
                     "& .MuiInput-underline:before": { borderBottom: 'none' },
                     "& .MuiInput-underline:after": { borderBottom: 'none' },
                   } as any),
@@ -848,13 +896,13 @@ export default function CustomInputField({
     const inputId = `custom-input-${Math.random().toString(36).slice(2, 9)}`;
     const labelStyle: CSSProperties = {
       position: 'absolute',
-      left: prefixIcon ? 40 : 16,
+      left: prefixIcon ? 40 : '-4px',
       top: -10,
       transform: 'translate(0,0) scale(0.85)',
       transformOrigin: 'left top',
       fontWeight: 600,
       color: 'rgba(0,0,0,0.6)',
-      fontSize: '12px',
+      fontSize: '15px',
       backgroundColor: 'transparent',
       padding: '0 4px',
       pointerEvents: 'none',
@@ -885,7 +933,7 @@ export default function CustomInputField({
             style={{
               width: '100%',
               height: 40,
-              padding: prefixIcon ? '8px 16px 8px 40px' : '8px 16px',
+              padding: prefixIcon ? '8px 16px 8px 40px' : '8px 0px',
               border: 'none',
               borderBottom: '2px solid var(--color-dark)',
               background: 'transparent',
