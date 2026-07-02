@@ -1,0 +1,61 @@
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
+import UserCircleIcon from '@mui/icons-material/AccountCircleOutlined';
+import logo02 from '../assets/logo-02.svg';
+
+type Props = {
+  onLogout: () => void;
+  onAccountClick?: () => void;
+};
+
+export default function SystemAdminHeader({ onLogout, onAccountClick }: Props) {
+  return (
+    <header className="relative z-20 border-b-4 border-[#ef4123] bg-[#C4B5A0] px-4 md:px-6">
+      <div className="flex items-center justify-between gap-4 py-2 xl:py-0">
+        <div className="flex items-center gap-4">
+          <img src={logo02} alt="Farmers Market logo" className="h-auto max-h-[70px] w-auto rounded-lg object-contain xl:max-h-[88px]" />
+          <div className="flex flex-col items-start leading-tight">
+            <p className="text-base font-bold text-(--color-text) whitespace-nowrap">Πλατφόρμα Διαχείρισης</p>
+            <p className="text-sm text-(--color-text)">Λαϊκών Αγορών</p>
+          </div>
+        </div>
+
+        <div className="flex items-center justify-end pr-6">
+          <Tooltip title="Διαχείριση λογαριασμού">
+            <IconButton
+              aria-label="account_circle"
+              onClick={onAccountClick}
+              sx={{
+                width: 32,
+                height: 32,
+                color: '#3D2817',
+                '&:hover': {
+                  backgroundColor: 'rgba(61, 40, 23, 0.1)',
+                },
+              }}
+            >
+              <UserCircleIcon />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Αποσύνδεση">
+            <IconButton
+              aria-label="logout"
+              onClick={onLogout}
+              sx={{
+                width: 32,
+                height: 32,
+                color: '#3D2817',
+                '&:hover': {
+                  backgroundColor: 'rgba(61, 40, 23, 0.1)',
+                },
+              }}
+            >
+              <LogoutRoundedIcon />
+            </IconButton>
+          </Tooltip>
+        </div>
+      </div>
+    </header>
+  );
+}

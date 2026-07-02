@@ -50,48 +50,29 @@ function createConnectedSellerColumns(
 ): ColumnDef<Record<string, unknown>>[] {
 
   return [
-  { key: "firstName", label: "Όνομα" },
-  { key: "lastName", label: "Επώνυμο" },
-  {
-    key: "sellerType",
-    label: "Τύπος",
-    filterable: false,
-    render: (row) => {
-      const type = Number(row.sellerType ?? 0);
-      return SELLER_TYPE_LABELS[type] ?? "—";
-    },
-  },
   {
     key: "spotNumber",
     label: "Αριθμός θέσης",
     filterable: false,
     render: (row) => String(row.spotNumber ?? "—"),
   },
+  { key: "firstName", label: "Όνομα" },
+  { key: "lastName", label: "Επώνυμο" },
   {
-    key: "spotLength",
-    label: "Μήκος θέσης",
-    filterable: false,
-    render: (row) => String(row.spotLength ?? "—"),
-  },
-  {
-    key: "licenseStatus",
-    label: "Κατάσταση Αδείας",
+    key: "sellerType",
+    label: "Τύπος Πωλητή",
     filterable: false,
     render: (row) => {
-      const statusKey = String(row.licenseStatusKey ?? "unknown");
-      const statusConfig = LICENSE_STATUS_CONFIG[statusKey] ?? LICENSE_STATUS_CONFIG.unknown;
-
-      return (
-        <span
-          style={{
-            color: statusConfig.color,
-            fontWeight: 700,
-          }}
-        >
-          {statusConfig.label}
-        </span>
-      );
+      const type = Number(row.sellerType ?? 0);
+      return SELLER_TYPE_LABELS[type] ?? "—";
     },
+  },
+ 
+  {
+    key: "spotLength",
+    label: "Μήκος θέσης (μέτρα)",
+    filterable: false,
+    render: (row) => String(row.spotLength ?? "—"),
   },
   {
     key: "actions",

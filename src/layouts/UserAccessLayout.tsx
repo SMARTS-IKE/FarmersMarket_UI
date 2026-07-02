@@ -26,7 +26,6 @@ function UserAccessLayoutInner() {
   const activeTab = getUserTab(location.pathname);
   const { filterSlot, tabSlot } = useLayoutSlot();
   const [collapsed, setCollapsed] = useState(false);
-  const [mobileOpen, setMobileOpen] = useState(false);
 
   function handleLogout() {
     clearAuth();

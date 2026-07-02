@@ -5,7 +5,7 @@ import CustomInputField from "../../../shared/components/CustomInputField";
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
 import type { SellerType } from "../../../models/seller";
 
-export default function AdminSellerCreatePage() {
+export default function AdminSellerEditPage() {
   const navigate = useNavigate();
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");

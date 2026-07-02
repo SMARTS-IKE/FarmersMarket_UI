@@ -52,7 +52,7 @@ export default function ConfirmActionDialog({ open, action, onClose, onConfirm }
           </>
         )}
       </DialogContent>
-      <DialogActions>
+      <DialogActions sx={{ '& .MuiButton-root': { textTransform: 'none' } }}>
         <Button onClick={() => { setReason(''); onClose(); }} sx={{ textTransform: 'none' }}>Ακύρωση</Button>
         <Button onClick={handleConfirm} disabled={isConfirmDisabled} variant="contained" color={action === "accept" ? "success" : "error"} sx={{ textTransform: 'none' }}>
           Επιβεβαίωση

@@ -1,7 +1,9 @@
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery } from '@tanstack/react-query';
+import { queryClient } from '../lib/queryClient';
 import type { SellerSearchRequest, SellerListResponse, Seller } from '../models/seller';
 import type { ConnectedMarket, ConnectedMarketListResponse } from '../models/market';
 import { getSellerById, getSellers, getSellerMarkets, getMarketSellerById } from '../services/sellerService';
+import { updateMarketSeller } from '../services/sellerService';
 
 const SELLERS_STALE_TIME_MS = 5 * 60 * 1000;
 const SELLERS_GC_TIME_MS = 15 * 60 * 1000;
@@ -50,5 +52,18 @@ export function useMarketSellerQuery(id: string) {
     enabled: Boolean(id),
     staleTime: SELLERS_STALE_TIME_MS,
     gcTime: SELLERS_GC_TIME_MS,
+  });
+}
+
+export function useUpdateMarketSellerMutation(marketConnectionId: string) {
+  return useMutation<void, Error, Partial<ConnectedMarket>>({
+    mutationFn: (payload) => updateMarketSeller(marketConnectionId, payload),
+    onSuccess: async () => {
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: sellerKeys.marketDetail(marketConnectionId) }),
+        queryClient.invalidateQueries({ queryKey: sellerKeys.markets(String(marketConnectionId)) }),
+        queryClient.invalidateQueries({ queryKey: sellerKeys.all }),
+      ]);
+    },
   });
 }

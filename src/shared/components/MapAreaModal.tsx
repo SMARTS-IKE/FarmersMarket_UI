@@ -58,6 +58,17 @@ function RecenterMap({ points }: { points: MapPoint[] }) {
   return null;
 }
 
+function SelectedPointPan({ pointId, points }: { pointId: string | null; points: MapPoint[] }) {
+  const map = useMap();
+  useEffect(() => {
+    if (!pointId) return;
+    const p = points.find((pt) => pt.id === pointId);
+    if (!p) return;
+    map.setView([p.lat, p.lng], SINGLE_POINT_ZOOM);
+  }, [map, pointId, points]);
+  return null;
+}
+
 function PointClickHandler({
   onPointAdded,
 }: {
@@ -82,6 +93,7 @@ export default function MapAreaModal({
   title = "Επιλογή Περιοχής στον Χάρτη",
 }: MapAreaModalProps) {
   const [points, setPoints] = useState<MapPoint[]>(initialPoints);
+  const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
 
   useEffect(() => {
     setPoints(initialPoints);
@@ -94,14 +106,21 @@ export default function MapAreaModal({
       lng,
     };
     setPoints([...points, newPoint]);
+    setSelectedPointId(newPoint.id);
+  };
+
+  const handlePointMoved = (id: string, lat: number, lng: number) => {
+    setPoints((prev) => prev.map((p) => (p.id === id ? { ...p, lat, lng } : p)));
   };
 
   const handleRemovePoint = (id: string) => {
     setPoints(points.filter((p) => p.id !== id));
+    if (selectedPointId === id) setSelectedPointId(null);
   };
 
   const handleClearPoints = () => {
     setPoints([]);
+    setSelectedPointId(null);
   };
 
   const handleSave = () => {
@@ -111,6 +130,7 @@ export default function MapAreaModal({
 
   const handleCancel = () => {
     setPoints(initialPoints);
+    setSelectedPointId(null);
     onClose();
   };
 
@@ -141,6 +161,7 @@ export default function MapAreaModal({
 
             <PointClickHandler onPointAdded={handlePointAdded} />
             <RecenterMap points={points} />
+            <SelectedPointPan pointId={selectedPointId} points={points} />
 
             {points.length > 0 && (
               <>
@@ -148,9 +169,18 @@ export default function MapAreaModal({
                   <Marker
                     key={point.id}
                     position={[point.lat, point.lng]}
+                    draggable
+                    eventHandlers={{
+                      dragend: (e) => {
+                        const trg = e.target as L.Marker;
+                        const ll = trg.getLatLng();
+                        handlePointMoved(point.id, Math.round(ll.lat * 1e6) / 1e6, Math.round(ll.lng * 1e6) / 1e6);
+                      },
+                      click: () => setSelectedPointId(point.id),
+                    }}
                     icon={L.divIcon({
                       className: "numbered-map-marker",
-                      html: `<div style="width:26px;height:26px;border-radius:9999px;background:#1d4ed8;color:#fff;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,0.35);">${index + 1}</div>`,
+                      html: `<div style="width:26px;height:26px;border-radius:9999px;background:${selectedPointId === point.id ? '#ef4444' : '#1d4ed8'};color:#fff;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,0.35);">${index + 1}</div>`,
                       iconSize: [26, 26],
                       iconAnchor: [13, 13],
                     })}
@@ -188,6 +218,7 @@ export default function MapAreaModal({
             {points.map((point, index) => (
               <ListItem
                 key={point.id}
+                selected={selectedPointId === point.id}
                 secondaryAction={
                   <IconButton
                     edge="end"
@@ -197,7 +228,8 @@ export default function MapAreaModal({
                     <DeleteIcon fontSize="small" />
                   </IconButton>
                 }
-                sx={{ py: 0.5 }}
+                sx={{ py: 0.5, cursor: 'pointer' }}
+                onClick={() => setSelectedPointId(point.id)}
               >
                 <Box sx={{ display: "flex", alignItems: "center", gap: 1, minWidth: 0, pr: 4 }}>
                   <Box
@@ -205,7 +237,7 @@ export default function MapAreaModal({
                       width: 20,
                       height: 20,
                       borderRadius: "50%",
-                      backgroundColor: "#1d4ed8",
+                      backgroundColor: selectedPointId === point.id ? '#ef4444' : '#1d4ed8',
                       color: "#fff",
                       display: "flex",
                       alignItems: "center",
@@ -236,7 +268,7 @@ export default function MapAreaModal({
         </Box>
       </DialogContent>
 
-      <DialogActions sx={{ gap: 1 }}>
+      <DialogActions sx={{ gap: 1, '& .MuiButton-root': { textTransform: 'none' } }}>
         <Button
           onClick={handleClearPoints}
           variant="text"

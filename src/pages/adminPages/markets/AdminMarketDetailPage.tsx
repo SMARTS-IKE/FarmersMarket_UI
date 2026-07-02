@@ -1,4 +1,6 @@
 import { Alert, Box, Snackbar, Tab, Tabs } from "@mui/material";
+import LayoutTabsSlot from "../../../shared/components/LayoutTabsSlot";
+import AdminMarketSellerParticipations from "./AdminMarketSellerParticipations";
 import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
 import { useBlocker, useNavigate, useParams } from "@tanstack/react-router";
 import CustomButton from "../../../shared/components/CustomButton";
@@ -194,15 +196,17 @@ function mapMarketToFormValues(market: Market): MarketFormValues {
   const fallbackLongitude = marketLocations[0]?.longitude ?? null;
 
   const supervisors = (Array.isArray(market.supervisors) ? market.supervisors : [])
-    .map((supervisor) => supervisor.userId)
+    .map((supervisor) => ((supervisor as any).userId ?? (supervisor as any).aspNetUserId ?? String((supervisor as any).id ?? '')))
     .filter((userId): userId is string => Boolean(userId));
 
   const operatingDays = (Array.isArray(market.schedules) ? market.schedules : [])
     .filter((schedule) => !schedule.isCancelled)
     .map((schedule) => ({
       day: DAY_NUMBER_TO_NAME[schedule.day] ?? "",
-      openTime: market.openTime?.slice(0, 5) ?? "",
-      closeTime: market.closeTime?.slice(0, 5) ?? "",
+      // Prefer times from currentHistory when available (they reflect the active configuration),
+      // otherwise fall back to top-level market open/close times.
+      openTime: (market.currentHistory?.openTime ?? market.openTime ?? "").slice(0, 5),
+      closeTime: (market.currentHistory?.closeTime ?? market.closeTime ?? "").slice(0, 5),
     }))
     .filter((entry) => entry.day);
 
@@ -260,6 +264,7 @@ function mapFormValuesToUpdatePayload(
       latitude: values.latitude ?? 0,
       longitude: values.longitude ?? 0,
       locations,
+      supervisorUserIds: values.supervisors ?? [],
     },
     configuration: {
       fromDate: toIsoDate(currentHistory?.fromDate),
@@ -505,35 +510,37 @@ export default function AdminMarketDetailPage() {
 
   return (
     <div className="flex h-full min-h-0 w-full flex-col gap-4 text-left overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="font-semibold text-(--color-text-heading)">Διαχείριση Αγοράς</h2>
-        <CustomButton
-          title="Επιστροφή στη λίστα αγορών"
-          backgroundColor="var(--color-text-muted)"
-          width="fit-content"
-          onClick={handleBackToList}
-        />
-      </div>
+      <LayoutTabsSlot>
+        <Box className="w-full flex items-start justify-between gap-3 mb-2">
+          <div>
+            <h2 className="font-semibold text-(--color-text-heading)">Διαχείριση Αγοράς</h2>
+            <h3 className="text-lg text-(--color-text-heading)">{market.name || `Αγορά #${market.id}`}</h3>
+          </div>
+          <CustomButton
+            title="Επιστροφή στη λίστα αγορών"
+            backgroundColor="var(--color-text-muted)"
+            width="fit-content"
+            onClick={handleBackToList}
+          />
+        </Box>
 
-      <h3 className="text-lg text-(--color-text-heading)">
-        {market.name || `Αγορά #${market.id}`}
-      </h3>
-
-      <Box className="w-full self-start">
-        <Tabs
-          value={activeTab}
-          onChange={handleTabChange}
-          variant="fullWidth"
-          textColor="inherit"
-          sx={{
-            marginBottom: 0,
-            width: "100%",
-          }}
-        >
-          <Tab label="Στοιχεία αγοράς" />
-          <Tab label={`Συμμετέχοντες πωλητές (${connectedSellersCount})`} />
-        </Tabs>
-      </Box>
+        <Box className="w-full self-start">
+          <Tabs
+            value={activeTab}
+            onChange={handleTabChange}
+            variant="fullWidth"
+            textColor="inherit"
+            sx={{
+              marginBottom: 0,
+              width: "100%",
+            }}
+          >
+            <Tab label="Στοιχεία αγοράς" />
+            <Tab label={`Συμμετέχοντες πωλητές (${connectedSellersCount})`} />
+            <Tab label="Παρουσίες" />
+          </Tabs>
+        </Box>
+      </LayoutTabsSlot>
 
       <div className="flex-1 overflow-y-auto pr-2 mt-2 ">
         <div className="flex flex-col gap-6">
@@ -543,8 +550,17 @@ export default function AdminMarketDetailPage() {
               values={formValues}
               onChange={setFormValues}
               onSubmit={hasUnsavedChanges ? handleSubmit : undefined}
+            
               onCancel={hasUnsavedChanges ? handleCancel : undefined}
               submitLabel="Αποθήκευση"
+              supervisorOptions={
+                Array.isArray(market.supervisors)
+                  ? market.supervisors.map((s) => ({
+                      label: (s as any).fullName ?? String((s as any).firstName ?? (s as any).userId ?? (s as any).email ?? ''),
+                      value: String((s as any).userId ?? (s as any).aspNetUserId ?? (s as any).id ?? ''),
+                    }))
+                  : []
+              }
             />
           ) : activeTab === 1 ? (
             <div className="flex flex-col gap-4">
@@ -557,6 +573,8 @@ export default function AdminMarketDetailPage() {
                 sellerOptions={availableSellerOptions}
               />
             </div>
+          ) : activeTab === 2 ? (
+            <AdminMarketSellerParticipations marketId={Number(marketId)} />
           ) : (
             <AttendanceTable marketId={Number(marketId)} />
           )}

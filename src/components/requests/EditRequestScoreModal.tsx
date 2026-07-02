@@ -61,7 +61,7 @@ export default function EditRequestScoreModal({
         </div>
       </DialogContent>
 
-      <DialogActions sx={{ gap: 1 }}>
+      <DialogActions sx={{ gap: 1, '& .MuiButton-root': { textTransform: 'none' } }}>
         <CustomButton
           title="Ακύρωση"
           backgroundColor="var(--color-text-muted)"

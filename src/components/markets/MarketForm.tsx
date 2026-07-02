@@ -21,7 +21,7 @@ const dayOrder = dayOptions.reduce<Record<string, number>>((acc, option, idx) =>
 
 const timeOptions = Array.from({ length: 24 }, (_, hour) => {
   const value = `${String(hour).padStart(2, "0")}:00`;
-  return { label: value, value };
+  return { label: `${value}:00`, value };
 });
 
 const toMinutes = (time: string) => {
@@ -41,6 +41,7 @@ export default function MarketForm({
   onSubmit,
   onCancel,
   submitLabel,
+  supervisorOptions,
 }: MarketFormProps) {
   const isViewMode = mode === "view";
   const isEditMode = mode === "edit";
@@ -61,8 +62,22 @@ export default function MarketForm({
 
   const usersList = usersArray.map((u) => ({
     label: `${u.firstName} ${u.lastName}`,
-    value: u.id,
+    // Prefer explicit aspNet user id fields if present, otherwise fall back to `id`.
+    value: String((u as any).aspNetUserId ?? (u as any).userId ?? u.id),
   }));
+
+  // Merge any supervisorOptions provided by parent (e.g., from market data) so selected
+  // supervisors that are not present in `usersList` still render with their full names.
+  const combinedSupervisorOptions = (() => {
+    const map = new Map<string, { label: string; value: string }>();
+    for (const item of usersList) map.set(String(item.value), item);
+    if (Array.isArray(supervisorOptions)) {
+      for (const item of supervisorOptions) {
+        if (!map.has(String(item.value))) map.set(String(item.value), item);
+      }
+    }
+    return Array.from(map.values());
+  })();
 
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const [isMapModalOpen, setIsMapModalOpen] = useState(false);
@@ -310,7 +325,7 @@ export default function MarketForm({
             label="Επόπτες/Υπεύθυνοι"
             value={values.supervisors}
             onChange={(v) => onChange({ ...values, supervisors: v as string[] })}
-            dropdownItems={usersList}
+            dropdownItems={combinedSupervisorOptions}
             disabled={isViewMode}
             width="100%"
           />

@@ -155,6 +155,7 @@ export interface MarketFormProps {
   onSubmit?: (values: MarketFormValues) => void;
   onCancel?: () => void;
   submitLabel?: string;
+  supervisorOptions?: { label: string; value: string }[];
 }
 
 export interface MarketLocationPointRequest {
@@ -170,6 +171,7 @@ export interface UpdateMarketInfoRequest {
   latitude: number;
   longitude: number;
   locations: MarketLocationPointRequest[];
+  supervisorUserIds?: string[];
 }
 
 export interface UpdateMarketConfigurationRequest {

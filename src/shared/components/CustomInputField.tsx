@@ -357,8 +357,8 @@ export default function CustomInputField({
       color: 'var(--color-dark)'
     },
     "& input[type='date']::-webkit-calendar-picker-indicator": {
-      /* Make the calendar icon dark to match input text. */
-      filter: 'invert(1) grayscale(1)',
+      /* Ensure the calendar icon uses the dark color (don't invert it). */
+      filter: 'none',
       opacity: 1,
       // Ensure the indicator uses the theme dark color where possible
       color: 'var(--color-dark)'
@@ -451,7 +451,6 @@ export default function CustomInputField({
     "&.Mui-selected": {
       backgroundColor: "#C4B5A0",
       color: "#ffffff",
-      fontSize: labelFontSize,
     },
     "&.Mui-selected:hover": {
       backgroundColor: "#ECE5DC",
@@ -462,7 +461,7 @@ export default function CustomInputField({
   };
 
   if (type === "MULTI_SELECT") {
-    const multiValue = Array.isArray(value) ? value : [];
+    const multiValue = Array.isArray(value) ? value.map(String) : [];
     return (
       <FormControl
         variant="standard"
@@ -517,8 +516,8 @@ export default function CustomInputField({
               <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.5 }}>
                 {sel.map((val) => (
                   <Chip
-                    key={val}
-                    label={dropdownItems.find((d) => d.value === val)?.label ?? val}
+                    key={String(val)}
+                    label={dropdownItems.find((d) => String(d.value) === String(val))?.label ?? String(val)}
                     size="small"
                   />
                 ))}
@@ -534,8 +533,8 @@ export default function CustomInputField({
         >
           {dropdownItems.map((item) => (
             <MenuItem
-              key={item.value}
-              value={item.value as string}
+              key={String(item.value)}
+              value={String(item.value)}
               disabled={disabledDropdownValues.includes(item.value)}
               sx={dropdownMenuItemSx}
             >
@@ -563,7 +562,7 @@ export default function CustomInputField({
           open={dropdownOpen}
           onOpen={() => setDropdownOpen(true)}
           onClose={() => setDropdownOpen(false)}
-          value={value ?? defaultValue ?? ""}
+          value={String(value ?? defaultValue ?? "")}
           onChange={(e) => onChange?.(e.target.value as string | number)}
           onBlur={onBlur}
           MenuProps={dropdownMenuProps}
@@ -605,7 +604,7 @@ export default function CustomInputField({
           renderValue={(selected) => {
             const sel = selected as string | number | undefined;
             if (sel === undefined || sel === "") return <em>{placeholder ?? "Επιλέξτε…"}</em>;
-            const found = dropdownItems.find((d) => d.value == sel);
+            const found = dropdownItems.find((d) => String(d.value) === String(sel));
             return found ? String(found.label) : String(sel);
           }}
           sx={{
@@ -620,8 +619,8 @@ export default function CustomInputField({
           </MenuItem>
           {dropdownItems.map((item) => (
             <MenuItem
-              key={item.value}
-              value={item.value}
+              key={String(item.value)}
+              value={String(item.value)}
               disabled={disabledDropdownValues.includes(item.value)}
               sx={dropdownMenuItemSx}
             >

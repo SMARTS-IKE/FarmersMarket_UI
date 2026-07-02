@@ -7,6 +7,7 @@ import CustomButton from "../../../shared/components/CustomButton";
 import CustomInputField from "../../../shared/components/CustomInputField";
 import { useSellerQuery, useSellerMarketsQuery } from "../../../queries/sellerQueries";
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
+import { updateSeller } from "../../../services/sellerService";
 
 const connectedMarketsColumns: ColumnDef<ConnectedMarket>[] = [
   { key: "marketName", label: "Όνομα Αγοράς" },
@@ -206,10 +207,22 @@ export default function SellerPage() {
     setIsSnackbarOpen(false);
   };
 
-  const handleSave = () => {
-    // TODO: wire update seller mutation when backend endpoint is available.
-    setInitialState(currentState);
-    showNotification("Οι αλλαγές αποθηκεύτηκαν.", "success");
+  const handleSave = async () => {
+    try {
+      await updateSeller(sellerId, {
+        firstName,
+        lastName,
+        phone,
+        address,
+      });
+
+      setInitialState(currentState);
+      showNotification("Οι αλλαγές αποθηκεύτηκαν.", "success");
+      navigate({ to: "/admin/sellers" });
+    } catch (err: any) {
+      const msg = err?.message ?? "Η αποθήκευση απέτυχε.";
+      showNotification(msg, "warning");
+    }
   };
 
   const handleSnackbarClose = (_event?: Event | SyntheticEvent, reason?: string) => {

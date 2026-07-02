@@ -35,6 +35,10 @@ export async function getMarketSellerById(id: string): Promise<ConnectedMarket> 
   return http.get<ConnectedMarket>(`/MarketSeller/${id}`);
 }
 
+export async function updateMarketSeller(id: string, data: Partial<ConnectedMarket>): Promise<void> {
+  return http.put<void, Partial<ConnectedMarket>>(`/MarketSeller/${id}`, data);
+}
+
 export async function createLicense(
   sellerId: string,
   licenseData: {
@@ -45,4 +49,16 @@ export async function createLicense(
   }
 ): Promise<void> {
   return http.post<void>(`/Sellers/${sellerId}/licenses`, licenseData);
+}
+
+export async function updateSeller(
+  id: string,
+  data: {
+    firstName: string;
+    lastName: string;
+    phone?: string | null;
+    address?: string | null;
+  }
+): Promise<void> {
+  return http.put<void>(`/Sellers/${id}`, data);
 }
