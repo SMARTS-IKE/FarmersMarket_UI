@@ -1,5 +1,5 @@
 import { Outlet } from '@tanstack/react-router';
-import logo01 from '../assets/logo-01.svg';
+import logo01 from '../assets/LOGO_WHITE.svg';
 import loginBgImage from '../assets/loginBg.png';
 import loginPageSideGraphic from '../assets/login_page_side_graphic.svg';
 
@@ -13,19 +13,19 @@ export default function AuthLayout() {
             style={{ backgroundImage: `url(${loginBgImage})` }}
           />
           <div className="absolute inset-0 bg-[linear-gradient(90deg,rgba(30,46,30,0.62)_0%,rgba(37,52,35,0.48)_45%,rgba(48,58,40,0.36)_100%)]" />
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_22%,rgba(255,255,255,0.22),transparent_44%),radial-gradient(circle_at_78%_18%,rgba(255,255,255,0.12),transparent_38%)]" />
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_18%_22%,rgba(255,255,255,0.22),transparent_44%),radial-gradient(circle_at_78%_18%,rgba(255,255,255,0.12),transparent_80%)]" />
 
           <div className="relative z-10 flex w-full max-w-5xl flex-col items-center px-10 text-[#f4efe6]">
-            <div className="flex w-full items-center justify-center gap-10">
+            <div className="flex w-full items-center justify-center gap-20">
               <img
                 src={logo01}
                 alt="Logo"
-                className="w-[500px] object-contain"
+                className="w-[318px] object-contain"
               />
-              <div className="flex w-[500px] flex-col items-center justify-center text-3xl text-center gap-3 font-bold leading-tight tracking-tight drop-shadow-[0_2px_6px_rgba(0,0,0,0.35)]">
+              <div className="flex w-[400px] pt-14 flex-col items-center justify-center text-3xl font-medium leading-tight tracking-tight ">
                 <div className="block whitespace-nowrap">Σύστημα Ηλεκτρονικής</div>
                 <div className="block whitespace-nowrap">Διαχείρισης Λαϊκών Αγορών</div>
-                <div className='w-full border-b'></div>
+                <div className='w-full border-b pt-2'></div>
               </div>
             </div>
             

@@ -2,7 +2,7 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import UserCircleIcon from '@mui/icons-material/AccountCircleOutlined';
-import logo02 from '../assets/logo-02.svg';
+import logo02 from '../assets/LOGO_coloured.svg';
 
 type Props = {
   onLogout: () => void;
@@ -12,13 +12,10 @@ type Props = {
 export default function SystemAdminHeader({ onLogout, onAccountClick }: Props) {
   return (
     <header className="relative z-20 border-b-4 border-[#ef4123] bg-[#C4B5A0] px-4 md:px-6">
-      <div className="flex items-center justify-between gap-4 py-2 xl:py-0">
-        <div className="flex items-center gap-4">
-          <img src={logo02} alt="Farmers Market logo" className="h-auto max-h-[70px] w-auto rounded-lg object-contain xl:max-h-[88px]" />
-          <div className="flex flex-col items-start leading-tight">
-            <p className="text-base font-bold text-(--color-text) whitespace-nowrap">Πλατφόρμα Διαχείρισης</p>
-            <p className="text-sm text-(--color-text)">Λαϊκών Αγορών</p>
-          </div>
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-baseline gap-4 py-2">
+          <img src={logo02} alt="Farmers Market logo" className="h-auto w-[120px] max-h-[52px] object-contain" />
+          <p className="text-sm font-semibold text-(--color-text) whitespace-nowrap">Πλατφόρμα Διαχείρισης Λαϊκών Αγορών</p>
         </div>
 
         <div className="flex items-center justify-end pr-6">

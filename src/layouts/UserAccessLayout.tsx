@@ -1,9 +1,6 @@
 import { Outlet, useLocation } from '@tanstack/react-router';
 import { router } from '../routers/router';
-import IconButton from '@mui/material/IconButton';
-import Tooltip from '@mui/material/Tooltip';
-import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
-import UserCircleIcon from '@mui/icons-material/AccountCircleOutlined';
+import SystemAdminHeader from './SystemAdminHeader';
 import Sidebar from '../shared/components/Sidebar';
 import { useState } from 'react';
 import logo02 from '../assets/logo-02.svg';
@@ -35,52 +32,7 @@ function UserAccessLayoutInner() {
   return (
     <div className="min-h-svh">
       <div className="flex min-h-svh w-full flex-col overflow-visible border border-(--color-border) bg-(--color-surface) shadow-[var(--shadow-lg)] md:overflow-hidden">
-        <header className="relative z-20 border-b-4 border-[#ef4123] bg-[#C4B5A0] px-4 md:px-6">
-          <div className="flex items-center justify-between gap-4 py-2 xl:py-0">
-            <div className="flex items-center gap-4">
-              <img src={logo02} alt="Farmers Market logo" className="h-auto max-h-[70px] w-auto rounded-lg object-contain xl:max-h-[88px]" />
-              <div className="flex flex-col items-start leading-tight">
-                <p className="text-base font-bold text-(--color-text) whitespace-nowrap">Πλατφόρμα Διαχείρισης</p>
-                <p className="text-sm text-(--color-text)">Λαϊκών Αγορών</p>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end pr-6">
-              <Tooltip title="Διαχείριση λογαριασμού">
-                <IconButton
-                  aria-label="account_circle"
-                  onClick={() => null}
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    color: '#3D2817',
-                    '&:hover': {
-                      backgroundColor: 'rgba(61, 40, 23, 0.1)',
-                    },
-                  }}
-                >
-                  <UserCircleIcon />
-                </IconButton>
-              </Tooltip>
-              <Tooltip title="Αποσύνδεση">
-                <IconButton
-                  aria-label="logout"
-                  onClick={handleLogout}
-                  sx={{
-                    width: 32,
-                    height: 32,
-                    color: '#3D2817',
-                    '&:hover': {
-                      backgroundColor: 'rgba(61, 40, 23, 0.1)',
-                    },
-                  }}
-                >
-                  <LogoutRoundedIcon />
-                </IconButton>
-              </Tooltip>
-            </div>
-          </div>
-        </header>
+        <SystemAdminHeader onLogout={handleLogout} onAccountClick={() => null} />
 
         <div className="flex flex-1 items-stretch gap-px bg-(--color-border-subtle)">
           <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} activeTab={activeTab} tabs={userTabs} />
