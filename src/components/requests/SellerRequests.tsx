@@ -268,11 +268,11 @@ export default function FetchedSellerRequests({ userMode }: { userMode?: boolean
                   filterable: false,
                   render: (row) => (
                     <IconButton
-                      size="small"
-                      onClick={(e) => handleMenuOpen(e, row)}
-                      aria-label="actions"
-                      disabled={row.status === RequestStatus.Approved}
-                    >
+                        size="small"
+                        onClick={(e) => handleMenuOpen(e, row)}
+                        aria-label="actions"
+                        disabled={row.status === RequestStatus.Approved || row.status === RequestStatus.Rejected}
+                      >
                       <MoreVertIcon fontSize="small" />
                     </IconButton>
                   ),
@@ -294,11 +294,11 @@ export default function FetchedSellerRequests({ userMode }: { userMode?: boolean
         open={Boolean(menuState)}
         onClose={handleMenuClose}
       >
-        {menuRowRef.current?.status === RequestStatus.Rejected ? (
+        {menuRowRef.current?.status !== RequestStatus.Pending ? (
           <MenuItem disabled>
-            {menuRowRef.current?.rejectionReason && menuRowRef.current.rejectionReason.length > 0
+            {/* {menuRowRef.current?.rejectionReason && menuRowRef.current.rejectionReason.length > 0
               ?  `${'Λόγος Απόρριψης: ' + menuRowRef.current.rejectionReason}`
-              : 'Χωρίς λόγο απόρριψης'}
+              : 'Χωρίς λόγο απόρριψης'} */}
           </MenuItem>
         ) : (
           <>

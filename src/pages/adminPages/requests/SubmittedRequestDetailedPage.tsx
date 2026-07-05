@@ -17,8 +17,8 @@ import EditIcon from "@mui/icons-material/Edit";
 
 const statusLabels: Record<RequestStatus, { label: string; color: string }> = {
   0: { label: "Σε Αναμονή", color: "#f59e0b" },
-  3: { label: "Εγκεκριμένο", color: "#10b981" },
-  4: { label: "Απορριφθέν", color: "#ef4444" },
+  3: { label: "Εγκρίθηκε", color: "#10b981" },
+  4: { label: "Απορρίφθηκε", color: "#ef4444" },
 };
 
 export default function SubmittedRequestDetailedPage() {
@@ -137,7 +137,7 @@ export default function SubmittedRequestDetailedPage() {
         )}
 
         {request.status === 4 && request.rejectionReason && (
-          <div className="mb-4 flex flex-row items-center gap-2 font-bold">
+          <div className="mb-4 flex flex-row items-center gap-2 font-bold bg-[#fef2f2] border border-[#fecaca] text-[#b91c1c] px-4 py-2 rounded-lg">
             <span className="text-sm ">Λόγος απόρριψης:</span>
             <span className="text-sm text-(--color-danger)">{request.rejectionReason}</span>
           </div>

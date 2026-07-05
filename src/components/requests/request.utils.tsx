@@ -5,7 +5,7 @@ import type {
   SellerRequest as SellerRequest,
   RequestSheet,
 } from "../../models/request";
-import { RequestStatusLabels } from "../../shared/components/GlobalEnums";
+import { RequestStatusLabels, RequestStatus as RequestStatusEnum } from "../../shared/components/GlobalEnums";
 
 export const STEPS = [
   {
@@ -113,7 +113,21 @@ export const sellerRequestColumns: ColumnDef<SellerRequest>[] = [
     key: "status",
     label: "Κατάσταση",
     render: (row) => {
-      return RequestStatusLabels[row.status] ?? "Άγνωστο";
+      const label = RequestStatusLabels[row.status] ?? "Άγνωστο";
+
+      const statusColors: Record<number, { bg: string; color: string }> = {
+        [RequestStatusEnum.Pending]: { bg: '#FFF7ED', color: '#9A5B00' },
+        [RequestStatusEnum.Approved]: { bg: '#ECFDF5', color: '#027A48' },
+        [RequestStatusEnum.Rejected]: { bg: '#FEF2F2', color: '#B91C1C' },
+      };
+
+      const c = statusColors[row.status] ?? { color: 'inherit' };
+
+      return (
+        <span style={{ color: c.color, padding: '0 6px', fontWeight: 600, display: 'inline-block' }}>
+          {label}
+        </span>
+      );
     },
   },
 ];
@@ -128,3 +142,4 @@ export const TYPE_OF_FIELDS_TO_DESIGN_FIELD: Record<number, DesignRequestFieldTy
 };
 
 export const SELLER_BASIC_FIELDS = ["Ονοματεπώνυμο", "Τίτλος Αγοράς"] as const;
+
