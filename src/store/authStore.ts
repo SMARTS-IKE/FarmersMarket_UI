@@ -84,8 +84,6 @@ export const useAuthStore = create<AuthState>()(
             status: decoded.status
           };
 
-          console.log(user);
-
           set({
             user,
             token: data.accessToken,

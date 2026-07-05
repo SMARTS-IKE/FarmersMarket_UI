@@ -27,7 +27,8 @@ function SystemAdminLayoutInner() {
 
   function handleLogout() {
     clearAuth();
-    void router.navigate({ to: '/auth/login' });
+    // delay navigation to let store persistence sync and avoid route guards reading stale token
+    setTimeout(() => void router.navigate({ to: '/auth/login' }), 0);
   }
 
   return (

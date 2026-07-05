@@ -26,7 +26,8 @@ function UserAccessLayoutInner() {
 
   function handleLogout() {
     clearAuth();
-    void router.navigate({ to: '/auth/login' });
+    // delay navigation to avoid route-guard reading stale auth state
+    setTimeout(() => void router.navigate({ to: '/auth/login' }), 0);
   }
 
   return (

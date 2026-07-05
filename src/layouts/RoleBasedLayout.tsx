@@ -1,5 +1,4 @@
 import { Outlet } from '@tanstack/react-router';
-import DefaultProtectedLayout from './DefaultProtectedLayout';
 import SystemAdminLayout from './SystemAdminLayout';
 import UserAccessLayout from './UserAccessLayout';
 import { useAuthStore } from '../store/authStore';
@@ -21,9 +20,6 @@ export default function RoleBasedLayout() {
     return <UserAccessLayout />;
   }
 
-  return (
-    <DefaultProtectedLayout>
-      <Outlet />
-    </DefaultProtectedLayout>
-  );
+  // If role is unknown, default to admin layout to keep behaviour predictable
+  return <SystemAdminLayout />;
 }

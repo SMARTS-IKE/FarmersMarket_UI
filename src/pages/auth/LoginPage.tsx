@@ -58,8 +58,34 @@ export default function LoginPage() {
         }
       }
 
-      const role = state.role;
-      navigate({ to: role === 'User_Access' ? '/users' : '/admin' });
+        const role = state.role;
+        // prefer router.navigate for consistent behavior across layouts
+        try {
+          console.log('login response', data);
+          console.log('auth store state before navigate', state);
+          // use the hook-based navigate (router instance from RouterProvider)
+          const target = role === 'User_Access' ? '/users' : '/admin';
+          await navigate({ to: target } as any);
+          console.log('useNavigate resolved');
+          // Force a full reload shortly after navigation to avoid route-guard race conditions
+          setTimeout(() => {
+            try {
+              if (window.location.pathname !== target) {
+                window.location.assign(target);
+              }
+            } catch (e) {
+              /* ignore */
+            }
+          }, 120);
+        } catch (navErr) {
+          console.error('useNavigate failed, falling back to window.location', navErr);
+          try {
+            const target = role === 'User_Access' ? '/users' : '/admin';
+            window.location.assign(target);
+          } catch (e) {
+            console.error('final navigation fallback failed', e);
+          }
+        }
     } catch {
       setError('Λάθος στοιχεία εισόδου.\nΔοκιμάστε ξανά');
     } finally {
@@ -148,7 +174,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="my-2 mx-auto w-3/4 rounded-xl bg-[#8a5a22] px-4 py-1.5 text-[16px] font-semibold text-[#f7f1eb] transition hover:bg-[#7b4f1d] disabled:cursor-not-allowed disabled:opacity-60"
+          className="my-2 mx-auto w-3/4 rounded-xl bg-[#603813] px-4 py-1.5 text-[16px] font-semibold text-[#f7f1eb] transition hover:bg-[#7b4f1d] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
         >
           {loading ? 'Είσοδος…' : 'Είσοδος'}
         </button>
@@ -160,6 +186,14 @@ export default function LoginPage() {
           Αίτηση Εγγραφής
         </Link>
       </p>
+
+       <button
+          type="button"
+          disabled={loading}
+          className="my-1 mx-auto w-full rounded-xl bg-[#64bde6] px-4 py-1.5 text-[12px] font-semibold text-[#f7f1eb] transition hover:bg-[#3a6f88] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+        >
+          {loading ? 'Σύνδεση…' : 'Σύνδεση με κωδικούς Taxisnet'}
+        </button>
     </div>
   );
 }
