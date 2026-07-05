@@ -61,12 +61,11 @@ export default function LoginPage() {
         const role = state.role;
         // prefer router.navigate for consistent behavior across layouts
         try {
-          console.log('login response', data);
-          console.log('auth store state before navigate', state);
+          
           // use the hook-based navigate (router instance from RouterProvider)
           const target = role === 'User_Access' ? '/users' : '/admin';
           await navigate({ to: target } as any);
-          console.log('useNavigate resolved');
+          
           // Force a full reload shortly after navigation to avoid route-guard race conditions
           setTimeout(() => {
             try {
