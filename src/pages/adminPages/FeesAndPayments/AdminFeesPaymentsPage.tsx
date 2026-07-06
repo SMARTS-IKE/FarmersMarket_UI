@@ -22,7 +22,7 @@ const columns: ColumnDef<FeeRule>[] = [
     key: "amount",
     label: "Ποσό",
     filterable: false,
-    render: (row) => `€${row.amount.toFixed(2)}`,
+    render: (row) => `€${Number(row.amount ?? 0).toFixed(2)}`,
   },
   { key: "basis", label: "Βάση" },
   { key: "validFrom", label: "Ισχύει από" },

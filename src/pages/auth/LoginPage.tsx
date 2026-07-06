@@ -173,7 +173,7 @@ export default function LoginPage() {
         <button
           type="submit"
           disabled={loading}
-          className="my-2 mx-auto w-3/4 rounded-xl bg-[#603813] px-4 py-1.5 text-[16px] font-semibold text-[#f7f1eb] transition hover:bg-[#7b4f1d] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
+          className="my-2 mx-auto w-3/4 rounded-xl bg-[#603813] px-4 py-1.5 text-[16px] font-semibold text-[#f7f1eb] transition hover:bg-[#2c1f14] disabled:cursor-not-allowed disabled:opacity-60 cursor-pointer"
         >
           {loading ? 'Είσοδος…' : 'Είσοδος'}
         </button>

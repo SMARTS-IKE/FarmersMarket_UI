@@ -2,13 +2,13 @@ import { Link } from '@tanstack/react-router';
 import IconButton from '@mui/material/IconButton';
 import logo03 from '../../assets/logo-03.svg';
 import { systemAdminTabs } from '../../lib/systemAdminTabs';
-import icon1 from '../../assets/sidebar/1_icon_arxiki.svg';
-import icon2 from '../../assets/sidebar/2_icons_diaxirisi xristwn.svg';
-import icon3 from '../../assets/sidebar/3_icons_mitrwo pwlhtwn.svg';
-import icon4 from '../../assets/sidebar/4_icon_diaxirisi agorwn_.svg';
-import icon5 from '../../assets/sidebar/5_icon_diaxeirisi anaforwn.svg';
-import icon6 from '../../assets/sidebar/6icon_invoice-teli kai plirwmes.svg';
-import icon7 from '../../assets/sidebar/7_icon_diaxirisi aaitisewn.svg';
+import icon1 from '../../assets/sidebar/icons_start.svg';
+import icon2 from '../../assets/sidebar/icons_users.svg';
+import icon3 from '../../assets/sidebar/icons_sellers.svg';
+import icon4 from '../../assets/sidebar/icons_markets.svg';
+import icon5 from '../../assets/sidebar/icons_reports.svg';
+import icon6 from '../../assets/sidebar/icons_fees.svg';
+import icon7 from '../../assets/sidebar/icons_requests.svg';
 
 
 const sidebarIcons = [icon1, icon2, icon3, icon4, icon5, icon6, icon7];
