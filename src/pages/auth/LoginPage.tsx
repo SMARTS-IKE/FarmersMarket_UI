@@ -59,30 +59,34 @@ export default function LoginPage() {
       }
 
         const role = state.role;
-        // prefer router.navigate for consistent behavior across layouts
         try {
-          
-          // use the hook-based navigate (router instance from RouterProvider)
           const target = role === 'User_Access' ? '/users' : '/admin';
           await navigate({ to: target } as any);
-          
-          // Force a full reload shortly after navigation to avoid route-guard race conditions
+
+          // Give the store a short moment to persist, then force reload so the router picks up auth state
           setTimeout(() => {
             try {
-              if (window.location.pathname !== target) {
-                window.location.assign(target);
-              }
+              if (window.location.hash !== `#${target}`) window.location.hash = `#${target}`;
             } catch (e) {
               /* ignore */
             }
-          }, 120);
+            try {
+              window.location.reload();
+            } catch (e) {
+              /* ignore */
+            }
+          }, 60);
+
+          return;
         } catch (navErr) {
-          console.error('useNavigate failed, falling back to window.location', navErr);
+          console.error('navigate failed, falling back to location assign', navErr);
           try {
             const target = role === 'User_Access' ? '/users' : '/admin';
-            window.location.assign(target);
-          } catch (e) {
-            console.error('final navigation fallback failed', e);
+            const url = `${window.location.origin}${window.location.pathname}#${target}`;
+            window.location.href = url;
+            return;
+          } catch (err) {
+            console.error('final navigation fallback failed', err);
           }
         }
     } catch {

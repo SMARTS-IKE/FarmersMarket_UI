@@ -198,6 +198,7 @@ export default function CustomInputField({
       fontSize: "0.65rem",
       fontWeight: 500,
       opacity: 1,
+      color: 'var(--color-text-muted)'
     },
   };
 
@@ -310,6 +311,8 @@ export default function CustomInputField({
     // ensure placeholder text is left-aligned
     "& .MuiOutlinedInput-input::placeholder, & .MuiInputBase-input::placeholder, & input::placeholder": {
       textAlign: 'left',
+      color: 'var(--color-text-muted) !important',
+      opacity: 1,
     },
     // vertically center labels when not shrunk so label overlaps input centered vertically
     "& .MuiInputLabel-root:not(.MuiInputLabel-shrink), & .MuiFormLabel-root:not(.MuiInputLabel-shrink)": {
@@ -357,11 +360,21 @@ export default function CustomInputField({
       color: 'var(--color-dark)'
     },
     "& input[type='date']::-webkit-calendar-picker-indicator": {
-      /* Ensure the calendar icon uses the dark color (don't invert it). */
-      filter: 'none',
+      /* Force the calendar icon to a dark color using filter so systems that render a bitmap icon appear dark. */
+      filter: 'brightness(0) saturate(100%)',
       opacity: 1,
-      // Ensure the indicator uses the theme dark color where possible
+      // Keep fallback color reference
       color: 'var(--color-dark)'
+    },
+    // Webkit-based date inputs render editable fields; style them so the empty format hint uses muted color
+    "& input[type='date']::-webkit-datetime-edit, & input[type='date']::-webkit-datetime-edit-text, & input[type='date']::-webkit-datetime-edit-year-field, & input[type='date']::-webkit-datetime-edit-month-field, & input[type='date']::-webkit-datetime-edit-day-field": {
+      color: 'var(--color-text-muted) !important',
+      opacity: 1,
+    },
+    // Firefox pseudo-element for date inputs
+    "& input[type='date']::-moz-placeholder": {
+      color: 'var(--color-text-muted) !important',
+      opacity: 1,
     },
     // Aggressively disable MUI focus pseudo-elements/outlines that can draw
     // an extra underline or outline on focus. This targets underline pseudo
@@ -813,6 +826,8 @@ export default function CustomInputField({
           }}
           slotProps={{
             textField: {
+              // show Greek format hint when empty
+              placeholder: placeholder ?? 'Ημέρα/Μήνας/Έτος',
               variant: "outlined",
               
               error: !!internalError,
@@ -959,6 +974,19 @@ export default function CustomInputField({
       error={!!internalError}
       helperText={internalError}
       onChange={(e) => {
+            {/* Overlay a placeholder hint for browsers that don't support placeholder on date inputs */}
+            {(!currentValue || currentValue === '') && !nativeFocused && (
+              <span style={{
+                position: 'absolute',
+                left: prefixIcon ? 40 : 8,
+                top: '50%',
+                transform: 'translateY(-50%)',
+                pointerEvents: 'none',
+                color: 'var(--color-text-muted)',
+                fontSize: '0.95rem',
+                fontWeight: 500,
+              }}>{placeholder ?? 'Ημέρα/Μήνας/Έτος'}</span>
+            )}
         onChange?.(e.target.value);
       }}
       onBlur={onBlur}

@@ -18,8 +18,8 @@ export const userTabs: UserTab[] = [
   },
   {
     to: '/users/markets',
-    label: 'Οι Αγορές μου',
-    title: 'Οι Αγορές μου',
+    label: 'Οι Αγορές Που Συμμετέχω',
+    title: 'Οι Αγορές Που Συμμετέχω',
     description: '',
     hasList: true,
   },

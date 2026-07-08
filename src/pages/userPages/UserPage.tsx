@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
+import { useAuthStore } from '../../store/authStore';
 import { useBlocker, useNavigate, useParams } from '@tanstack/react-router';
 import { setAuthNotification } from '../../lib/authNotifications';
 import {
@@ -10,7 +11,7 @@ import {
 } from '../../queries/userQueries';
 import { useGlobalEnums } from '../../shared/mappings/GlobalEnums';
 import CustomInputField from '../../shared/components/CustomInputField';
-import { USER_ROLE_MAPPING_TITLES } from '../../shared/mappings/users.mapping';
+import { USER_ROLE_MAPPING_TITLES, USER_ROLE_MAPPING } from '../../shared/mappings/users.mapping';
 
 const inputClass =
   'w-full px-4 py-3 text-[15px] rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text-heading) placeholder:text-(--color-text-muted) outline-none transition focus:border-(--color-primary) focus:ring-3 focus:ring-(--color-primary-subtle) disabled:opacity-50 disabled:cursor-not-allowed';
@@ -20,7 +21,10 @@ const ROLE_KEYS = USER_ROLE_MAPPING_TITLES ? Object.keys(USER_ROLE_MAPPING_TITLE
 
 export default function UserPage() {
   const navigate = useNavigate();
+  const connectedRole = useAuthStore((s) => s.role);
+  const connectedIsUserRole = ((connectedRole ?? '').trim().toLowerCase() === (USER_ROLE_MAPPING.USER ?? '').trim().toLowerCase());
   const params = useParams({ strict: false });
+  const { UserStatus, UserStatusLabels } = useGlobalEnums();
   const userId = typeof params.id === 'string' ? params.id : '';
   const { data: user, isLoading, isError, error } = useUserQuery(userId);
   const updateUserMutation = useUpdateUserMutation(userId);
@@ -127,7 +131,8 @@ export default function UserPage() {
         message: 'Οι αλλαγές χρήστη και ρόλων αποθηκεύτηκαν.',
       });
       allowProgrammaticNavigationRef.current = true;
-      navigate({ to: '/admin/users' });
+      const redirectTarget = connectedIsUserRole ? '/users' : '/admin/users';
+      navigate({ to: redirectTarget });
     } catch (mutationError) {
       showNotification(mutationError instanceof Error ? mutationError.message : 'Η αποθήκευση απέτυχε.', 'error');
     }
@@ -141,7 +146,8 @@ export default function UserPage() {
     setErrors({});
     setIsNavigationLocked(false);
     allowProgrammaticNavigationRef.current = true;
-    navigate({ to: '/admin/users' });
+    const redirectTarget = connectedIsUserRole ? '/users' : '/admin/users';
+    navigate({ to: redirectTarget });
   }
 
   function handleRoleToggle(role: string) {
@@ -157,7 +163,8 @@ export default function UserPage() {
       return;
     }
 
-    navigate({ to: "/admin/users" });
+    const redirectTarget = connectedIsUserRole ? '/users' : '/admin/users';
+    navigate({ to: redirectTarget });
   };
 
   const handleReinitializePassword = async () => {
@@ -283,6 +290,7 @@ export default function UserPage() {
                 value={selectedRoles[0] || ''}
                 dropdownItems={ROLE_KEYS.map((roleKey, index) => ({ value: roleKey, label: ROLE_OPTIONS[index] }))}
                 onChange={(v) => handleRoleToggle(String(v ?? ''))}
+                disabled={connectedIsUserRole}
                 width="100%"
               />
             </div>
@@ -293,7 +301,6 @@ export default function UserPage() {
                 label="Κατάσταση"
                 value={String(status)}
                 dropdownItems={(() => {
-                  const { UserStatus, UserStatusLabels } = useGlobalEnums();
                   const keys = Object.keys(UserStatus) as string[];
                   return keys
                     .filter((k) => isNaN(Number(k)))

@@ -2,8 +2,10 @@ import { useMemo, useState } from "react";
 import { RestartAlt } from "@mui/icons-material";
 import type { AttendanceRecord, AttendanceSearchRequest } from "../../models/attendance";
 import type { SellerSearchRequest } from "../../models/seller";
+import type { AppUser, UserListResult } from "../../models/user";
 import { useAttendanceQuery } from "../../queries/attendanceQueries";
 import { useSellersQuery } from "../../queries/sellerQueries";
+import { useUsersQuery } from "../../queries/userQueries";
 import DataTable, { type ColumnDef, FilterDef, FilterValues } from "../../shared/components/DataTable";
 
 interface AttendanceTableProps {
@@ -33,11 +35,17 @@ function formatIsoDate(value: string): string {
   return date.toLocaleDateString("el-GR");
 }
 
-function formatRecordedBy(row: AttendanceRecord): string {
-  if (row.recordedByName) return row.recordedByName;
+function formatRecordedBy(row: AttendanceRecord, usersData?: UserListResult): string {
+  // If we have a recordedByUserId, prefer resolving it to a fullname from usersData
   if (row.recordedByUserId !== null && row.recordedByUserId !== undefined) {
-    return `Χρήστης #${row.recordedByUserId}`;
+    const list: AppUser[] = Array.isArray(usersData) ? usersData : (usersData?.items ?? []);
+    const found = list.find((u) => String(u.id) === String(row.recordedByUserId));
+    if (found) return `${found.firstName} ${found.lastName}`.trim() || `Χρήστης #${row.recordedByUserId}`;
   }
+
+  // Fallback to any recordedByName provided by the API (may be a placeholder like 'Επόπτης: #7')
+  if (row.recordedByName) return row.recordedByName;
+
   return "-";
 }
 
@@ -51,27 +59,7 @@ function buildInitialFilters(marketId: number): AttendanceFilters {
   };
 }
 
-const attendanceColumns: ColumnDef<AttendanceRecord>[] = [
-  {
-    key: "sellerName",
-    label: "Πωλητής",
-  },
-  {
-    key: "attendanceDate",
-    label: "Ημερομηνία",
-    render: (row) => formatIsoDate(row.attendanceDate),
-  },
-  {
-    key: "recordedByName",
-    label: "Καταγραφή από",
-    render: (row) => formatRecordedBy(row),
-  },
-  {
-    key: "notes",
-    label: "Σχόλια",
-    render: (row) => row.notes || "-",
-  },
-];
+// attendanceColumns moved inside component to access usersData
 
 export default function AttendanceTable({ marketId }: AttendanceTableProps) {
   const [filters, setFilters] = useState<AttendanceFilters>(() => buildInitialFilters(marketId));
@@ -86,8 +74,8 @@ export default function AttendanceTable({ marketId }: AttendanceTableProps) {
   );
 
   const { data: sellersData } = useSellersQuery(DEFAULT_SELLER_FILTERS);
+  const { data: usersData } = useUsersQuery({ name: '', email: '', role: '', page: 1, pageSize: 5000 });
   const { data: attendanceData, isLoading, isError, error } = useAttendanceQuery(attendanceQueryParams);
-
   const sellerOptions = useMemo(
     () => [
       { label: "Όλοι", value: "" },
@@ -98,6 +86,28 @@ export default function AttendanceTable({ marketId }: AttendanceTableProps) {
     ],
     [sellersData?.items]
   );
+
+  const attendanceColumns: ColumnDef<AttendanceRecord>[] = [
+    {
+      key: "sellerName",
+      label: "Πωλητής",
+    },
+    {
+      key: "attendanceDate",
+      label: "Ημερομηνία",
+      render: (row) => formatIsoDate(row.attendanceDate),
+    },
+    {
+      key: "recordedByName",
+      label: "Καταγραφή από",
+      render: (row) => formatRecordedBy(row, usersData),
+    },
+    {
+      key: "notes",
+      label: "Σχόλια",
+      render: (row) => row.notes || "-",
+    },
+  ];
 
   const rows = attendanceData?.items ?? [];
   const totalCount = attendanceData?.totalCount ?? 0;

@@ -1,6 +1,6 @@
-import { Outlet, useLocation } from '@tanstack/react-router';
+import { Outlet, useLocation, useNavigate } from '@tanstack/react-router';
 import { router } from '../routers/router';
-import SystemAdminHeader from './SystemAdminHeader';
+import Header from '../shared/components/Header';
 import Sidebar from '../shared/components/Sidebar';
 import { useState } from 'react';
 import logo02 from '../assets/logo-02.svg';
@@ -26,18 +26,22 @@ function UserAccessLayoutInner() {
 
   function handleLogout() {
     clearAuth();
-    // perform a full reload to the login page to avoid route-guard race conditions
-    try {
-      window.location.assign('/auth/login');
-    } catch (e) {
-      setTimeout(() => void router.navigate({ to: '/auth/login' }), 0);
-    }
+    // navigate immediately to login via router
+    void router.navigate({ to: '/auth/login' });
+  }
+
+  const navigate = useNavigate();
+
+  function handleAccountClick() {
+    const userId = user?.id ? String(user.id) : '';
+    if (!userId) return;
+    navigate({ to: '/admin/users/$id', params: { id: userId } });
   }
 
   return (
     <div className="min-h-svh">
       <div className="flex min-h-svh w-full flex-col overflow-visible border border-(--color-border) bg-(--color-surface) shadow-[var(--shadow-lg)] md:overflow-hidden">
-        <SystemAdminHeader onLogout={handleLogout} onAccountClick={() => null} />
+        <Header onLogout={handleLogout} onAccountClick={handleAccountClick} />
 
         <div className="flex flex-1 items-stretch gap-px bg-(--color-border-subtle)">
           <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} activeTab={activeTab} tabs={userTabs} />

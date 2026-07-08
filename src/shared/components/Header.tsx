@@ -2,14 +2,60 @@ import IconButton from '@mui/material/IconButton';
 import Tooltip from '@mui/material/Tooltip';
 import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
 import UserCircleIcon from '@mui/icons-material/AccountCircleOutlined';
-import logo02 from '../assets/LOGO_coloured.svg';
+import logo02 from '../../assets/LOGO_coloured.svg';
+import { router } from '../../routers/router';
 
 type Props = {
   onLogout: () => void;
   onAccountClick?: () => void;
 };
 
-export default function SystemAdminHeader({ onLogout, onAccountClick }: Props) {
+export default function Header({ onLogout, onAccountClick }: Props) {
+  function handleLogoutClick() {
+    if (onLogout) {
+      try {
+        onLogout();
+      } catch (e) {
+        /* ignore */
+      }
+      return;
+    }
+
+    try {
+      localStorage.removeItem('auth');
+    } catch (e) {
+      /* ignore */
+    }
+
+    try {
+      sessionStorage.removeItem('auth');
+    } catch (e) {
+      /* ignore */
+    }
+
+    try {
+      void router.navigate({ to: '/auth/login' });
+      setTimeout(() => {
+        try {
+          if (window.location.hash !== '#/auth/login') {
+            window.location.hash = '#/auth/login';
+          }
+        } catch (e) {
+          try {
+            window.location.assign('/auth/login');
+          } catch (err) {
+            /* ignore */
+          }
+        }
+      }, 120);
+    } catch (e) {
+      try {
+        window.location.assign('/auth/login');
+      } catch (err) {
+        /* ignore */
+      }
+    }
+  }
   return (
     <header className="relative z-20 border-b-4 border-[#ef4123] bg-[#C4B5A0] px-4 md:px-6">
       <div className="flex items-center justify-between gap-2">
@@ -38,7 +84,7 @@ export default function SystemAdminHeader({ onLogout, onAccountClick }: Props) {
           <Tooltip title="Αποσύνδεση">
             <IconButton
               aria-label="logout"
-              onClick={onLogout}
+              onClick={handleLogoutClick}
               sx={{
                 width: 32,
                 height: 32,
