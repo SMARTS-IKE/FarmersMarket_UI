@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Tab, Tabs, Box } from "@mui/material";
+import { Tab, Tabs, Box, Tooltip } from "@mui/material";
 import CustomButton from "../../../shared/components/CustomButton";
 import { useNavigate } from '@tanstack/react-router';
 import DataTable, { ColumnDef, FilterDef, FilterValues, DropdownItem } from "../../../shared/components/DataTable";
@@ -11,12 +11,52 @@ import LayoutTabsSlot from "../../../shared/components/LayoutTabsSlot";
 import type { Market } from "../../../models/market";
 
 const columns: ColumnDef<FeeRule>[] = [
-  { key: "marketName", label: "Αγορά" },
+  {
+    key: "marketName",
+    label: "Αγορά",
+    render: (row) => {
+      const names: string[] = (row as any).marketNames ?? [];
+      if (!names || names.length === 0) return "—";
+      const first = names[0];
+      const extra = names.length - 1;
+      const tooltipContent = names.join(', ');
+      return (
+        <Tooltip title={tooltipContent} placement="top" arrow>
+          <span style={{ cursor: 'default' }}>
+            {first}
+            {extra > 0 && (
+              <span style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: 22, height: 22, borderRadius: '50%', backgroundColor: 'var(--color-dark)', color: 'var(--color-surface)', fontSize: 12, marginLeft: 8 }}>
+                +{extra}
+              </span>
+            )}
+          </span>
+        </Tooltip>
+      );
+    },
+  },
   {
     key: "sellerType",
     label: "Τύπος Πωλητή",
     filterable: false,
-    render: (row) => SELLER_TYPE_LABELS[row.sellerType] ?? row.sellerType,
+    render: (row) => {
+      const val = (row as any).sellerType;
+      // If the value directly matches our labels (e.g. numeric string "1"), use it
+      if (val != null && SELLER_TYPE_LABELS[String(val)]) return SELLER_TYPE_LABELS[String(val)];
+
+      // Map common English values to enum codes
+      const mapEngToCode: Record<string, string> = {
+        producer: '0',
+        professional_seller: '1',
+      };
+
+      if (typeof val === 'string') {
+        const normalized = val.trim().toLowerCase();
+        if (mapEngToCode[normalized]) return SELLER_TYPE_LABELS[mapEngToCode[normalized]];
+      }
+
+      // Fallback to original value
+      return String(val ?? '—');
+    },
   },
   {
     key: "amount",
@@ -24,7 +64,6 @@ const columns: ColumnDef<FeeRule>[] = [
     filterable: false,
     render: (row) => `€${Number(row.amount ?? 0).toFixed(2)}`,
   },
-  { key: "basis", label: "Βάση" },
   { key: "validFrom", label: "Ισχύει από" },
   { key: "validTo", label: "Ισχύει έως" }
 ];
@@ -39,7 +78,41 @@ export default function AdminFeesPaymentsPage() {
   });
 
   const { data: feesQueryResults } = useFeesQuery(filters);
-  const fees: FeeRule[] = feesQueryResults?.items ?? [];
+
+  // Map API response shape to the `FeeRule` table shape expected by the DataTable.
+  // - Use the first market id (or null) as `marketId` and join `marketNames` for display
+  // - Display `basis` in the `amount` column per request
+  // - Use `createdAt` / `updatedAt` as `validFrom` / `validTo`
+  const formatDate = (iso?: string) => {
+    if (!iso) return "";
+    try {
+      const d = new Date(iso);
+      if (Number.isNaN(d.getTime())) return "";
+      return d.toISOString().slice(0, 10);
+    } catch {
+      return "";
+    }
+  };
+
+  const fees: FeeRule[] = (feesQueryResults?.items ?? []).map((f: any) => ({
+    id: f.id,
+    name: f.name,
+    description: f.description,
+    marketId: f.marketIds && f.marketIds.length > 0 ? f.marketIds[0] : null,
+    marketIds: f.marketIds,
+    // keep the original names array for the renderer
+    // @ts-ignore
+    marketNames: Array.isArray(f.marketNames) ? f.marketNames : (f.marketNames ?? []),
+    sellerType: f.sellerType,
+    licenseCategory: f.licenseCategory,
+    // Per request, show basis as the main displayed amount
+    amount: f.basis ?? f.amount ?? 0,
+    basis: f.basis ?? 0,
+    validFrom: formatDate(f.createdAt),
+    validTo: formatDate(f.updatedAt),
+    priority: 0,
+    legalReference: "",
+  }));
 
   // Fetch markets for the dropdown
   const marketSearchParams = {
@@ -51,6 +124,10 @@ export default function AdminFeesPaymentsPage() {
   };
   const { data: marketsQueryResults } = useMarketsQuery(marketSearchParams);
   const markets: Market[] = marketsQueryResults?.items ?? [];
+  // Debug: log markets response to help diagnose visibility issues
+  // Remove in production after debugging
+  // eslint-disable-next-line no-console
+  console.debug('AdminFeesPaymentsPage markets:', marketsQueryResults);
 
   // Create market dropdown options
   const marketOptions: DropdownItem[] = useMemo(() => {
@@ -133,7 +210,8 @@ export default function AdminFeesPaymentsPage() {
             <DataTable<FeeRule>
               rows={fees}
               columns={columns}
-              rowKey="name"
+              rowKey="id"
+              onRowClick={(r) => navigate({ to: `/admin/fees-payments/${(r as any).id}` } as any)}
               showFilter={true}
               showGlobalSearch={false}
               filters={tableFilters}

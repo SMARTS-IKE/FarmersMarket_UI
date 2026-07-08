@@ -4,6 +4,7 @@ export interface FeeRule {
   description: string;
   marketId: number | null;
   marketIds?: number[];
+  feeType?: string;
   sellerType: string;
   licenseCategory: string;
   amount: number;

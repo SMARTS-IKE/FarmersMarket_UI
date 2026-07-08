@@ -4,7 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { RouterProvider } from '@tanstack/react-router';
 import './index.css';
 import { queryClient } from './lib/queryClient';
-import GlobalEnumsProvider from './shared/components/GlobalEnums';
+import GlobalEnumsProvider from './shared/mappings/GlobalEnums';
 
 const root = createRoot(document.getElementById('root')!);
 

@@ -5,7 +5,7 @@ import DataTable, { ColumnDef, FilterDef, FilterValues } from "../../../shared/c
 import type { AppUser, UserSearchRequest } from "../../../models/user";
 import { useUsersQuery } from "../../../queries/userQueries";
 import { USER_ROLE_MAPPING_TITLES } from "../../../shared/mappings/users.mapping";
-import { useGlobalEnums } from '../../../shared/components/GlobalEnums';
+import { useGlobalEnums } from '../../../shared/mappings/GlobalEnums';
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import CustomButton from "../../../shared/components/CustomButton";
 import { consumeAuthNotification } from "../../../lib/authNotifications";

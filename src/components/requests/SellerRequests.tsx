@@ -15,7 +15,7 @@ import { useAuthStore } from "../../store/authStore";
 import { useSellersQuery } from "../../queries/sellerQueries";
 import { useRequestFormsQuery } from "../../queries/formsQueries";
 import { sellerRequestColumns } from "./request.utils";
-import { useGlobalEnums } from "../../shared/components/GlobalEnums";
+import { useGlobalEnums } from "../../shared/mappings/GlobalEnums";
 
 const SELLER_FILTERS: SellerSearchRequest = {
   name: "",

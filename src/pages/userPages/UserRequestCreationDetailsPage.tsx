@@ -12,7 +12,7 @@ import { useSellerQuery, useSellersQuery } from "../../queries/sellerQueries";
 import { useAuthStore } from "../../store/authStore";
 import { TYPE_OF_FIELDS_TO_DESIGN_FIELD } from "../../components/requests/request.utils";
 import { useCreateRequestMutation } from "../../queries/requestQueries";
-import { useGlobalEnums } from '../../shared/components/GlobalEnums';
+import { useGlobalEnums } from '../../shared/mappings/GlobalEnums';
 import CheckIcon from '@mui/icons-material/Check';
 import CloseIcon from '@mui/icons-material/Close';
 

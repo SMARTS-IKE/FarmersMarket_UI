@@ -88,7 +88,28 @@ export default function AdminSellerEditPage() {
       return;
     }
 
-    // TODO: wire create seller mutation when backend endpoint is available
+    const payload = {
+      seller: {
+        phone: phone || null,
+        address: address || null,
+      },
+      license: {
+        fromDate: licenseIssuedAt,
+        sellerType: Number(sellerType) || 0,
+        isSeasonal: true,
+        seasonalFromDate: licenseIssuedAt || null,
+        seasonalToDate: licenseExpiresAt || null,
+        licenseCategory: 0,
+        licenseStatus: 0,
+        licenseNumber: licenseNumber,
+        licenseExpiry: licenseExpiresAt || null,
+        notes: "",
+      },
+    };
+
+    // TODO: call edit seller API. For now log the payload and return to list
+    // eslint-disable-next-line no-console
+    console.log("Edit payload:", payload);
     navigate({ to: "/admin/sellers" });
   };
 

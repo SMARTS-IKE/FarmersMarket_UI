@@ -15,14 +15,20 @@ export default function AdminSellerMarketPage() {
   const updateMutation = useUpdateMarketSellerMutation(marketConnectionId);
 
   const [isEditing, setIsEditing] = useState(true);
-  const [spotLocation, setSpotLocation] = useState<string | null>(null);
+  const [spotNumber, setSpotNumber] = useState<number | null>(null);
+  const [licenseCategory, setLicenseCategory] = useState<number | null>(null);
   const [spotLength, setSpotLength] = useState<number | null>(null);
   const [fromDate, setFromDate] = useState<string>("");
   const [notes, setNotes] = useState<string>("");
 
   useEffect(() => {
     if (!connection) return;
-    setSpotLocation(connection.spotLocation ?? null);
+    // backend may return either `spotLocation` (string) or `spotNumber` (number)
+    // prefer `spotNumber`, otherwise try to parse `spotLocation` if numeric
+    const rawSpot = (connection as any).spotNumber ?? (connection as any).spotLocation ?? null;
+    const parsedSpot = rawSpot == null ? null : Number(rawSpot);
+    setSpotNumber(Number.isNaN(parsedSpot) ? null : parsedSpot);
+    setLicenseCategory(connection.licenseCategory ?? null);
     setSpotLength(connection.spotLength ?? null);
     setFromDate(connection.fromDate ? connection.fromDate.split("T")[0] : "");
     setNotes(connection.notes ?? "");
@@ -30,14 +36,16 @@ export default function AdminSellerMarketPage() {
 
   const hasChanges = (() => {
     if (!connection) return false;
-    const origSpot = connection.spotLocation ?? null;
+    const origSpot = (connection as any).spotLocation ?? (connection as any).spotNumber ?? null;
     const origLength = connection.spotLength ?? null;
     const origFrom = connection.fromDate ? connection.fromDate.split("T")[0] : "";
     const origNotes = connection.notes ?? "";
+    const origLicense = connection.licenseCategory ?? null;
 
     // Strict comparison is fine for these primitives
-    if ((spotLocation ?? null) !== origSpot) return true;
+    if ((spotNumber ?? null) !== origSpot) return true;
     if ((spotLength ?? null) !== origLength) return true;
+    if ((licenseCategory ?? null) !== origLicense) return true;
     if ((fromDate ?? "") !== origFrom) return true;
     if ((notes ?? "") !== origNotes) return true;
     return false;
@@ -104,12 +112,12 @@ export default function AdminSellerMarketPage() {
           </div>
           <Box className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <CustomInputField
-              type="TEXT"
+              type="NUMBER"
               label="Αριθμός θέσης"
-              value={spotLocation ?? ""}
+              value={spotNumber !== null && spotNumber !== undefined ? String(spotNumber) : ""}
               disabled={!isEditing}
               width="100%"
-              onChange={(v) => setSpotLocation(String(v) || null)}
+              onChange={(v) => setSpotNumber(v === "" ? null : Number(v))}
             />
             <CustomInputField
               type="NUMBER"
@@ -128,7 +136,10 @@ export default function AdminSellerMarketPage() {
               onChange={(v) => setFromDate(String(v))}
             />
           </Box>
+        
           <Box className="mt-4">
+        
+
             <CustomInputField
               type="TEXTAREA"
               label="Σημειώσεις"
@@ -156,11 +167,13 @@ export default function AdminSellerMarketPage() {
                   onClick={async () => {
                     try {
                       await updateMutation.mutateAsync({
-                        spotLocation: spotLocation,
-                        spotLength: spotLength,
+                        // use the requested edit body shape
                         fromDate: fromDate,
+                        spotLength: spotLength ?? 0,
+                        spotNumber: spotNumber ?? 0,
+                        licenseCategory: licenseCategory ?? 0,
                         notes: notes,
-                      });
+                      } as any);
                     } catch (e) {
                       // mutation error handled elsewhere
                     }
@@ -171,10 +184,13 @@ export default function AdminSellerMarketPage() {
                   backgroundColor="var(--color-text-muted)"
                   onClick={() => {
                     if (connection) {
-                      setSpotLocation(connection.spotLocation ?? null);
+                      const rawSpot = (connection as any).spotNumber ?? (connection as any).spotLocation ?? null;
+                      const parsedSpot = rawSpot == null ? null : Number(rawSpot);
+                      setSpotNumber(Number.isNaN(parsedSpot) ? null : parsedSpot);
                       setSpotLength(connection.spotLength ?? null);
                       setFromDate(connection.fromDate ? connection.fromDate.split("T")[0] : "");
                       setNotes(connection.notes ?? "");
+                      setLicenseCategory(connection.licenseCategory ?? null);
                     }
                   }}
                   sx={{ ml: 2 }}

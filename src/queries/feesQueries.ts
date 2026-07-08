@@ -22,7 +22,7 @@ export function useFeesQuery(params: FeeRuleSearchRequest) {
 }
 
 export function useCreateFeeRuleMutation() {
-  return useMutation<void, Error, FeeRule>({
+  return useMutation<void, Error, any>({
     mutationFn: (payload) => createFeeRule(payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: feeKeys.all });
@@ -43,7 +43,7 @@ export function useFeeRuleQuery(id: string | number | undefined) {
 }
 
 export function useUpdateFeeRuleMutation() {
-  return useMutation<void, Error, { id: string | number; payload: FeeRule }>({
+  return useMutation<void, Error, { id: string | number; payload: any }>({
     mutationFn: ({ id, payload }) => updateFeeRule(id, payload),
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: feeKeys.all });

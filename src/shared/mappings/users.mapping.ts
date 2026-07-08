@@ -1,4 +1,4 @@
-import { UserRole, UserRoleLabels } from '../components/GlobalEnums';
+import { UserRole, UserRoleLabels } from './GlobalEnums';
 
 export const USER_ROLE_MAPPING_TITLES: Record<string, string> = {
   [UserRoleLabels[UserRole.Admin_Access]]: 'Διαχειριστής',

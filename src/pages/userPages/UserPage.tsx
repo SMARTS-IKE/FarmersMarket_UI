@@ -8,7 +8,7 @@ import {
   useUpdateUserMutation,
   useUserQuery,
 } from '../../queries/userQueries';
-import { useGlobalEnums } from '../../shared/components/GlobalEnums';
+import { useGlobalEnums } from '../../shared/mappings/GlobalEnums';
 import CustomInputField from '../../shared/components/CustomInputField';
 import { USER_ROLE_MAPPING_TITLES } from '../../shared/mappings/users.mapping';
 

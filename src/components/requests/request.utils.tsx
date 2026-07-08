@@ -5,7 +5,7 @@ import type {
   SellerRequest as SellerRequest,
   RequestSheet,
 } from "../../models/request";
-import { RequestStatusLabels, RequestStatus as RequestStatusEnum } from "../../shared/components/GlobalEnums";
+import { RequestStatusLabels, RequestStatus as RequestStatusEnum } from "../../shared/mappings/GlobalEnums";
 
 export const STEPS = [
   {

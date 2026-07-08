@@ -8,6 +8,23 @@ export interface License {
   expiresAt: string;
 }
 
+// Detailed license model returned as `currentLicense` from the API
+export interface CurrentLicense {
+  id: number;
+  fromDate: string;
+  toDate?: string | null;
+  isActive: boolean;
+  sellerType: number;
+  isSeasonal: boolean;
+  seasonalFromDate?: string | null;
+  seasonalToDate?: string | null;
+  licenseCategory: number;
+  licenseStatus: number;
+  licenseNumber: string;
+  licenseExpiry?: string | null;
+  notes?: string | null;
+}
+
 export interface SellerSearchRequest {
   name: string;
   afm: string;
@@ -28,6 +45,10 @@ export interface Seller {
   sellerType: SellerType;
   isActive: boolean;
   licenses?: License[];
+  userId?: number;
+  fullName?: string;
+  createdAt?: string;
+  currentLicense?: CurrentLicense | null;
 }
 
 export interface SellerListResponse {

@@ -54,10 +54,22 @@ export async function createLicense(
 export async function updateSeller(
   id: string,
   data: {
-    firstName: string;
-    lastName: string;
-    phone?: string | null;
-    address?: string | null;
+    seller: {
+      phone?: string | null;
+      address?: string | null;
+    };
+    license: {
+      fromDate: string;
+      sellerType: number;
+      isSeasonal: boolean;
+      seasonalFromDate?: string | null;
+      seasonalToDate?: string | null;
+      licenseCategory: number;
+      licenseStatus: number;
+      licenseNumber: string;
+      licenseExpiry?: string | null;
+      notes?: string | null;
+    };
   }
 ): Promise<void> {
   return http.put<void>(`/Sellers/${id}`, data);

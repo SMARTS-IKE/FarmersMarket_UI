@@ -1,5 +1,6 @@
 import { Alert, Box, Snackbar, Tab, Tabs } from "@mui/material";
 import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
+import { flushSync } from "react-dom";
 import { useBlocker, useNavigate, useParams } from "@tanstack/react-router";
 import type { ConnectedMarket } from "../../../models/market";
 import DataTable, { type ColumnDef } from "../../../shared/components/DataTable";
@@ -210,13 +211,26 @@ export default function SellerPage() {
   const handleSave = async () => {
     try {
       await updateSeller(sellerId, {
-        firstName,
-        lastName,
-        phone,
-        address,
+        seller: {
+          phone: phone || null,
+          address: address || null,
+        },
+        license: {
+          fromDate: licenseIssuedAt,
+          sellerType: Number(sellerType) || 0,
+          isSeasonal: Boolean(licenseIssuedAt || licenseExpiresAt),
+          seasonalFromDate: licenseIssuedAt || null,
+          seasonalToDate: licenseExpiresAt || null,
+          licenseCategory: 0,
+          licenseStatus: 0,
+          licenseNumber: licenseNumber,
+          licenseExpiry: licenseExpiresAt || null,
+          notes: null,
+        },
       });
 
-      setInitialState(currentState);
+      // Ensure initialState is updated synchronously so the blocker sees no unsaved changes
+      flushSync(() => setInitialState(currentState));
       showNotification("Οι αλλαγές αποθηκεύτηκαν.", "success");
       navigate({ to: "/admin/sellers" });
     } catch (err: any) {
