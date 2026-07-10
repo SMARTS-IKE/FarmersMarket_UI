@@ -4,6 +4,7 @@ import CustomButton from "../../../shared/components/CustomButton";
 import CustomInputField from "../../../shared/components/CustomInputField";
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
 import type { SellerType } from "../../../models/seller";
+import { useGlobalEnums } from "../../../shared/mappings/GlobalEnums";
 
 export default function AdminSellerEditPage() {
   const navigate = useNavigate();
@@ -16,12 +17,17 @@ export default function AdminSellerEditPage() {
   const [licenseNumber, setLicenseNumber] = useState("");
   const [licenseIssuedAt, setLicenseIssuedAt] = useState("");
   const [licenseExpiresAt, setLicenseExpiresAt] = useState("");
+  const [email, setEmail] = useState("");
+  const [userRole, setUserRole] = useState<string | number>("");
+  const [userStatus, setUserStatus] = useState<number | string>(0);
   const [submitAttempted, setSubmitAttempted] = useState(false);
 
   const firstNameTrimmed = firstName.trim();
   const lastNameTrimmed = lastName.trim();
   const afmTrimmed = afm.trim();
   const sellerTypeValue = String(sellerType ?? "");
+
+  const { UserRoleLabels, UserStatusLabels } = useGlobalEnums();
 
   const firstNameError = submitAttempted
     ? !firstNameTrimmed
@@ -89,6 +95,11 @@ export default function AdminSellerEditPage() {
     }
 
     const payload = {
+      user: {
+        email: email || null,
+        role: userRole || null,
+        status: Number(userStatus) || 0,
+      },
       seller: {
         phone: phone || null,
         address: address || null,
@@ -162,6 +173,13 @@ export default function AdminSellerEditPage() {
           />
           <CustomInputField
             type="TEXT"
+            label="Email"
+            value={email}
+            onChange={(value) => setEmail(String(value))}
+            width="100%"
+          />
+          <CustomInputField
+            type="TEXT"
             label="Τηλέφωνο"
             value={phone}
             onChange={(value) => setPhone(String(value))}
@@ -173,6 +191,22 @@ export default function AdminSellerEditPage() {
             value={address}
             onChange={(value) => setAddress(String(value))}
             width="100%"
+          />
+          <CustomInputField
+            type="DROPDOWN"
+            label="Ρόλος χρήστη"
+            value={String(userRole)}
+            onChange={(value) => setUserRole(value)}
+            width="100%"
+            dropdownItems={Object.entries(UserRoleLabels).map(([k, v]) => ({ label: v, value: String(k) }))}
+          />
+          <CustomInputField
+            type="DROPDOWN"
+            label="Κατάσταση χρήστη"
+            value={String(userStatus)}
+            onChange={(value) => setUserStatus(value)}
+            width="100%"
+            dropdownItems={Object.entries(UserStatusLabels).map(([k, v]) => ({ label: v, value: String(k) }))}
           />
         </div>
 

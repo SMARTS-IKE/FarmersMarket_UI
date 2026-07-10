@@ -1,4 +1,5 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
+import { Snackbar, Alert } from "@mui/material";
 import { useNavigate } from "@tanstack/react-router";
 import DataTable, { FilterDef, FilterValues } from "../../../shared/components/DataTable";
 import CustomButton from "../../../shared/components/CustomButton";
@@ -24,6 +25,42 @@ const INITIAL_FILTER_VALUES = {
 export default function AdminMarketsPage() {
   const navigate = useNavigate({ from: "/admin/markets" });
   const [filters, setFilters] = useState<MarketSearchRequest>(EMPTY_FILTERS);
+  const [noticeMessage, setNoticeMessage] = useState<string | null>(null);
+  const [isNoticeOpen, setIsNoticeOpen] = useState(false);
+
+  useEffect(() => {
+    try {
+      const params = new URLSearchParams(window.location.search);
+      let notice = params.get("notice");
+
+      if (!notice) {
+        // fallback to sessionStorage (used when navigate couldn't include query)
+        try {
+          notice = sessionStorage.getItem('admin.markets.notice') ?? undefined;
+          if (notice) sessionStorage.removeItem('admin.markets.notice');
+        } catch (e) {
+          // ignore
+        }
+      }
+
+      if (notice) {
+        const msg = notice === "created" ? "Η αγορά δημιουργήθηκε επιτυχώς." : notice === "updated" ? "Η αγορά ενημερώθηκε επιτυχώς." : notice;
+        setNoticeMessage(msg);
+        setIsNoticeOpen(true);
+
+        // remove the notice param from the URL without reloading
+        try {
+          const url = new URL(window.location.href);
+          url.searchParams.delete("notice");
+          window.history.replaceState(null, "", url.toString());
+        } catch (e) {
+          // ignore
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+  }, []);
 
   const { data } = useMarketsQuery(filters);
   const markets: Market[] = data?.items ?? [];
@@ -83,6 +120,12 @@ export default function AdminMarketsPage() {
           onRowClick={handleRowClick}
         />
       </div>
+
+      <Snackbar open={isNoticeOpen} autoHideDuration={4000} onClose={() => setIsNoticeOpen(false)} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert onClose={() => setIsNoticeOpen(false)} severity="success" variant="filled" sx={{ width: '100%' }}>
+          {noticeMessage}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

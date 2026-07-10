@@ -9,6 +9,7 @@ import CustomInputField from "../../../shared/components/CustomInputField";
 import { useSellerQuery, useSellerMarketsQuery } from "../../../queries/sellerQueries";
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
 import { updateSeller } from "../../../services/sellerService";
+import { useGlobalEnums } from "../../../shared/mappings/GlobalEnums";
 
 const connectedMarketsColumns: ColumnDef<ConnectedMarket>[] = [
   { key: "marketName", label: "Όνομα Αγοράς" },
@@ -63,7 +64,10 @@ export default function SellerPage() {
   const [afm, setAfm] = useState("");
   const [phone, setPhone] = useState("");
   const [address, setAddress] = useState("");
+  const [email, setEmail] = useState("");
   const [userId, setUserId] = useState<number | null>(null);
+  const [userRole, setUserRole] = useState<string | number>("");
+  const [userStatus, setUserStatus] = useState<number | string>(0);
   const [createdAt, setCreatedAt] = useState("");
   const [sellerType, setSellerType] = useState<string>("0");
   const [isActive, setIsActive] = useState(false);
@@ -83,6 +87,9 @@ export default function SellerPage() {
     licenseExpiresAt: "",
     userId: null,
     createdAt: "",
+    email: "",
+    userRole: "",
+    userStatus: 0,
   });
   const [navigationNotice, setNavigationNotice] = useState("");
   const [notificationSeverity, setNotificationSeverity] = useState<"success" | "warning">("warning");
@@ -90,6 +97,8 @@ export default function SellerPage() {
 
   const { data: seller, isLoading, isError, error } = useSellerQuery(sellerId);
   const { data: connectedMarketsResults } = useSellerMarketsQuery(sellerId);
+
+  const { UserRoleLabels, UserStatusLabels } = useGlobalEnums();
 
   const connectedMarkets = connectedMarketsResults?.items ?? [];
 
@@ -108,13 +117,16 @@ export default function SellerPage() {
       address,
       sellerType,
       isActive,
+      email,
+      userRole,
+      userStatus,
       licenseNumber,
       licenseIssuedAt,
       licenseExpiresAt,
       userId,
       createdAt,
     }),
-    [firstName, lastName, afm, phone, address, sellerType, isActive, licenseNumber, licenseIssuedAt, licenseExpiresAt, userId, createdAt]
+    [firstName, lastName, afm, phone, address, sellerType, isActive, licenseNumber, licenseIssuedAt, licenseExpiresAt, userId, createdAt, email, userRole, userStatus]
   );
   const hasUnsavedChanges = useMemo(
     () => JSON.stringify(currentState) !== JSON.stringify(initialState),
@@ -139,6 +151,9 @@ export default function SellerPage() {
       licenseExpiresAt: cl?.licenseExpiry ?? cl?.expiresAt ?? cl?.toDate ?? cl?.seasonalToDate ?? "",
       userId: typeof seller.userId === 'number' ? seller.userId : null,
       createdAt: seller.createdAt ?? "",
+      email: (seller as any).email ?? "",
+      userRole: (seller as any).role ?? "",
+      userStatus: typeof (seller as any).status === 'number' ? (seller as any).status : 0,
     };
 
     setFirstName(mappedState.firstName);
@@ -153,6 +168,9 @@ export default function SellerPage() {
     setLicenseExpiresAt(mappedState.licenseExpiresAt);
     setUserId(mappedState.userId ?? null);
     setCreatedAt(mappedState.createdAt ?? "");
+    setEmail(mappedState.email ?? "");
+    setUserRole(mappedState.userRole ?? "");
+    setUserStatus(mappedState.userStatus ?? 0);
     setInitialState(mappedState);
     setNavigationNotice("");
     setIsSnackbarOpen(false);
@@ -204,6 +222,9 @@ export default function SellerPage() {
     setLicenseExpiresAt(initialState.licenseExpiresAt);
     setUserId(initialState.userId ?? null);
     setCreatedAt(initialState.createdAt ?? "");
+    setEmail(initialState.email ?? "");
+    setUserRole(initialState.userRole ?? "");
+    setUserStatus(initialState.userStatus ?? 0);
     setNavigationNotice("");
     setIsSnackbarOpen(false);
   };
@@ -211,6 +232,11 @@ export default function SellerPage() {
   const handleSave = async () => {
     try {
       await updateSeller(sellerId, {
+        user: {
+          email: email || null,
+          role: userRole || null,
+          status: Number(userStatus) || 0,
+        },
         seller: {
           phone: phone || null,
           address: address || null,
@@ -350,6 +376,13 @@ export default function SellerPage() {
               />
               <CustomInputField
                 type="TEXT"
+                label="Email"
+                value={email}
+                onChange={(value) => setEmail(String(value))}
+                width="100%"
+              />
+              <CustomInputField
+                type="TEXT"
                 label="Τηλέφωνο"
                 value={phone}
                 onChange={(value) => setPhone(String(value))}
@@ -361,6 +394,22 @@ export default function SellerPage() {
                 value={address}
                 onChange={(value) => setAddress(String(value))}
                 width="100%"
+              />
+              <CustomInputField
+                type="DROPDOWN"
+                label="Ρόλος χρήστη"
+                value={String(userRole)}
+                onChange={(value) => setUserRole(value)}
+                width="100%"
+                dropdownItems={Object.entries(UserRoleLabels).map(([k, v]) => ({ label: v, value: String(k) }))}
+              />
+              <CustomInputField
+                type="DROPDOWN"
+                label="Κατάσταση χρήστη"
+                value={String(userStatus)}
+                onChange={(value) => setUserStatus(value)}
+                width="100%"
+                dropdownItems={Object.entries(UserStatusLabels).map(([k, v]) => ({ label: v, value: String(k) }))}
               />
             </div>
 

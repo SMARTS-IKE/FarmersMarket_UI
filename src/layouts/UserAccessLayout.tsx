@@ -26,7 +26,6 @@ function UserAccessLayoutInner() {
 
   function handleLogout() {
     clearAuth();
-    // navigate immediately to login via router
     void router.navigate({ to: '/auth/login' });
   }
 

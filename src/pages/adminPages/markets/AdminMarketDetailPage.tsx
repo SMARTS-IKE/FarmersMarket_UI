@@ -407,6 +407,14 @@ export default function AdminMarketDetailPage() {
       setInitialFormValues(values);
       setNavigationNotice("");
       setIsSnackbarOpen(false);
+
+      // Inform user on the list page that update succeeded
+      try {
+        sessionStorage.setItem('admin.markets.notice', 'updated');
+      } catch (e) {
+        // ignore
+      }
+      navigate({ to: "/admin/markets" });
     } catch (submitError) {
       const message = submitError instanceof Error ? submitError.message : "Η ενημέρωση της αγοράς απέτυχε.";
       showNavigationNotice(message);

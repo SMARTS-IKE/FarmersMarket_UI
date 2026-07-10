@@ -36,7 +36,7 @@ const tableFilters: FilterDef[] = [
 
 const INITIAL_FILTERS: UserSearchRequest = {
   email: "",
-  role: "",
+  role: "Admin_Access",
   status: "",
   page: 1,
   pageSize: 25,
@@ -83,9 +83,10 @@ export default function AdminUsersPage() {
       render: (row) => {
         // Prefer numeric `status` from backend; fall back to boolean `isActive` for older payloads
         const rawStatus = (row as any).status;
-        const statusValue = typeof rawStatus === 'number' ? rawStatus : (row.isActive ? 1 : 0);
-        const label = UserStatusLabels[statusValue] ?? (statusValue === 1 ? 'Ενεργός' : 'Ανενεργός');
-        const color = statusValue === 1 ? USER_STATUS_COLORS.active : USER_STATUS_COLORS.inactive;
+        // Treat `0` as active (green) and `1` as inactive (red).
+        const statusValue = typeof rawStatus === 'number' ? rawStatus : (row.isActive ? 0 : 1);
+        const label = UserStatusLabels[statusValue] ?? (statusValue === 0 ? 'Ενεργός' : 'Ανενεργός');
+        const color = statusValue === 0 ? USER_STATUS_COLORS.active : USER_STATUS_COLORS.inactive;
         return <span style={{ color, fontWeight: 700 }}>{label}</span>;
       },
     },

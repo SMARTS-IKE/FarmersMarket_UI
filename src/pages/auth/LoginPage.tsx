@@ -63,19 +63,17 @@ export default function LoginPage() {
           const target = role === 'User_Access' ? '/users' : '/admin';
           await navigate({ to: target } as any);
 
-          // Give the store a short moment to persist, then force reload so the router picks up auth state
+          //Give the store a short moment to persist, then force reload so the router picks up auth state
           setTimeout(() => {
             try {
               if (window.location.hash !== `#${target}`) window.location.hash = `#${target}`;
             } catch (e) {
               /* ignore */
             }
-            try {
-              window.location.reload();
-            } catch (e) {
-              /* ignore */
-            }
           }, 60);
+          const url = `${window.location.origin}${window.location.pathname}#${target}`;
+          window.location.href = url;
+          
 
           return;
         } catch (navErr) {

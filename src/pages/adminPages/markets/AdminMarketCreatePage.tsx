@@ -36,6 +36,12 @@ export default function AdminMarketCreatePage() {
     try {
       const payload = mapFormValuesToCreatePayload(values);
       await createMarketMutation.mutateAsync(payload);
+      // Inform user on the list page that creation succeeded
+      try {
+        sessionStorage.setItem('admin.markets.notice', 'created');
+      } catch (e) {
+        // ignore
+      }
       navigate({ to: "/admin/markets" });
     } catch (error) {
       console.error("Failed to create market:", error);

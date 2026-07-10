@@ -23,15 +23,15 @@ export const RequestStatusLabels: Record<number, string> = {
 };
 
 export enum UserStatus {
-  Inactive = 0,
-  Active = 1,
-  Pending = 2,
+  active = 0,
+  inactive = 1,
+  pending = 2,
 }
 
 export const UserStatusLabels: Record<number, string> = {
-  [UserStatus.Inactive]: 'Ανενεργός',
-  [UserStatus.Active]: 'Ενεργός',
-  [UserStatus.Pending]: 'Υπό Εξέταση',
+  [UserStatus.active]: 'Ενεργός',
+  [UserStatus.inactive]: 'Ανενεργός',
+  [UserStatus.pending]: 'Υπό Εξέταση',
 };
 
 export enum UserRole {

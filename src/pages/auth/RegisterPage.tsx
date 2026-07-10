@@ -179,7 +179,7 @@ export default function RegisterPage() {
           <input
             id="address"
             name="address"
-            type="text"
+           type="text"
             value={form.address}
             onChange={handleChange}
             placeholder="Διεύθυνση"
