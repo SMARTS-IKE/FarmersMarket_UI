@@ -9,6 +9,9 @@ import CustomInputField from "../../../shared/components/CustomInputField";
 import { useSellerQuery, useSellerMarketsQuery } from "../../../queries/sellerQueries";
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
 import { updateSeller } from "../../../services/sellerService";
+import { updateUser, getUserById } from "../../../services/userService";
+import { USER_ROLE_MAPPING } from "../../../shared/mappings/users.mapping";
+import { UserRole } from "../../../shared/mappings/GlobalEnums";
 import { useGlobalEnums } from "../../../shared/mappings/GlobalEnums";
 
 const connectedMarketsColumns: ColumnDef<ConnectedMarket>[] = [
@@ -128,10 +131,43 @@ export default function SellerPage() {
     }),
     [firstName, lastName, afm, phone, address, sellerType, isActive, licenseNumber, licenseIssuedAt, licenseExpiresAt, userId, createdAt, email, userRole, userStatus]
   );
-  const hasUnsavedChanges = useMemo(
-    () => JSON.stringify(currentState) !== JSON.stringify(initialState),
-    [currentState, initialState]
-  );
+  const hasUnsavedChanges = useMemo(() => {
+    const normalize = (v: unknown) => {
+      if (v === null || v === undefined) return "";
+      if (typeof v === "boolean") return v; // keep boolean
+      if (typeof v === "number") return String(v);
+      if (Array.isArray(v)) return JSON.stringify(v.map((x) => (x === null || x === undefined ? "" : String(x))));
+      return String(v).trim();
+    };
+
+    const keys = [
+      "firstName",
+      "lastName",
+      "afm",
+      "phone",
+      "address",
+      "sellerType",
+      "isActive",
+      "email",
+      "userRole",
+      "userStatus",
+      "licenseNumber",
+      "licenseIssuedAt",
+      "licenseExpiresAt",
+      "userId",
+      "createdAt",
+    ];
+
+    for (const k of keys) {
+      const a = normalize((currentState as any)[k]);
+      const b = normalize((initialState as any)[k]);
+      if (typeof a === "boolean" || typeof b === "boolean") {
+        if (a !== b) return true;
+      } else if (a !== b) return true;
+    }
+
+    return false;
+  }, [currentState, initialState]);
 
   useEffect(() => {
     if (!seller) return;
@@ -175,6 +211,48 @@ export default function SellerPage() {
     setNavigationNotice("");
     setIsSnackbarOpen(false);
   }, [seller]);
+
+  // When a userId is present, prefer loading user details from /Users/{id}
+  useEffect(() => {
+    let cancelled = false;
+    const loadUser = async () => {
+      if (!userId) return;
+      try {
+        const u = await getUserById(String(userId));
+        if (cancelled || !u) return;
+
+        const norm = (s?: string) => (s ?? "").trim().toLowerCase();
+        const firstRole = (u.roles && u.roles.length > 0) ? u.roles[0] : '';
+        let mappedRole: string | number = '';
+        if (norm(firstRole) === norm(USER_ROLE_MAPPING.ADMIN)) mappedRole = UserRole.Admin_Access;
+        else if (norm(firstRole) === norm(USER_ROLE_MAPPING.USER)) mappedRole = UserRole.User_Access;
+        else if (firstRole.toLowerCase().includes('admin')) mappedRole = UserRole.Admin_Access;
+        else mappedRole = UserRole.User_Access;
+
+        // Update component state with authoritative user values
+        setEmail(u.email ?? '');
+        setUserRole(mappedRole);
+        setUserStatus(typeof u.status === 'number' ? u.status : 0);
+
+        // Ensure blocker initial state is consistent with fetched user
+        flushSync(() =>
+          setInitialState((cur) => ({
+            ...cur,
+            email: u.email ?? cur.email,
+            userRole: mappedRole ?? cur.userRole,
+            userStatus: typeof u.status === 'number' ? u.status : cur.userStatus,
+          }))
+        );
+      } catch (e) {
+        // ignore — keep seller-provided values
+      }
+    };
+
+    loadUser();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId]);
 
   const showNotification = (message: string, severity: "success" | "warning") => {
     setNavigationNotice(message);
@@ -231,12 +309,17 @@ export default function SellerPage() {
 
   const handleSave = async () => {
     try {
-      await updateSeller(sellerId, {
-        user: {
-          email: email || null,
-          role: userRole || null,
+      // If there's an associated user, update the user first
+      if (userId) {
+        await updateUser(String(userId), {
+          firstName: firstName || "",
+          lastName: lastName || "",
           status: Number(userStatus) || 0,
-        },
+        });
+      }
+
+      // Then update the seller record (seller + license)
+      await updateSeller(sellerId, {
         seller: {
           phone: phone || null,
           address: address || null,
@@ -379,6 +462,7 @@ export default function SellerPage() {
                 label="Email"
                 value={email}
                 onChange={(value) => setEmail(String(value))}
+                disabled={true}
                 width="100%"
               />
               <CustomInputField

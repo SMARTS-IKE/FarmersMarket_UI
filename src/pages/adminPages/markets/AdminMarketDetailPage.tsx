@@ -4,7 +4,7 @@ import AdminMarketSellerParticipations from "./AdminMarketSellerParticipations";
 import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
 import { useBlocker, useNavigate, useParams } from "@tanstack/react-router";
 import CustomButton from "../../../shared/components/CustomButton";
-import AddSellerModal from "../../../components/markets/AddSellerModal";
+import AssignSellerManualyToMarketModal from "../../../components/markets/AssignSellerManualyToMarketModal";
 import MarketForm from "../../../components/markets/MarketForm";
 import type { Market, MarketFormValues, UpdateMarketRequest } from "../../../models/market";
 import {
@@ -16,7 +16,7 @@ import {
 } from "../../../queries/marketQueries";
 import ConnectedSellersTable from "../../../components/markets/ConnectedSellersTable";
 import AttendanceTable from "../../../components/markets/AttendanceTable";
-import { useSellersQuery } from "../../../queries/sellerQueries";
+import { useAllSellersQuery } from "../../../queries/sellerQueries";
 import { toIsoDate, toTimeWithSeconds } from "../../../components/markets/market.utils";
 
 const EMPTY_FORM_VALUES: MarketFormValues = {
@@ -288,13 +288,23 @@ export default function AdminMarketDetailPage() {
   const addMarketSellerMutation = useAddMarketSellerMutation(marketId);
   const removeMarketSellerMutation = useRemoveMarketSellerMutation(marketId);
   const updateMarketMutation = useUpdateMarketMutation(marketId);
-  const { data: sellersQueryResults } = useSellersQuery({
+  const { data: sellersQueryResults, isLoading: isAllSellersLoading, isError: isAllSellersError, error: sellersQueryError } = useAllSellersQuery({
     name: "",
     afm: "",
-    sellerType: 1,
-    page: 1,
-    pageSize: 5000,
+    sellerType: '',
+    pageSize: 2000,
   });
+
+  console.log('AdminMarketDetailPage sellersQueryResults', { sellersCount: sellersQueryResults?.items?.length ?? 0, sellersQueryResults });
+  console.log('AdminMarketDetailPage sellersQuery status', { isLoading: isAllSellersLoading, isError: isAllSellersError, sellersQueryError });
+  useEffect(() => {
+    console.log('AdminMarketDetailPage sellersQueryResults changed', { sellersCount: sellersQueryResults?.items?.length ?? 0, sellersQueryResults });
+  }, [sellersQueryResults]);
+  useEffect(() => {
+    console.log('AdminMarketDetailPage sellersQuery status changed', { isLoading: isAllSellersLoading, isError: isAllSellersError, sellersQueryError });
+  }, [isAllSellersLoading, isAllSellersError, sellersQueryError]);
+
+
   const [activeTab, setActiveTab] = useState(0);
   const [formValues, setFormValues] = useState<MarketFormValues>(EMPTY_FORM_VALUES);
   const [initialFormValues, setInitialFormValues] = useState<MarketFormValues>(EMPTY_FORM_VALUES);
@@ -302,6 +312,7 @@ export default function AdminMarketDetailPage() {
   const [isAddSellerModalOpen, setIsAddSellerModalOpen] = useState(false);
   const [navigationNotice, setNavigationNotice] = useState("");
   const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
+  const [snackbarSeverity, setSnackbarSeverity] = useState<'warning' | 'info' | 'success' | 'error'>('warning');
   const connectedSellersCount = connectedSellers.length;
   const hasUnsavedChanges = useMemo(
     () => JSON.stringify(formValues) !== JSON.stringify(initialFormValues),
@@ -330,9 +341,19 @@ export default function AdminMarketDetailPage() {
     [connectedSellerIds, sellersQueryResults?.items]
   );
 
+  const allSellerOptions = useMemo(
+    () =>
+      (sellersQueryResults?.items ?? []).map((seller) => ({
+        label: `${seller.firstName} ${seller.lastName}`.trim() || `Πωλητής #${seller.id}`,
+        value: String(seller.id),
+      })),
+    [sellersQueryResults?.items]
+  );
 
-  const showNavigationNotice = (message: string) => {
+
+  const showNavigationNotice = (message: string, severity: 'warning' | 'info' | 'success' | 'error' = 'warning') => {
     setNavigationNotice(message);
+    setSnackbarSeverity(severity);
     setIsSnackbarOpen(true);
   };
 
@@ -429,10 +450,14 @@ export default function AdminMarketDetailPage() {
     sellerId,
     spotNumber,
     spotLength,
+    fromDate,
+    notes,
   }: {
     sellerId: number;
     spotNumber: number;
     spotLength: number;
+    fromDate?: string;
+    notes?: string;
   }) => {
     if (!marketId || addMarketSellerMutation.isPending) return;
 
@@ -440,7 +465,7 @@ export default function AdminMarketDetailPage() {
     if (!sellerToAdd) return;
 
     addMarketSellerMutation.mutate(
-      { sellerId, spotNumber, spotLength },
+      { sellerId, spotNumber, spotLength, fromDate, notes },
       {
         onSuccess: () => {
           setConnectedSellers((currentSellers) => [
@@ -450,13 +475,16 @@ export default function AdminMarketDetailPage() {
               sellerId: sellerToAdd.id,
               spotNumber,
               spotLength,
+              fromDate: fromDate ?? undefined,
+              notes: notes ?? undefined,
             },
           ]);
 
           handleCloseAddSellerModal();
+          showNavigationNotice('Ο πωλητής προστέθηκε επιτυχώς.', 'info');
         },
         onError: (mutationError) => {
-          showNavigationNotice(mutationError.message || "Η σύνδεση πωλητή απέτυχε.");
+          showNavigationNotice(mutationError.message || "Η σύνδεση πωλητή απέτυχε.", 'error');
         },
       }
     );
@@ -572,13 +600,23 @@ export default function AdminMarketDetailPage() {
             />
           ) : activeTab === 1 ? (
             <div className="flex flex-col gap-4">
-              <ConnectedSellersTable sellers={connectedSellers} onRemoveSeller={handleRemoveSeller} />
+              <div className="w-full flex items-center justify-end">
+                <CustomButton
+                  title="Προσθήκη Πωλητή"
+                  width="fit-content"
+                  onClick={() => setIsAddSellerModalOpen(true)}
+                />
+              </div>
 
-              <AddSellerModal
+              <ConnectedSellersTable marketId={Number(marketId)} onRemoveSeller={handleRemoveSeller} />
+
+              <AssignSellerManualyToMarketModal
                 open={isAddSellerModalOpen}
                 onClose={handleCloseAddSellerModal}
                 onSave={handleSaveSellerFromModal}
-                sellerOptions={availableSellerOptions}
+                sellersData={sellersQueryResults}
+                sellerOptions={allSellerOptions}
+                assignedSellerIds={Array.from(connectedSellerIds)}
               />
             </div>
           ) : activeTab === 2 ? (
@@ -596,7 +634,7 @@ export default function AdminMarketDetailPage() {
         onClose={handleSnackbarClose}
         anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert onClose={handleSnackbarClose} severity="warning" variant="filled" sx={{ width: "100%" }}>
+        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} variant="filled" sx={{ width: "100%" }}>
           {navigationNotice}
         </Alert>
       </Snackbar>

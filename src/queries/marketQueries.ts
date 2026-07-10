@@ -64,7 +64,11 @@ export function useRemoveMarketSellerMutation(marketId: string) {
 }
 
 export function useAddMarketSellerMutation(marketId: string) {
-  return useMutation<void, Error, { sellerId: number; spotNumber: number; spotLength: number }>({
+  return useMutation<
+    void,
+    Error,
+    { sellerId: number; spotNumber: number; spotLength: number; fromDate?: string; notes?: string }
+  >({
     mutationFn: (payload) => addMarketSeller(marketId, payload),
     onSuccess: async () => {
       await Promise.all([

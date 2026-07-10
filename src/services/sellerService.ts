@@ -17,6 +17,45 @@ export async function getSellers(params: SellerSearchRequest): Promise<SellerLis
   return http.get<SellerListResponse>(`/Sellers${qs ? `?${qs}` : ''}`);
 }
 
+export async function getAllSellers(params: Omit<SellerSearchRequest, 'page' | 'pageSize'> & { pageSize?: number } = { name: '', afm: '', sellerType: '', pageSize: 1000 }): Promise<SellerListResponse> {
+  const pageSize = params.pageSize ?? 1000;
+  let page = 1;
+  let accumulated: Seller[] = [];
+  let totalCount = 0;
+  const maxPages = 200; // safety cap to avoid infinite loops
+
+  while (page <= maxPages) {
+    // reuse getSellers to leverage the same query params formatting
+    const resp = await getSellers({
+      name: (params as any).name ?? '',
+      afm: (params as any).afm ?? '',
+      sellerType: (params as any).sellerType ?? '',
+      page,
+      pageSize,
+      isActive: (params as any).isActive,
+    } as SellerSearchRequest);
+
+    console.log('getAllSellers page response', { page, itemsLength: Array.isArray(resp?.items) ? resp.items.length : 0, totalCount: resp?.totalCount, resp });
+
+    if (!resp || !Array.isArray(resp.items)) break;
+
+    accumulated = accumulated.concat(resp.items);
+    totalCount = resp.totalCount ?? accumulated.length;
+
+    if (accumulated.length >= totalCount) break;
+    if (resp.items.length < pageSize) break;
+
+    page += 1;
+  }
+
+  return {
+    items: accumulated,
+    totalCount,
+    page: 1,
+    pageSize: accumulated.length,
+  };
+}
+
 export async function getSellerById(id: string): Promise<Seller | null> {
   try {
     return await http.get<Seller>(`/Sellers/${id}`);

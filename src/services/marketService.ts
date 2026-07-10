@@ -173,12 +173,19 @@ export async function updateMarket(id: string, payload: UpdateMarketRequest): Pr
 
 export async function addMarketSeller(
   marketId: string,
-  payload: { sellerId: number; spotNumber: number; spotLength: number }
+  payload: { sellerId: number; spotNumber: number; spotLength: number; fromDate?: string; notes?: string }
 ): Promise<void> {
-  return http.post<void, { sellerId: number; spotNumber: number; spotLength: number }>(
-    `/Markets/${marketId}/sellers`,
-    payload
-  );
+  // Use manual assignment endpoint which accepts full payload
+  const body = {
+    marketId: Number(marketId),
+    sellerId: payload.sellerId,
+    fromDate: payload.fromDate ?? undefined,
+    spotLength: payload.spotLength,
+    spotNumber: payload.spotNumber,
+    notes: payload.notes ?? "",
+  };
+
+  return http.post<void, typeof body>(`/MarketSeller/assign_manually`, body);
 }
 
 export async function removeMarketSeller(marketId: string, sellerId: number): Promise<void> {

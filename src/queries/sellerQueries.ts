@@ -2,7 +2,7 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { queryClient } from '../lib/queryClient';
 import type { SellerSearchRequest, SellerListResponse, Seller } from '../models/seller';
 import type { ConnectedMarket, ConnectedMarketListResponse } from '../models/market';
-import { getSellerById, getSellers, getSellerMarkets, getMarketSellerById } from '../services/sellerService';
+import { getSellerById, getSellers, getSellerMarkets, getMarketSellerById, getAllSellers } from '../services/sellerService';
 import { updateMarketSeller } from '../services/sellerService';
 
 const SELLERS_STALE_TIME_MS = 5 * 60 * 1000;
@@ -11,6 +11,7 @@ const SELLERS_GC_TIME_MS = 15 * 60 * 1000;
 export const sellerKeys = {
   all: ['sellers'] as const,
   list: (params: SellerSearchRequest) => ['sellers', 'list', params] as const,
+  all: (params?: Partial<SellerSearchRequest>) => ['sellers', 'all', params] as const,
   detail: (id: string) => ['sellers', 'detail', id] as const,
   markets: (id: string) => ['sellers', 'markets', id] as const,
   marketDetail: (id: string) => ['sellers', 'marketDetail', id] as const,
@@ -20,6 +21,21 @@ export function useSellersQuery(params: SellerSearchRequest) {
   return useQuery<SellerListResponse, Error>({
     queryKey: sellerKeys.list(params),
     queryFn: () => getSellers(params),
+    staleTime: SELLERS_STALE_TIME_MS,
+    gcTime: SELLERS_GC_TIME_MS,
+  });
+}
+
+export function useAllSellersQuery(params?: Partial<SellerSearchRequest>) {
+  return useQuery<SellerListResponse, Error>({
+    queryKey: sellerKeys.all(params),
+    queryFn: () => getAllSellers({
+      name: params?.name ?? '',
+      afm: params?.afm ?? '',
+      sellerType: (params?.sellerType as any) ?? '',
+      isActive: params?.isActive,
+      pageSize: params?.pageSize ?? 1000,
+    }),
     staleTime: SELLERS_STALE_TIME_MS,
     gcTime: SELLERS_GC_TIME_MS,
   });

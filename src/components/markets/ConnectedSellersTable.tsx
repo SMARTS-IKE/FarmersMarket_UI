@@ -1,13 +1,19 @@
 import DeleteIcon from "@mui/icons-material/Delete";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import CustomButton from "../../shared/components/CustomButton";
 import DataTable, { type ColumnDef } from "../../shared/components/DataTable";
 import { SELLER_TYPE_LABELS } from "../sellers/sellers.utils";
 import { useSellersQuery } from "../../queries/sellerQueries";
+import { useMarketSellersQuery } from "../../queries/marketQueries";
+import EditMarketSellerModal from "./EditMarketSellerModal";
+import { updateMarketSeller } from "../../services/sellerService";
+import { queryClient } from "../../lib/queryClient";
+import { marketKeys } from "../../queries/marketQueries";
 
 interface ConnectedSellersTableProps {
-  sellers: unknown[];
+  sellers?: unknown[];
+  marketId?: number;
   onRemoveSeller?: (sellerId: number) => void;
 }
 
@@ -277,15 +283,20 @@ function normalizeConnectedSeller(
   return connectedSeller;
 }
 
-export default function ConnectedSellersTable({ sellers, onRemoveSeller }: ConnectedSellersTableProps) {
+export default function ConnectedSellersTable({ sellers, marketId, onRemoveSeller }: ConnectedSellersTableProps) {
   const navigate = useNavigate();
+  const [editingRow, setEditingRow] = useState<Record<string, unknown> | null>(null);
+  const [isEditOpen, setIsEditOpen] = useState(false);
+  const { data: marketSellersData } = useMarketSellersQuery(marketId ? String(marketId) : "");
 
   const sellerIds = useMemo(
-    () =>
-      sellers
+    () => {
+      const source = marketSellersData?.items ?? sellers ?? [];
+      return (source as unknown[])
         .map(extractSellerId)
-        .filter((id): id is number => id !== null),
-    [sellers]
+        .filter((id): id is number => id !== null);
+    },
+    [sellers, marketSellersData?.items]
   );
 
   const { data: allSellersData } = useSellersQuery({
@@ -311,32 +322,89 @@ export default function ConnectedSellersTable({ sellers, onRemoveSeller }: Conne
   }, [allSellersData?.items, sellerIds]);
 
   const connectedSellers = useMemo(
-    () =>
-      sellers
+    () => {
+      const source = marketSellersData?.items ?? sellers ?? [];
+      return (source as unknown[])
         .map((entry) => normalizeConnectedSeller(entry, sellerDetailsById))
-        .filter((seller): seller is Record<string, unknown> => seller !== null),
-    [sellers, sellerDetailsById]
+        .filter((seller): seller is Record<string, unknown> => seller !== null);
+    },
+    [sellers, sellerDetailsById, marketSellersData?.items]
   );
+
+  const openEdit = (row: Record<string, unknown>) => {
+    setEditingRow(row);
+    setIsEditOpen(true);
+  };
+
+  const closeEdit = () => {
+    setEditingRow(null);
+    setIsEditOpen(false);
+  };
+
+  const handleSaveEdit = async (payload: { spotNumber?: number; spotLength?: number; fromDate?: string; notes?: string }) => {
+    if (!editingRow) return;
+    const connectionId = Number(editingRow.id ?? editingRow.sellerId ?? editingRow.sellerId);
+    if (!Number.isFinite(connectionId)) return;
+
+    try {
+      await updateMarketSeller(String(connectionId), {
+        spotNumber: payload.spotNumber,
+        spotLength: payload.spotLength,
+        fromDate: payload.fromDate,
+        notes: payload.notes,
+      } as any);
+
+      // invalidate market sellers for this market if marketId is available
+      if (marketId) {
+        void queryClient.invalidateQueries({ queryKey: marketKeys.sellers(String(marketId)) });
+      }
+    } catch (err) {
+      // swallow — caller can inspect network / UI for errors
+      console.error('Failed to update market-seller', err);
+    } finally {
+      closeEdit();
+    }
+  };
 
 
   const columns = useMemo(() => createConnectedSellerColumns(onRemoveSeller), [onRemoveSeller]);
 
   return (
-    <DataTable<Record<string, unknown>>
-      rows={connectedSellers}
-      columns={columns}
-      rowKey="id"
-      showFilter={false}
-      defaultRowsPerPage={10}
-      onRowClick={(row) => {
-        const sellerId = row.sellerId ?? row.id;
-        if (sellerId) {
-          navigate({
-            to: "/admin/sellers/$sellerId",
-            params: { sellerId: String(sellerId) },
-          });
-        }
-      }}
-    />
+    <>
+      <DataTable<Record<string, unknown>>
+        rows={connectedSellers}
+        columns={columns}
+        rowKey="id"
+        showFilter={false}
+        defaultRowsPerPage={10}
+        onRowClick={(row) => {
+          // Open edit modal for the connected seller row
+          openEdit(row as Record<string, unknown>);
+        }}
+      />
+
+      <EditMarketSellerModal
+        open={isEditOpen}
+        onClose={closeEdit}
+        initial={editingRow ? {
+          spotNumber: editingRow.spotNumber as any,
+          spotLength: editingRow.spotLength as any,
+          fromDate: (editingRow as any).fromDate ?? "",
+          notes: (editingRow as any).notes ?? "",
+        } : undefined}
+        onSave={handleSaveEdit}
+      />
+    </>
+  );
+}
+
+// Render edit modal at end of file so component-level imports stay grouped
+
+export function ConnectedSellersTableWithModal(props: ConnectedSellersTableProps) {
+  // Reuse ConnectedSellersTable component logic by rendering it and the modal together.
+  return (
+    <>
+      <ConnectedSellersTable {...props} />
+    </>
   );
 }
