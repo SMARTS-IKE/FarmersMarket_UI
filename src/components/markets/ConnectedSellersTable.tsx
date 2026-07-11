@@ -391,6 +391,10 @@ export default function ConnectedSellersTable({ sellers, marketId, onRemoveSelle
           spotLength: editingRow.spotLength as any,
           fromDate: (editingRow as any).fromDate ?? "",
           notes: (editingRow as any).notes ?? "",
+          sellerFullName: `${(editingRow as any).firstName ?? ""} ${(editingRow as any).lastName ?? ""}`.trim(),
+          sellerId: (editingRow as any).sellerId ?? (editingRow as any).id,
+          firstName: (editingRow as any).firstName ?? undefined,
+          lastName: (editingRow as any).lastName ?? undefined,
         } : undefined}
         onSave={handleSaveEdit}
       />

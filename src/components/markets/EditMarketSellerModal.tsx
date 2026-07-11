@@ -1,5 +1,7 @@
-import { Box, Dialog, DialogContent, DialogTitle } from "@mui/material";
+import { Box, Dialog, DialogContent, DialogTitle, IconButton } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
 import CustomButton from "../../shared/components/CustomButton";
 import CustomInputField from "../../shared/components/CustomInputField";
 
@@ -12,18 +14,30 @@ export default function EditMarketSellerModal({
   open: boolean;
   onClose: () => void;
   onSave: (payload: { spotNumber?: number; spotLength?: number; fromDate?: string; notes?: string }) => Promise<void> | void;
-  initial?: { spotNumber?: number | string; spotLength?: number | string; fromDate?: string; notes?: string; sellerFullName?: string } | null;
+  initial?: { spotNumber?: number | string; spotLength?: number | string; fromDate?: string; notes?: string; sellerFullName?: string; sellerId?: number | string; firstName?: string; lastName?: string } | null;
 }) {
   const [spotNumber, setSpotNumber] = useState<string>(String(initial?.spotNumber ?? ""));
   const [spotLength, setSpotLength] = useState<string>(String(initial?.spotLength ?? ""));
-  const [fromDate, setFromDate] = useState<string>(initial?.fromDate ?? "");
+  const normalizeToInputDate = (raw?: unknown) => {
+    if (raw === null || raw === undefined) return "";
+    const s = String(raw).trim();
+    if (!s) return "";
+    const d = new Date(s);
+    if (isNaN(d.getTime())) return s;
+    const y = d.getFullYear();
+    const m = String(d.getMonth() + 1).padStart(2, "0");
+    const day = String(d.getDate()).padStart(2, "0");
+    return `${y}-${m}-${day}`;
+  };
+
+  const [fromDate, setFromDate] = useState<string>(normalizeToInputDate(initial?.fromDate));
   const [notes, setNotes] = useState<string>(initial?.notes ?? "");
 
   useEffect(() => {
     if (!open) return;
     setSpotNumber(String(initial?.spotNumber ?? ""));
     setSpotLength(String(initial?.spotLength ?? ""));
-    setFromDate(initial?.fromDate ?? "");
+    setFromDate(normalizeToInputDate(initial?.fromDate));
     setNotes(initial?.notes ?? "");
   }, [open, initial]);
 
@@ -44,11 +58,56 @@ export default function EditMarketSellerModal({
     await onSave(payload);
   };
 
+  const navigate = useNavigate();
+
+  const resolvedFullName = useMemo(() => {
+    if (initial?.sellerFullName) return String(initial.sellerFullName).trim();
+    if (initial?.firstName || initial?.lastName) return `${initial?.firstName ?? ""} ${initial?.lastName ?? ""}`.trim();
+    return "";
+  }, [initial]);
+
+  const resolvedFromDate = useMemo(() => {
+    const raw = initial?.fromDate ?? fromDate ?? "";
+    if (!raw) return "";
+    try {
+      const d = new Date(String(raw));
+      if (isNaN(d.getTime())) return String(raw);
+      return d.toLocaleDateString("el-GR");
+    } catch {
+      return String(raw);
+    }
+  }, [initial?.fromDate]);
+
+  const handleOpenSeller = () => {
+    const sellerId = initial?.sellerId ?? (initial ? (initial as any).id : undefined);
+    if (!sellerId) return;
+    navigate({ to: `/admin/sellers/${String(sellerId)}` });
+  };
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth>
       <DialogTitle>Επεξεργασία Στοιχείων Πωλητή</DialogTitle>
       <DialogContent>
         <Box className="flex flex-col gap-4 pt-2">
+          {resolvedFullName ? (
+            <Box className="flex items-center gap-3">
+              <div className="flex flex-col">
+                <h4 className="text-(--color-text-heading) text-lg font-medium">{resolvedFullName}</h4>
+                {resolvedFromDate ? (
+                  <span className="text-sm text-(--color-text-muted)">Από: {resolvedFromDate}</span>
+                ) : null}
+              </div>
+              <IconButton
+                aria-label="Προβολή πωλητή"
+                onClick={handleOpenSeller}
+                disabled={!initial?.sellerId}
+                size="small"
+                sx={{ color: "var(--color-text)" }}
+              >
+                <OpenInNewIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          ) : null}
           <CustomInputField
             type="NUMBER"
             label="Αριθμός θέσης"

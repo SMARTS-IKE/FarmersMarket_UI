@@ -158,7 +158,7 @@ export default function CreateMarketPeriodPage() {
     const probeDate = new Date(utcMs);
     if (Number.isNaN(probeDate.getTime())) return null;
 
-    const parts = new Intl.DateTimeFormat("en-GB", {
+    const parts = new Intl.DateTimeFormat("el-GR", {
       timeZone: ATHENS_TIMEZONE,
       hour12: false,
       year: "numeric",

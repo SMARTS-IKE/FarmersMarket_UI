@@ -1,4 +1,4 @@
-import { Alert, Box, Snackbar, Tab, Tabs } from "@mui/material";
+import { Alert, Box, Snackbar, Tab, Tabs, Checkbox, FormControlLabel } from "@mui/material";
 import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
 import { flushSync } from "react-dom";
 import { useBlocker, useNavigate, useParams } from "@tanstack/react-router";
@@ -77,6 +77,9 @@ export default function SellerPage() {
   const [licenseNumber, setLicenseNumber] = useState("");
   const [licenseIssuedAt, setLicenseIssuedAt] = useState("");
   const [licenseExpiresAt, setLicenseExpiresAt] = useState("");
+  const [isSeasonal, setIsSeasonal] = useState(false);
+  const [seasonalFromDate, setSeasonalFromDate] = useState("");
+  const [seasonalToDate, setSeasonalToDate] = useState("");
   const [initialState, setInitialState] = useState({
     firstName: "",
     lastName: "",
@@ -88,6 +91,9 @@ export default function SellerPage() {
     licenseNumber: "",
     licenseIssuedAt: "",
     licenseExpiresAt: "",
+    isSeasonal: false,
+    seasonalFromDate: "",
+    seasonalToDate: "",
     userId: null,
     createdAt: "",
     email: "",
@@ -126,10 +132,13 @@ export default function SellerPage() {
       licenseNumber,
       licenseIssuedAt,
       licenseExpiresAt,
+      isSeasonal,
+      seasonalFromDate,
+      seasonalToDate,
       userId,
       createdAt,
     }),
-    [firstName, lastName, afm, phone, address, sellerType, isActive, licenseNumber, licenseIssuedAt, licenseExpiresAt, userId, createdAt, email, userRole, userStatus]
+    [firstName, lastName, afm, phone, address, sellerType, isActive, licenseNumber, licenseIssuedAt, licenseExpiresAt, isSeasonal, seasonalFromDate, seasonalToDate, userId, createdAt, email, userRole, userStatus]
   );
   const hasUnsavedChanges = useMemo(() => {
     const normalize = (v: unknown) => {
@@ -154,6 +163,9 @@ export default function SellerPage() {
       "licenseNumber",
       "licenseIssuedAt",
       "licenseExpiresAt",
+      "isSeasonal",
+      "seasonalFromDate",
+      "seasonalToDate",
       "userId",
       "createdAt",
     ];
@@ -169,6 +181,18 @@ export default function SellerPage() {
     return false;
   }, [currentState, initialState]);
 
+  const isSaveDisabled = useMemo(() => {
+    if (!String(licenseNumber ?? "").trim()) return true;
+    if (isSeasonal) {
+      if (!String(seasonalFromDate ?? "").trim()) return true;
+      if (!String(seasonalToDate ?? "").trim()) return true;
+    } else {
+      if (!String(licenseIssuedAt ?? "").trim()) return true;
+      if (!String(licenseExpiresAt ?? "").trim()) return true;
+    }
+    return false;
+  }, [licenseNumber, isSeasonal, seasonalFromDate, seasonalToDate, licenseIssuedAt, licenseExpiresAt]);
+
   useEffect(() => {
     if (!seller) return;
 
@@ -183,8 +207,12 @@ export default function SellerPage() {
       sellerType: String(seller.sellerType ?? ""),
       isActive: Boolean(seller.isActive),
       licenseNumber: cl?.licenseNumber ?? cl?.license_number ?? "",
+      // prefer explicit seasonal fields when present
       licenseIssuedAt: cl?.fromDate ?? cl?.seasonalFromDate ?? "",
       licenseExpiresAt: cl?.licenseExpiry ?? cl?.expiresAt ?? cl?.toDate ?? cl?.seasonalToDate ?? "",
+      isSeasonal: Boolean(cl?.isSeasonal ?? cl?.seasonalFromDate ?? cl?.seasonalToDate),
+      seasonalFromDate: cl?.seasonalFromDate ?? cl?.fromDate ?? "",
+      seasonalToDate: cl?.seasonalToDate ?? cl?.toDate ?? cl?.licenseExpiry ?? "",
       userId: typeof seller.userId === 'number' ? seller.userId : null,
       createdAt: seller.createdAt ?? "",
       email: (seller as any).email ?? "",
@@ -202,6 +230,9 @@ export default function SellerPage() {
     setLicenseNumber(mappedState.licenseNumber);
     setLicenseIssuedAt(mappedState.licenseIssuedAt);
     setLicenseExpiresAt(mappedState.licenseExpiresAt);
+    setIsSeasonal(Boolean(mappedState.isSeasonal));
+    setSeasonalFromDate(mappedState.seasonalFromDate ?? "");
+    setSeasonalToDate(mappedState.seasonalToDate ?? "");
     setUserId(mappedState.userId ?? null);
     setCreatedAt(mappedState.createdAt ?? "");
     setEmail(mappedState.email ?? "");
@@ -298,6 +329,9 @@ export default function SellerPage() {
     setLicenseNumber(initialState.licenseNumber);
     setLicenseIssuedAt(initialState.licenseIssuedAt);
     setLicenseExpiresAt(initialState.licenseExpiresAt);
+    setIsSeasonal(Boolean((initialState as any).isSeasonal));
+    setSeasonalFromDate((initialState as any).seasonalFromDate ?? "");
+    setSeasonalToDate((initialState as any).seasonalToDate ?? "");
     setUserId(initialState.userId ?? null);
     setCreatedAt(initialState.createdAt ?? "");
     setEmail(initialState.email ?? "");
@@ -324,18 +358,31 @@ export default function SellerPage() {
           phone: phone || null,
           address: address || null,
         },
-        license: {
-          fromDate: licenseIssuedAt,
-          sellerType: Number(sellerType) || 0,
-          isSeasonal: Boolean(licenseIssuedAt || licenseExpiresAt),
-          seasonalFromDate: licenseIssuedAt || null,
-          seasonalToDate: licenseExpiresAt || null,
-          licenseCategory: 0,
-          licenseStatus: 0,
-          licenseNumber: licenseNumber,
-          licenseExpiry: licenseExpiresAt || null,
-          notes: null,
-        },
+        license: isSeasonal
+          ? {
+              fromDate: seasonalFromDate || null,
+              sellerType: Number(sellerType) || 0,
+              isSeasonal: true,
+              seasonalFromDate: seasonalFromDate || null,
+              seasonalToDate: seasonalToDate || null,
+              licenseCategory: 0,
+              licenseStatus: 0,
+              licenseNumber: licenseNumber,
+              licenseExpiry: seasonalToDate || null,
+              notes: null,
+            }
+          : {
+              fromDate: licenseIssuedAt || null,
+              sellerType: Number(sellerType) || 0,
+              isSeasonal: false,
+              seasonalFromDate: null,
+              seasonalToDate: null,
+              licenseCategory: 0,
+              licenseStatus: 0,
+              licenseNumber: licenseNumber,
+              licenseExpiry: licenseExpiresAt || null,
+              notes: null,
+            },
       });
 
       // Ensure initialState is updated synchronously so the blocker sees no unsaved changes
@@ -394,7 +441,7 @@ export default function SellerPage() {
 
   return (
     <div className="flex h-full w-full flex-col gap-6 text-left overflow-hidden">
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
         <div className="flex flex-col gap-1">
           <h2 className="font-semibold text-(--color-text-heading)">Πωλητής</h2>
           <h3 className="text-lg text-(--color-text-heading)">
@@ -426,7 +473,7 @@ export default function SellerPage() {
         <div className="flex flex-col gap-6 pt-2">
         
           {activeTab === 0 ? (
-            <div className="flex flex-col gap-6">
+            <div className="flex flex-col gap-4">
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
               <CustomInputField
                 type="TEXT"
@@ -497,28 +544,38 @@ export default function SellerPage() {
               />
             </div>
 
-            <div className="pt-6">
-              <h3 className="mb-4 text-lg font-semibold text-(--color-text-heading)">Άδεια</h3>
+            <div>
+              <div className="flex items-center justify-between">
+                <h3 className="text-lg font-semibold text-(--color-text-heading)">Άδεια</h3>
+                <FormControlLabel
+                  className="font-medium"
+                  control={<Checkbox checked={isSeasonal} onChange={(e) => setIsSeasonal(Boolean(e.target.checked))} />}
+                  label="Περιορισμένης διάρκειας"
+                />
+              </div>
               <div className="flex flex-row items-start gap-4 justify-center">
                 <CustomInputField
                   type="TEXT"
                   label="Αριθμός"
                   value={licenseNumber}
                   onChange={(value) => setLicenseNumber(String(value))}
+                  validation={{ required: true }}
                   width="100%"
                 />
                 <CustomInputField
                   type="DATE"
-                  label="Ημερομηνία Έκδοσης"
-                  value={licenseIssuedAt}
-                  onChange={(value) => setLicenseIssuedAt(String(value))}
+                    label="Από"
+                    value={isSeasonal ? seasonalFromDate : licenseIssuedAt}
+                    onChange={(value) => isSeasonal ? setSeasonalFromDate(String(value)) : setLicenseIssuedAt(String(value))}
+                    validation={{ required: true }}
                   width="100%"
                 />
                 <CustomInputField
                   type="DATE"
-                  label="Ημερομηνία Λήξης"
-                  value={licenseExpiresAt}
-                  onChange={(value) => setLicenseExpiresAt(String(value))}
+                    label="Έως"
+                    value={isSeasonal ? seasonalToDate : licenseExpiresAt}
+                    onChange={(value) => isSeasonal ? setSeasonalToDate(String(value)) : setLicenseExpiresAt(String(value))}
+                    validation={{ required: true }}
                   width="100%"
                 />
                             {/* <div className="mt-4">
@@ -561,6 +618,7 @@ export default function SellerPage() {
                     onClick={handleSave}
                     width="fit-content"
                     sx={{ px: 4, minHeight: 32 }}
+                    disabled={isSaveDisabled}
                   />
                 </>
               )}

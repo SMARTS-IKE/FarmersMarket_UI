@@ -11,7 +11,7 @@ import {
 } from "@mui/material";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import type { SxProps, Theme } from "@mui/material";
-import { useState, type CSSProperties } from "react";
+import { useState, useRef, type CSSProperties } from "react";
 import { DatePicker, LocalizationProvider } from "@mui/x-date-pickers";
 import { AdapterDateFns } from "@mui/x-date-pickers/AdapterDateFns";
 import { el } from "date-fns/locale";
@@ -108,7 +108,7 @@ function toDateInputValue(value: string | number | string[] | undefined): string
   const parsed = new Date(raw);
   if (Number.isNaN(parsed.getTime())) return raw;
 
-  const parts = new Intl.DateTimeFormat("en-GB", {
+  const parts = new Intl.DateTimeFormat("el-GR", {
     timeZone: GREECE_TIMEZONE,
     year: "numeric",
     month: "2-digit",
@@ -136,7 +136,7 @@ function parseDateValue(value: string | number | string[] | undefined): Date | n
 }
 
 function toIsoDateString(date: Date): string {
-  const parts = new Intl.DateTimeFormat("en-CA", {
+  const parts = new Intl.DateTimeFormat("el-GR", {
     timeZone: GREECE_TIMEZONE,
     year: "numeric",
     month: "2-digit",
@@ -267,7 +267,7 @@ export default function CustomInputField({
             '&:focus': {
               outline: 'none',
               boxShadow: 'none',
-              borderBottom: '2px solid var(--color-dark)',
+                          borderBottom: '2px solid var(--color-dark)',
             },
           },
           "& .MuiSelect-select": { fontSize: '14px' },
@@ -371,10 +371,19 @@ export default function CustomInputField({
       color: 'var(--color-text-muted) !important',
       opacity: 1,
     },
+    // When the wrapper has the hide-native-hint class, hide the browser's built-in format hint
+    "& .hide-native-hint input[type='date']::-webkit-datetime-edit, & .hide-native-hint input[type='date']::-webkit-datetime-edit-text, & .hide-native-hint input[type='date']::-webkit-datetime-edit-year-field, & .hide-native-hint input[type='date']::-webkit-datetime-edit-month-field, & .hide-native-hint input[type='date']::-webkit-datetime-edit-day-field, & .hide-native-hint input[type='date']::-webkit-datetime-edit-fields-wrapper": {
+      color: 'transparent !important',
+      opacity: '0 !important',
+    },
     // Firefox pseudo-element for date inputs
     "& input[type='date']::-moz-placeholder": {
       color: 'var(--color-text-muted) !important',
       opacity: 1,
+    },
+    "& .hide-native-hint input[type='date']::-moz-placeholder": {
+      color: 'transparent !important',
+      opacity: '0 !important',
     },
     // Aggressively disable MUI focus pseudo-elements/outlines that can draw
     // an extra underline or outline on focus. This targets underline pseudo
@@ -664,7 +673,7 @@ export default function CustomInputField({
       const inputId = `custom-textarea-${Math.random().toString(36).slice(2, 9)}`;
       return (
         <Box sx={sharedSx}>
-          <Box sx={{ position: 'relative' }}>
+          <Box sx={{ position: 'relative' }} className={!currentValue && !nativeFocused ? 'hide-native-hint' : ''}>
             {label && (
               <label htmlFor={inputId} style={labelStyle}>
                 {label}
@@ -679,7 +688,7 @@ export default function CustomInputField({
               disabled={disabled}
               placeholder={placeholder}
               rows={3}
-              style={{
+                style={{
                 width: '100%',
                 minHeight: 80,
                 padding: '8px 0',
@@ -727,7 +736,7 @@ export default function CustomInputField({
                   "& .MuiInputBase-root": {
                     backgroundColor: 'transparent',
                     border: 'none',
-                    borderBottom: '2px solid var(--color-dark)',
+                          borderBottom: 'none',
                     borderRadius: 0,
                   },
                 }
@@ -770,39 +779,60 @@ export default function CustomInputField({
     };
 
     if (bottomOnly) {
-      const inputId = `custom-date-${Math.random().toString(36).slice(2, 9)}`;
-      const currentValue = toDateInputValue(value ?? defaultValue);
+      // Use MUI non-native DatePicker for consistent localized calendar UI
       return (
-        <Box sx={sharedSx}>
-          <Box sx={{ position: 'relative' }}>
-            {label && (
-              <label htmlFor={inputId} style={labelStyle}>
-                {label}
-              </label>
-            )}
-            <input
-              id={inputId}
-              type="date"
-              value={currentValue}
-              onChange={(e) => onChange?.(e.target.value)}
-              onFocus={() => setNativeFocused(true)}
-              onBlur={() => { setNativeFocused(false); onBlur?.(); }}
-              disabled={disabled}
-              style={{
-                width: '100%',
-                height: 40,
-                padding: '8px 0',
-                border: 'none',
-                borderBottom: '2px solid var(--color-dark)',
-                background: 'transparent',
-                outline: 'none',
-                color: 'var(--color-dark)',
-                fontFamily: 'inherit',
-              }}
-            />
-          </Box>
-          {internalError && <FormHelperText error>{internalError}</FormHelperText>}
-        </Box>
+        <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={el}>
+          <DatePicker
+            label={label}
+            format="dd/MM/yyyy"
+            placeholder='ημέρα/μήνας/έτος'
+            value={parseDateValue(value ?? defaultValue)}
+            disabled={disabled}
+            onChange={(newValue) => {
+              if (!newValue) {
+                onChange?.("");
+                return;
+              }
+
+              const isoDate = toIsoDateString(newValue);
+              if (isoDate) onChange?.(isoDate);
+            }}
+            slotProps={{
+              textField: {
+                placeholder: 'ημέρα/μήνας/έτος',
+                variant: 'outlined',
+                error: !!internalError,
+                helperText: internalError,
+                onBlur,
+                sx: ({ ...sharedSx,
+                  "& .MuiOutlinedInput-root": {
+                    borderRadius: 0,
+                    border: 'none',
+                      borderBottom: '2px solid var(--color-dark)',
+                    boxShadow: 'none',
+                    height: 40,
+                    padding: 0,
+                    display: 'flex',
+                    alignItems: 'center',
+                    backgroundColor: 'transparent',
+                  },
+                  "& .MuiOutlinedInput-input": {
+                    height: 40,
+                    padding: '8px 16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                  },
+                  // remove padding inside the pickers sections container to tighten layout
+                  "& .MuiPickersInput-sectionsContainer, & .MuiPickersOutlinedInput-sectionsContainer, & .MuiPickersInput-root .MuiPickersInput-sectionsContainer": {
+                    padding: 0,
+                  },
+                  '& .MuiSvgIcon-root': { fontSize: '20px', color: 'var(--color-dark)' },
+                } as any),
+                slotProps: { inputLabel: { shrink: true } },
+              },
+            }}
+          />
+        </LocalizationProvider>
       );
     }
 
@@ -810,6 +840,7 @@ export default function CustomInputField({
       <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={el}>
         <DatePicker
           label={label}
+          placeholder='ημέρα/μήνας/έτος'
           format="dd/MM/yyyy"
           value={parseDateValue(value ?? defaultValue)}
           disabled={disabled}
@@ -827,7 +858,7 @@ export default function CustomInputField({
           slotProps={{
             textField: {
               // show Greek format hint when empty
-              placeholder: placeholder ?? 'Ημέρα/Μήνας/Έτος',
+              placeholder: placeholder ?? 'ημέρα/μήνας/έτος',
               variant: "outlined",
               
               error: !!internalError,
@@ -852,6 +883,10 @@ export default function CustomInputField({
                             padding: '8px 16px',
                             display: 'flex',
                             alignItems: 'center',
+                          },
+                          // remove padding inside the pickers sections container to tighten layout
+                          "& .MuiPickersInput-sectionsContainer, & .MuiPickersOutlinedInput-sectionsContainer, & .MuiPickersInput-root .MuiPickersInput-sectionsContainer": {
+                            padding: 0,
                           },
                           // ensure the notched outline does not draw
                           "& .MuiOutlinedInput-notchedOutline": { border: 'none' },
