@@ -1,4 +1,4 @@
-import { Box, Dialog, DialogContent, DialogTitle, IconButton } from "@mui/material";
+import { Box, Dialog, DialogContent, DialogTitle, IconButton, Tooltip } from "@mui/material";
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import OpenInNewIcon from '@mui/icons-material/OpenInNew';
@@ -19,6 +19,7 @@ export default function EditMarketSellerModal({
   const [spotNumber, setSpotNumber] = useState<string>(String(initial?.spotNumber ?? ""));
   const [spotLength, setSpotLength] = useState<string>(String(initial?.spotLength ?? ""));
   const normalizeToInputDate = (raw?: unknown) => {
+    console.log(initial);
     if (raw === null || raw === undefined) return "";
     const s = String(raw).trim();
     if (!s) return "";
@@ -32,6 +33,8 @@ export default function EditMarketSellerModal({
 
   const [fromDate, setFromDate] = useState<string>(normalizeToInputDate(initial?.fromDate));
   const [notes, setNotes] = useState<string>(initial?.notes ?? "");
+
+  console.log(fromDate);
 
   useEffect(() => {
     if (!open) return;
@@ -76,7 +79,7 @@ export default function EditMarketSellerModal({
     } catch {
       return String(raw);
     }
-  }, [initial?.fromDate]);
+  }, [initial?.fromDate, fromDate]);
 
   const handleOpenSeller = () => {
     const sellerId = initial?.sellerId ?? (initial ? (initial as any).id : undefined);
@@ -93,19 +96,20 @@ export default function EditMarketSellerModal({
             <Box className="flex items-center gap-3">
               <div className="flex flex-col">
                 <h4 className="text-(--color-text-heading) text-lg font-medium">{resolvedFullName}</h4>
-                {resolvedFromDate ? (
-                  <span className="text-sm text-(--color-text-muted)">Από: {resolvedFromDate}</span>
-                ) : null}
               </div>
-              <IconButton
-                aria-label="Προβολή πωλητή"
-                onClick={handleOpenSeller}
-                disabled={!initial?.sellerId}
-                size="small"
-                sx={{ color: "var(--color-text)" }}
-              >
-                <OpenInNewIcon fontSize="small" />
-              </IconButton>
+              <Tooltip title="Προβολή προφίλ πωλητή" arrow placement="top">
+                <span>
+                  <IconButton
+                    aria-label="Προβολή πωλητή"
+                    onClick={handleOpenSeller}
+                    disabled={!initial?.sellerId}
+                    size="small"
+                    sx={{ color: "var(--color-text)" }}
+                  >
+                    <OpenInNewIcon fontSize="small" />
+                  </IconButton>
+                </span>
+              </Tooltip>
             </Box>
           ) : null}
           <CustomInputField

@@ -56,9 +56,14 @@ export default function MarketForm({
     pageSize: 5000,
   });
 
-  const usersArray = (Array.isArray(usersData) ? usersData : (usersData?.items ?? [])).filter(
-    (u) => u.roles.includes(USER_ROLE_MAPPING.ADMIN)
-  );
+  const usersArray = (Array.isArray(usersData) ? usersData : (usersData?.items ?? [])).filter((u) => {
+    // Backend may return role keys like 'Admin_Access' / 'User_Access',
+    // while `USER_ROLE_MAPPING` contains localized labels (e.g. 'Διαχειριστής').
+    // Accept either representation so users appear in the supervisors dropdown.
+    return (
+      u.roles.includes('Admin_Access')
+    );
+  });
 
   const usersList = usersArray.map((u) => ({
     label: `${u.firstName} ${u.lastName}`,

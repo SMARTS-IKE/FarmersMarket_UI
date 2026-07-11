@@ -277,6 +277,10 @@ function normalizeConnectedSeller(
     licenseStatus: licenseStatus.label,
     licenseStatusKey: licenseStatus.key,
 
+    // Preserve any assignment metadata so edit modal can read and show it
+    fromDate: readString(record, ['fromDate', 'from', 'startDate', 'assignedAt']) || "",
+    notes: readString(record, ['notes', 'note']) || "",
+
     isActive: sellerIsActive,
   };
 

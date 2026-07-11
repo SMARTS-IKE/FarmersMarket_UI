@@ -132,6 +132,8 @@ function parseDateValue(value: string | number | string[] | undefined): Date | n
   const parsed = new Date(`${normalized}T00:00:00`);
   if (Number.isNaN(parsed.getTime())) return null;
 
+  console.log(parsed);
+
   return parsed;
 }
 
@@ -673,7 +675,7 @@ export default function CustomInputField({
       const inputId = `custom-textarea-${Math.random().toString(36).slice(2, 9)}`;
       return (
         <Box sx={sharedSx}>
-          <Box sx={{ position: 'relative' }} className={!currentValue && !nativeFocused ? 'hide-native-hint' : ''}>
+          <Box sx={{ position: 'relative' }} className={!normalizedDateValue && !nativeFocused ? 'hide-native-hint' : ''}>
             {label && (
               <label htmlFor={inputId} style={labelStyle}>
                 {label}
@@ -778,6 +780,8 @@ export default function CustomInputField({
       pointerEvents: 'none',
     };
 
+    const showDateOverlay = !normalizedDateValue && !nativeFocused;
+
     if (bottomOnly) {
       // Use MUI non-native DatePicker for consistent localized calendar UI
       return (
@@ -785,7 +789,7 @@ export default function CustomInputField({
           <DatePicker
             label={label}
             format="dd/MM/yyyy"
-            placeholder='ημέρα/μήνας/έτος'
+            inputFormat="dd/MM/yyyy"
             value={parseDateValue(value ?? defaultValue)}
             disabled={disabled}
             onChange={(newValue) => {
@@ -799,8 +803,6 @@ export default function CustomInputField({
             }}
             slotProps={{
               textField: {
-                placeholder: 'ημέρα/μήνας/έτος',
-                variant: 'outlined',
                 error: !!internalError,
                 helperText: internalError,
                 onBlur,
@@ -808,7 +810,7 @@ export default function CustomInputField({
                   "& .MuiOutlinedInput-root": {
                     borderRadius: 0,
                     border: 'none',
-                      borderBottom: '2px solid var(--color-dark)',
+                    borderBottom: '2px solid var(--color-dark)',
                     boxShadow: 'none',
                     height: 40,
                     padding: 0,
@@ -823,11 +825,52 @@ export default function CustomInputField({
                     alignItems: 'center',
                   },
                   // remove padding inside the pickers sections container to tighten layout
-                  "& .MuiPickersInput-sectionsContainer, & .MuiPickersOutlinedInput-sectionsContainer, & .MuiPickersInput-root .MuiPickersInput-sectionsContainer": {
-                    padding: 0,
+                  "& .MuiPickersInput-sectionsContainer, & .MuiPickersOutlinedInput-sectionsContainer, & .MuiPickersInput-root .MuiPickersInput-sectionsContainer, & .MuiPickersSectionList-root": {
+                    padding: '10px 0 8px 0',
+                    fontSize: '0.95rem',
+                    visibility: showDateOverlay ? 'hidden' : 'visible',
+                    height: 40
                   },
+                  "& .MuiFormLabel-root":{
+                    fontSize: '12px',
+                    top: '0',
+                    left: '-14px',
+                    height: 40
+                  },
+                  "& .MuiPickersInputBase-root":{
+                     paddingLeft: '1px',
+                  },
+                  // Ensure MUI Pickers' notched outline doesn't draw a border
+                  "& .MuiPickersOutlinedInput-notchedOutline": { border: 'none', borderBottom: '2px solid var(--color-dark)', borderRadius: 0 },
+                  // Remove notched outline when pickers input is focused and not in error state
+                  "& .MuiPickersInputBase-root.MuiPickersOutlinedInput-root.Mui-focused:not(.Mui-error) .MuiPickersOutlinedInput-notchedOutline": { border: 'none', borderBottom: '2px solid var(--color-dark)', borderRadius: 0 },
                   '& .MuiSvgIcon-root': { fontSize: '20px', color: 'var(--color-dark)' },
+                  // overlay placeholder when empty and not focused
+                  '&.show-greek-placeholder': {
+                    position: 'relative',
+                    '&::after': {
+                      content: '"ημέρα/μήνας/έτος"',
+                      position: 'absolute',
+                      left: 0,
+                      top: '20%',
+                      pointerEvents: 'none',
+                      color: 'var(--color-text-muted)',
+                      fontSize: '0.95rem',
+                      fontWeight: 500,
+                      height: '40px',
+                    },
+                    '& .MuiInputBase-input': { color: 'transparent' },
+                    // hide native placeholder and browser date edit fragments
+                    '& .MuiInputBase-input::placeholder': { color: 'transparent', opacity: 0 },
+                    '& input::-webkit-datetime-edit, & input::-webkit-datetime-edit-text, & input::-webkit-datetime-edit-year-field, & input::-webkit-datetime-edit-month-field, & input::-webkit-datetime-edit-day-field': {
+                      color: 'transparent !important',
+                      opacity: 0,
+                    },
+                    '& input::-moz-placeholder': { color: 'transparent !important', opacity: 0 },
+                  },
                 } as any),
+                // add a class when empty + not focused so we can show an overlay placeholder
+                className: showDateOverlay ? 'show-greek-placeholder' : undefined,
                 slotProps: { inputLabel: { shrink: true } },
               },
             }}
@@ -840,8 +883,8 @@ export default function CustomInputField({
       <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={el}>
         <DatePicker
           label={label}
-          placeholder='ημέρα/μήνας/έτος'
           format="dd/MM/yyyy"
+          inputFormat="dd/MM/yyyy"
           value={parseDateValue(value ?? defaultValue)}
           disabled={disabled}
           onChange={(newValue) => {
@@ -857,10 +900,6 @@ export default function CustomInputField({
           }}
           slotProps={{
             textField: {
-              // show Greek format hint when empty
-              placeholder: placeholder ?? 'ημέρα/μήνας/έτος',
-              variant: "outlined",
-              
               error: !!internalError,
               helperText: internalError,
               onBlur,
@@ -884,10 +923,11 @@ export default function CustomInputField({
                             display: 'flex',
                             alignItems: 'center',
                           },
-                          // remove padding inside the pickers sections container to tighten layout
-                          "& .MuiPickersInput-sectionsContainer, & .MuiPickersOutlinedInput-sectionsContainer, & .MuiPickersInput-root .MuiPickersInput-sectionsContainer": {
-                            padding: 0,
-                          },
+                            // remove padding inside the pickers sections container to tighten layout
+                            "& .MuiPickersInput-sectionsContainer, & .MuiPickersOutlinedInput-sectionsContainer, & .MuiPickersInput-root .MuiPickersInput-sectionsContainer, & .MuiPickersSectionList-root": {
+                              padding: '12px 0 8px 0',
+                              color: showDateOverlay ? 'transparent' : 'inherit',
+                            },
                           // ensure the notched outline does not draw
                           "& .MuiOutlinedInput-notchedOutline": { border: 'none' },
                         }
@@ -920,10 +960,36 @@ export default function CustomInputField({
                       alignItems: 'center',
                     },
                     "& .MuiSvgIcon-root": { fontSize: '20px', color: 'var(--color-dark)' },
+                    // overlay placeholder when empty and not focused
+                    '&.show-greek-placeholder': {
+                      position: 'relative',
+                      '&::after': {
+                        content: '"ημέρα/μήνας/έτος"',
+                        position: 'absolute',
+                        left: prefixIcon ? '40px' : '8px',
+                        top: '50%',
+                        transform: 'translateY(-50%)',
+                        pointerEvents: 'none',
+                        color: 'var(--color-text-muted)',
+                        fontSize: '0.95rem',
+                        fontWeight: 500,
+                      },
+                      '& .MuiInputBase-input': { color: 'transparent' },
+                      // hide native placeholder and browser date edit fragments
+                      '& .MuiInputBase-input::placeholder': { color: 'transparent', opacity: 0 },
+                      '& input::-webkit-datetime-edit, & input::-webkit-datetime-edit-text, & input::-webkit-datetime-edit-year-field, & input::-webkit-datetime-edit-month-field, & input::-webkit-datetime-edit-day-field': {
+                        color: 'transparent !important',
+                        opacity: 0,
+                      },
+                      '& input::-moz-placeholder': { color: 'transparent !important', opacity: 0 },
+                    },
                     "& .MuiInput-underline:before": { borderBottom: 'none' },
                     "& .MuiInput-underline:after": { borderBottom: 'none' },
-                  } as any),
-              slotProps: {
+                    } as any),
+                  // add a class when empty + not focused so we can show an overlay placeholder
+                  className: showDateOverlay ? 'show-greek-placeholder' : undefined,
+                  inputProps: { placeholder: 'ημέρα/μήνας/έτος' },
+                  slotProps: {
                 inputLabel: { shrink: true },
                 input: {
                   className: inputClass,
@@ -998,56 +1064,55 @@ export default function CustomInputField({
   }
 
   return (
-    <TextField
-      variant="outlined"
-      label={label}
-      InputLabelProps={{ shrink: true }}
-      placeholder={placeholder}
-      type={type === "NUMBER" ? "number" : "text"}
-      value={normalizedDateValue}
-      disabled={disabled}
-      error={!!internalError}
-      helperText={internalError}
-      onChange={(e) => {
-            {/* Overlay a placeholder hint for browsers that don't support placeholder on date inputs */}
-            {(!currentValue || currentValue === '') && !nativeFocused && (
-              <span style={{
-                position: 'absolute',
-                left: prefixIcon ? 40 : 8,
-                top: '50%',
-                transform: 'translateY(-50%)',
-                pointerEvents: 'none',
-                color: 'var(--color-text-muted)',
-                fontSize: '0.95rem',
-                fontWeight: 500,
-              }}>{placeholder ?? 'Ημέρα/Μήνας/Έτος'}</span>
-            )}
-        onChange?.(e.target.value);
-      }}
-      onBlur={onBlur}
-      slotProps={{
-        inputLabel: undefined,
-        input: {
-          className: inputClass,
-          startAdornment: prefixIcon ? (
-            <InputAdornment position="start">{prefixIcon}</InputAdornment>
-          ) : undefined,
-        },
-      }}
-      sx={{
-        // apply shared styles then add textfield-specific focus overrides
-        ...sharedSx,
-        // Target the OutlinedInput root to remove any notched outline / pseudo-elements
-        "& .MuiOutlinedInput-root": {
-          "& .MuiOutlinedInput-notchedOutline": { border: 'none', display: 'none' },
-          "&::before, &::after": { border: 'none', display: 'none' },
-          "&.Mui-focused": { boxShadow: 'none', outline: 'none' },
-        },
-        // Ensure the input itself has no native focus outline/shadow
-        "& input": { outline: 'none', boxShadow: 'none' },
-        // Also ensure helper text/focus color doesn't introduce borders
-        "& .MuiFormHelperText-root": { boxShadow: 'none' },
-      } as any}
-    />
+    <Box sx={{ position: 'relative' }}>
+      {(!normalizedDateValue || normalizedDateValue === '') && !nativeFocused && (
+        <span style={{
+          position: 'absolute',
+          left: prefixIcon ? 40 : 8,
+          top: '50%',
+          transform: 'translateY(-50%)',
+          pointerEvents: 'none',
+          color: 'var(--color-text-muted)',
+          fontSize: '0.95rem',
+          fontWeight: 500,
+        }}>{placeholder ?? 'Ημέρα/Μήνας/Έτος'}</span>
+      )}
+      <TextField
+        variant="outlined"
+        label={label}
+        InputLabelProps={{ shrink: true }}
+        placeholder={placeholder}
+        type={type === "NUMBER" ? "number" : "text"}
+        value={normalizedDateValue}
+        disabled={disabled}
+        error={!!internalError}
+        helperText={internalError}
+        onChange={(e) => onChange?.(e.target.value)}
+        onBlur={onBlur}
+        slotProps={{
+          inputLabel: undefined,
+          input: {
+            className: inputClass,
+            startAdornment: prefixIcon ? (
+              <InputAdornment position="start">{prefixIcon}</InputAdornment>
+            ) : undefined,
+          },
+        }}
+        sx={{
+          // apply shared styles then add textfield-specific focus overrides
+          ...sharedSx,
+          // Target the OutlinedInput root to remove any notched outline / pseudo-elements
+          "& .MuiOutlinedInput-root": {
+            "& .MuiOutlinedInput-notchedOutline": { border: 'none', display: 'none' },
+            "&::before, &::after": { border: 'none', display: 'none' },
+            "&.Mui-focused": { boxShadow: 'none', outline: 'none' },
+          },
+          // Ensure the input itself has no native focus outline/shadow
+          "& input": { outline: 'none', boxShadow: 'none' },
+          // Also ensure helper text/focus color doesn't introduce borders
+          "& .MuiFormHelperText-root": { boxShadow: 'none' },
+        } as any}
+      />
+    </Box>
   );
 }

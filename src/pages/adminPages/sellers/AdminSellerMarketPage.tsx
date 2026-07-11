@@ -90,7 +90,7 @@ export default function AdminSellerMarketPage() {
         />
       </div>
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto w-full overflow-x-hidden">
         <Box className="flex flex-col gap-8">
           <div className="flex items-center justify-between">
             <Typography variant="h6" className="font-bold pb-2 mb-2">
