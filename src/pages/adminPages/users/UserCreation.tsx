@@ -6,13 +6,14 @@ import { useRegisterMutation } from '../../../queries/authQueries';
 import { USER_ROLE_MAPPING, USER_ROLE_MAPPING_TITLES } from '../../../shared/mappings/users.mapping';
 import { SELLER_TYPE_LABELS } from '../../../components/sellers/sellers.utils';
 import CustomInputField from '../../../shared/components/CustomInputField';
+import { DEFAULT_PASSWORD } from '../../auth/RegisterPage';
 
 const inputClass =
   'w-full px-4 py-3 text-[15px] rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text-heading) placeholder:text-(--color-text-muted) outline-none transition focus:border-(--color-primary) focus:ring-3 focus:ring-(--color-primary-subtle)';
 
 const ROLE_OPTIONS = USER_ROLE_MAPPING_TITLES ? Object.values(USER_ROLE_MAPPING_TITLES) : [];
 const ROLE_KEYS = USER_ROLE_MAPPING_TITLES ? Object.keys(USER_ROLE_MAPPING_TITLES) : [];
-const INITIAL_PASSWORD = 'Aa111111!';
+const INITIAL_PASSWORD = DEFAULT_PASSWORD; // Default password for new users
 const DEFAULT_ROLE = USER_ROLE_MAPPING.USER;
 
 interface UserCreationForm extends RegisterCredentials {

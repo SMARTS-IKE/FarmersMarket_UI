@@ -9,6 +9,7 @@ import { useMarketsQuery } from "../../../queries/marketQueries";
 import { SELLER_TYPE_LABELS } from "../../../lib/feeUtils";
 import LayoutTabsSlot from "../../../shared/components/LayoutTabsSlot";
 import type { Market } from "../../../models/market";
+import ChargesSummary from '../../../components/feesAndPayments/ChargesSummary';
 
 const columns: ColumnDef<FeeRule>[] = [
   {
@@ -60,9 +61,9 @@ const columns: ColumnDef<FeeRule>[] = [
   },
   {
     key: "amount",
-    label: "Ποσό",
+    label: "Βασικό Ποσό €",
     filterable: false,
-    render: (row) => `€${Number(row.amount ?? 0).toFixed(2)}`,
+    render: (row) => `${Number(row.amount ?? 0).toFixed(2)}`,
   },
   { key: "validFrom", label: "Ισχύει από" },
   { key: "validTo", label: "Ισχύει έως" }
@@ -223,8 +224,8 @@ export default function AdminFeesPaymentsPage() {
         )}
 
         {activeTab === 1 && (
-          <div className="flex items-center justify-center h-96 text-gray-500">
-            <p>Ενότητα Πληρωμών (Σύντομα)</p>
+          <div className="flex flex-col gap-4">
+            <ChargesSummary />
           </div>
         )}
       </div>

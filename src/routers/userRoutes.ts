@@ -1,5 +1,6 @@
 import { createRoute, redirect } from '@tanstack/react-router';
 import RoleBasedLayout from '../layouts/RoleBasedLayout';
+import UserPage from '../pages/userPages/UserPage';
 import UserDashboardPage from '../pages/userPages/UserDashboardPage';
 import AdminMarketDetailPage from '../pages/adminPages/markets/AdminMarketDetailPage';
 import UserRequestsPage from '../pages/userPages/UserRequestsPage';
@@ -23,6 +24,12 @@ export const userDashboardRoute = createRoute({
   getParentRoute: () => userProtectedRoute,
   path: '/users',
   component: UserDashboardPage,
+});
+
+export const userProfileRoute = createRoute({
+  getParentRoute: () => userProtectedRoute,
+  path: '/users/profile',
+  component: UserPage,
 });
 
 export const userMarketsRoute = createRoute({
@@ -100,6 +107,7 @@ export const userFormCreationDetailsRoute = createRoute({
 
 export const userRouteTree = userProtectedRoute.addChildren([
   userDashboardRoute,
+  userProfileRoute,
   userMarketsRoute,
   userMarketDetailRoute,
   userRequestsRoute,

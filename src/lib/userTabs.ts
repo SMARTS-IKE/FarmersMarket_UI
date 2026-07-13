@@ -1,6 +1,7 @@
 export interface UserTab {
   to:
     | '/users'
+    | '/users/profile'
     | '/users/markets'
     | '/users/requests';
   label: string;
@@ -14,6 +15,12 @@ export const userTabs: UserTab[] = [
     to: '/users',
     label: 'Αρχική',
     title: 'Αρχική Σελίδα',
+    description: '',
+  },
+  {
+    to: '/users/profile',
+    label: 'Το Προφίλ μου',
+    title: 'Προφίλ Χρήστη',
     description: '',
   },
   {

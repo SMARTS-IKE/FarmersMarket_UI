@@ -160,7 +160,7 @@ export default function DataTable<T extends object>({
     }
     return () => setFilterSlot(null);
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [filters, onSearch, onClearFilters, clearFiltersButtonTitle, clearFiltersButtonBackgroundColor, clearFiltersPrefixIcon, initialFilterValues]);
+  }, [filters, clearFiltersButtonTitle, clearFiltersButtonBackgroundColor, clearFiltersPrefixIcon, initialFilterValues]);
 
   const filterableCols = useMemo(
     () => columns.filter((c) => c.filterable !== false),

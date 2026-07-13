@@ -1,13 +1,16 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
+import { Snackbar, Alert } from '@mui/material';
+import { consumeAuthNotification } from '../../../lib/authNotifications';
 import DataTable, { ColumnDef, FilterDef, FilterValues } from "../../../shared/components/DataTable";
 import type { Seller, SellerSearchRequest, SellerType } from "../../../models/seller";
 import { useSellersQuery } from "../../../queries/sellerQueries";
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
+import { useGlobalEnums } from '../../../shared/mappings/GlobalEnums';
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 
 
-const columns: ColumnDef<Seller>[] = [
+const columnsBase: ColumnDef<Seller>[] = [
   { key: "firstName", label: "Όνομα" },
   { key: "lastName", label: "Επώνυμο" },
   { key: "afm", label: "ΑΦΜ" },
@@ -37,6 +40,19 @@ const tableFilters: FilterDef[] = [
 
 export default function AdminSellersPage() {
   const navigate = useNavigate();
+  const { UserStatusLabels, UserStatus } = useGlobalEnums();
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [notificationSeverity, setNotificationSeverity] = useState<'success' | 'error'>('success');
+  const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
+
+  useEffect(() => {
+    const nextNotification = consumeAuthNotification();
+    if (!nextNotification) return;
+
+    setNotificationMessage(nextNotification.message);
+    setNotificationSeverity(nextNotification.type);
+    setIsSnackbarOpen(true);
+  }, []);
   const initialFilters: SellerSearchRequest = {
     name: "",
     afm: "",
@@ -50,6 +66,13 @@ export default function AdminSellersPage() {
 
   const { data: sellersQueryResults } = useSellersQuery(filters);
   const sellers: Seller[] = sellersQueryResults?.items ?? [];
+
+  const USER_STATUS_COLORS: Record<number, string> = {
+    [UserStatus.active ?? 0]: '#166534',
+    [UserStatus.inactive ?? 1]: '#991b1b',
+    // pending / other statuses
+    [UserStatus.pending ?? 2]: '#b45309',
+  };
 
   const handleSearch = (values: FilterValues) => {
     setFilters((prev) => ({
@@ -73,6 +96,21 @@ export default function AdminSellersPage() {
     navigate({ to: "/admin/sellers/$sellerId", params: { sellerId: String(seller.id) } });
   };
 
+  const columns: ColumnDef<Seller>[] = [
+    ...columnsBase,
+    {
+      key: 'userStatus',
+      label: 'Κατάσταση χρήστη',
+      render: (row) => {
+        const rawStatus = (row as any).status;
+        const statusValue = typeof rawStatus === 'number' ? rawStatus : (row.isActive ? 0 : 1);
+        const label = UserStatusLabels?.[statusValue] ?? (statusValue === 0 ? 'Ενεργός' : 'Ανενεργός');
+        const color = USER_STATUS_COLORS[statusValue] ?? '#374151';
+        return <span style={{ color, fontWeight: 700 }}>{label}</span>;
+      },
+    },
+  ];
+
   return (
     <div className="flex h-full flex-col gap-6 text-left">
 
@@ -89,6 +127,16 @@ export default function AdminSellersPage() {
           clearFiltersPrefixIcon={<RestartAltIcon />}
           onRowClick={handleRowClick}
         />
+        <Snackbar
+          open={isSnackbarOpen && Boolean(notificationMessage)}
+          autoHideDuration={4500}
+          onClose={() => setIsSnackbarOpen(false)}
+          anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        >
+          <Alert onClose={() => setIsSnackbarOpen(false)} severity={notificationSeverity} variant="filled" sx={{ width: '100%' }}>
+            {notificationMessage}
+          </Alert>
+        </Snackbar>
     </div>
   );
 }

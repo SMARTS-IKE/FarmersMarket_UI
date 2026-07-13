@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState, type SyntheticEvent } from 'react';
+import { Box, Snackbar, Alert } from '@mui/material';
 import { useAuthStore } from '../../store/authStore';
 import { useBlocker, useNavigate, useParams } from '@tanstack/react-router';
 import { setAuthNotification } from '../../lib/authNotifications';
@@ -10,27 +11,35 @@ import {
   useUserQuery,
 } from '../../queries/userQueries';
 import { useGlobalEnums } from '../../shared/mappings/GlobalEnums';
+import { useAllSellersQuery } from '../../queries/sellerQueries';
+import { SELLER_TYPE_LABELS } from '../../components/sellers/sellers.utils';
 import CustomInputField from '../../shared/components/CustomInputField';
+import CustomButton from '../../shared/components/CustomButton';
 import { USER_ROLE_MAPPING_TITLES, USER_ROLE_MAPPING } from '../../shared/mappings/users.mapping';
-
-const inputClass =
-  'w-full px-4 py-3 text-[15px] rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text-heading) placeholder:text-(--color-text-muted) outline-none transition focus:border-(--color-primary) focus:ring-3 focus:ring-(--color-primary-subtle) disabled:opacity-50 disabled:cursor-not-allowed';
 
 const ROLE_OPTIONS = USER_ROLE_MAPPING_TITLES ? Object.values(USER_ROLE_MAPPING_TITLES) : [];
 const ROLE_KEYS = USER_ROLE_MAPPING_TITLES ? Object.keys(USER_ROLE_MAPPING_TITLES) : [];
 
 export default function UserPage() {
   const navigate = useNavigate();
+  const params = useParams({ strict: false });
   const connectedRole = useAuthStore((s) => s.role);
   const connectedIsUserRole = ((connectedRole ?? '').trim().toLowerCase() === (USER_ROLE_MAPPING.USER ?? '').trim().toLowerCase());
-  const params = useParams({ strict: false });
   const { UserStatus, UserStatusLabels } = useGlobalEnums();
-  const userId = typeof params.id === 'string' ? params.id : '';
-  const { data: user, isLoading, isError, error } = useUserQuery(userId);
-  const updateUserMutation = useUpdateUserMutation(userId);
-  const assignRoleMutation = useAssignUserRoleMutation(userId);
-  const removeRoleMutation = useRemoveUserRoleMutation(userId);
-  const reinitializePasswordMutation = useReinitializeUserPasswordMutation(userId);
+  const connectedUser = useAuthStore((s) => s.user);
+  const paramId = typeof params.id === 'string' ? params.id : '';
+  const effectiveUserId = paramId || (connectedUser?.id ? String(connectedUser.id) : '');
+
+  const { data: user, isLoading, isError, error } = useUserQuery(effectiveUserId);
+  const { data: sellersResp } = useAllSellersQuery({ name: '', afm: '', sellerType: '', isActive: undefined, pageSize: 1000 });
+
+  const [matchedSeller, setMatchedSeller] = useState<any | null>(null);
+
+  const updateUserMutation = useUpdateUserMutation(effectiveUserId);
+  const assignRoleMutation = useAssignUserRoleMutation(effectiveUserId);
+  const removeRoleMutation = useRemoveUserRoleMutation(effectiveUserId);
+  const reinitializePasswordMutation = useReinitializeUserPasswordMutation(effectiveUserId);
+
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
   const [status, setStatus] = useState<number>(0);
@@ -43,6 +52,8 @@ export default function UserPage() {
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
   const allowProgrammaticNavigationRef = useRef(false);
+  const [navigationNotice, setNavigationNotice] = useState('');
+  const [notificationSeverity, setNotificationSeverity] = useState<'success' | 'warning'>('warning');
 
   useEffect(() => {
     if (!user) return;
@@ -63,6 +74,26 @@ export default function UserPage() {
     setErrors({});
   }, [user]);
 
+  useEffect(() => {
+    if (!sellersResp || !user) {
+      setMatchedSeller(null);
+      return;
+    }
+
+    const all = sellersResp.items ?? [];
+    const authName = ((user as any)?.name ?? `${(user as any)?.firstName ?? ''} ${(user as any)?.lastName ?? ''}`).trim();
+
+    const found = all.find((s: any) => {
+      if (s.userId && String(s.userId) === String(user.id)) return true;
+      if (user.afm && s.afm && String(s.afm) === String(user.afm)) return true;
+      const sName = `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim();
+      if (sName && authName && sName === authName) return true;
+      return false;
+    }) ?? null;
+
+    setMatchedSeller(found);
+  }, [sellersResp, user]);
+
   const isSavingUser = updateUserMutation.isPending;
   const isUpdatingRole = assignRoleMutation.isPending || removeRoleMutation.isPending;
   const isReinitializingPassword = reinitializePasswordMutation.isPending;
@@ -79,19 +110,16 @@ export default function UserPage() {
     lastName !== initialLastName ||
     status !== initialStatus;
   const hasPendingChanges = hasUserChanges || hasRoleChanges;
-  const currentRoleKey = selectedRoles[0] ?? initialSelectedRoles[0] ?? '';
-  const currentRoleTitle = currentRoleKey
-    ? USER_ROLE_MAPPING_TITLES[currentRoleKey as keyof typeof USER_ROLE_MAPPING_TITLES] ?? currentRoleKey
-    : '—';
 
   const showNotification = (message: string, severity: 'success' | 'warning' | 'error' = 'warning') => {
-    setErrors({ form: message });
+    setErrors((prev) => ({ ...prev, form: message }));
+    setNavigationNotice(message);
+    setNotificationSeverity(severity === 'error' ? 'warning' : severity);
+    setIsSnackbarOpen(true);
   };
 
   useEffect(() => {
-    if (hasPendingChanges) {
-      setIsNavigationLocked(true);
-    }
+    if (hasPendingChanges) setIsNavigationLocked(true);
   }, [hasPendingChanges]);
 
   useBlocker({
@@ -104,9 +132,10 @@ export default function UserPage() {
     enableBeforeUnload: isNavigationLocked,
   });
 
+  // Single merged view — no tab switching needed.
+
   async function handleSave() {
     if (!hasPendingChanges) return;
-
     setErrors({});
 
     try {
@@ -126,10 +155,7 @@ export default function UserPage() {
       setInitialStatus(status);
       setInitialSelectedRoles(selectedRoles);
       setIsNavigationLocked(false);
-      setAuthNotification({
-        type: 'success',
-        message: 'Οι αλλαγές χρήστη και ρόλων αποθηκεύτηκαν.',
-      });
+      setAuthNotification({ type: 'success', message: 'Οι αλλαγές χρήστη και ρόλων αποθηκεύτηκαν.' });
       allowProgrammaticNavigationRef.current = true;
       const redirectTarget = connectedIsUserRole ? '/users' : '/admin/users';
       navigate({ to: redirectTarget });
@@ -152,46 +178,15 @@ export default function UserPage() {
 
   function handleRoleToggle(role: string) {
     setErrors({});
-    setSelectedRoles((current) =>
-      current.includes(role) ? [] : [role]
-    );
+    setSelectedRoles((current) => (current.includes(role) ? [] : [role]));
   }
-
-  const handleBackToList = () => {
-    if (isNavigationLocked) {
-      showNotification('Έχετε μη αποθηκευμένες αλλαγές. Αποθηκεύστε ή ακυρώστε για να συνεχίσετε.', 'warning');
-      return;
-    }
-
-    const redirectTarget = connectedIsUserRole ? '/users' : '/admin/users';
-    navigate({ to: redirectTarget });
-  };
-
-  const handleReinitializePassword = async () => {
-    setErrors({});
-
-    try {
-      await reinitializePasswordMutation.mutateAsync();
-      setAuthNotification({
-        type: 'success',
-        message: 'Ο κωδικός του χρήστη επαναρχικοποιήθηκε επιτυχώς.',
-      });
-    } catch (mutationError) {
-      showNotification(
-        mutationError instanceof Error
-          ? mutationError.message
-          : 'Η επαναρχικοποίηση κωδικού απέτυχε.',
-        'error'
-      );
-    }
-  };
 
   const handleSnackbarClose = (_event?: Event | SyntheticEvent, reason?: string) => {
     if (reason === 'clickaway') return;
     setIsSnackbarOpen(false);
   };
 
-  if (!userId) {
+  if (!effectiveUserId) {
     return (
       <div className="min-h-screen p-6 md:px-10 bg-transparent">
         <div className="mx-auto max-w-2xl">
@@ -231,71 +226,107 @@ export default function UserPage() {
   }
 
   return (
-    <div className="min-h-screen p-6 md:px-10 bg-transparent">
-      <div className="mx-auto max-w-2xl">
-        <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-(--color-text-heading) mb-2">Στοιχεία χρήστη</h2>
-          <p className="text-sm text-(--color-text-muted)">Επεξεργασία στοιχείων χρήστη</p>
+    <div className="flex h-full w-full flex-col gap-6 text-left overflow-hidden">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="flex flex-col gap-1">
+          <h2 className="font-semibold text-(--color-text-heading)">Το Προφίλ μου</h2>
+          <h3 className="text-lg text-(--color-text-heading)">{user ? (user.name ?? `${user.firstName ?? ''} ${user.lastName ?? ''}`) : ''}</h3>
         </div>
+      </div>
 
-        <form className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); handleSave(); }} noValidate>
-          {errors.form && (
-            <div
-              className="bg-danger-subtle border border-(--color-danger-border) text-danger rounded-lg px-4 py-3 text-sm"
-              role="alert"
-            >
-              {errors.form}
-            </div>
-          )}
+      <Box className="w-full self-start">
+        {/* Single merged view: user form followed by seller details */}
+      </Box>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <CustomInputField
-                type="TEXT"
+      <div className="flex-1 overflow-y-auto pr-2 max-h-[calc(100svh-300px)]">
+        <div className="flex flex-col gap-6 pt-2">
+          <div className="flex flex-col gap-4">
+            {errors.form && (
+              <div className="bg-danger-subtle border border-(--color-danger-border) text-danger rounded-lg px-4 py-3 text-sm" role="alert">
+                {errors.form}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3">
+              <CustomInputField 
+                type="TEXT" 
                 label="Όνομα"
                 value={firstName}
                 placeholder="Όνομα"
                 onChange={(v) => setFirstName(String(v ?? ''))}
-                width="100%"
+                width="100%" />
+              <CustomInputField 
+                type="TEXT" 
+                label="Επώνυμο" 
+                value={lastName} 
+                placeholder="Επώνυμο" 
+                onChange={(v) => setLastName(String(v ?? ''))} 
+                width="100%" />
+
+            </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+               <CustomInputField
+                  type="DROPDOWN"
+                  label="Τύπος Πωλητή"
+                  value={String((matchedSeller as any)?.sellerType ?? '')}
+                  disabled
+                  width="100%"
+                  dropdownItems={[{ label: '-- Επιλέξτε --', value: '' }, ...Object.entries(SELLER_TYPE_LABELS).map(([k, v]) => ({ label: v, value: String(k) }))]}
+              />
+              <CustomInputField 
+                type="TEXT" 
+                label="ΑΦΜ" 
+                value={(matchedSeller as any)?.afm ?? ''} 
+                disabled 
+                width="100%" 
               />
             </div>
 
-            <div className="flex flex-col gap-1">
-              <CustomInputField
-                type="TEXT"
-                label="Επώνυμο"
-                value={lastName}
-                placeholder="Επώνυμο"
-                onChange={(v) => setLastName(String(v ?? ''))}
-                width="100%"
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+
+              <CustomInputField 
+                type="TEXT" 
+                label="Email" 
+                value={user.email || ''} 
+                disabled 
+                width="100%" 
               />
+
+               <CustomInputField 
+                type="TEXT" 
+                label="Τηλέφωνο" 
+                value={(matchedSeller as any)?.phone ?? ''} 
+                disabled 
+                width="100%" 
+               />
+
             </div>
-          </div>
 
-          <div className="flex flex-col gap-1">
-            <CustomInputField
-              type="TEXT"
-              label="Ηλεκτρονικό ταχυδρομείο"
-              value={user.email || ''}
-              disabled
-              width="100%"
-            />
-          </div>
+            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
+              <CustomInputField 
+                type="TEXT" 
+                label="Διεύθυνση" 
+                value={(matchedSeller as any)?.address ?? ''} 
+                disabled 
+                width="100%" 
+              />
+
               <CustomInputField
                 type="DROPDOWN"
-                label="Ρόλος"
+                label="Ρόλος Χρήστη"
                 value={selectedRoles[0] || ''}
                 dropdownItems={ROLE_KEYS.map((roleKey, index) => ({ value: roleKey, label: ROLE_OPTIONS[index] }))}
                 onChange={(v) => handleRoleToggle(String(v ?? ''))}
                 disabled={connectedIsUserRole}
                 width="100%"
               />
+
             </div>
 
-            <div className="flex flex-col gap-1">
+            
+
+            <div className="grid grid-cols-2 gap-3">
               <CustomInputField
                 type="DROPDOWN"
                 label="Κατάσταση"
@@ -313,27 +344,60 @@ export default function UserPage() {
                 width="100%"
               />
             </div>
+
+            {/* action buttons moved to bottom; shown only when there are unsaved changes */}
           </div>
 
-          <div className="flex gap-3 pt-4">
-            <button
-              type="submit"
-              disabled={isSavingUser || isUpdatingRole || isReinitializingPassword}
-              className="w-full py-3 px-4 text-[15px] font-semibold rounded-lg bg-(--color-text) text-white transition hover:brightness-90 active:brightness-75 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-            >
-              {isSavingUser || isUpdatingRole ? 'Αποθήκευση...' : 'Αποθήκευση'}
-            </button>
-            <button
-              type="button"
-              onClick={handleCancel}
-              disabled={isSavingUser}
-              className="w-full py-3 px-4 text-[15px] font-semibold rounded-lg bg-transparent border border-(--color-text-muted) text-(--color-text-heading) transition hover:bg-(--color-bg-hover) disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
-            >
-              Ακύρωση
-            </button>
-          </div>
-        </form>
+          {matchedSeller && (
+            <div className="flex flex-col gap-4 mt-2">
+             
+              <div>
+                <h3 className="text-lg font-semibold text-(--color-text-heading)">Άδεια</h3>
+                <div className="flex flex-row items-start gap-4 justify-center mt-2">
+                  <CustomInputField type="TEXT" label="Αριθμός" value={matchedSeller.currentLicense?.licenseNumber ?? ''} disabled width="100%" />
+                  <CustomInputField type="DATE" label="Από" value={matchedSeller.currentLicense?.fromDate ?? ''} disabled width="100%" />
+                  <CustomInputField type="DATE" label="Έως" value={matchedSeller.currentLicense?.licenseExpiry ?? matchedSeller.currentLicense?.expiresAt ?? ''} disabled width="100%" />
+                </div>
+              </div>
+            </div>
+          )}
+          {hasPendingChanges && (
+            <div className="flex justify-end gap-4 mt-6">
+                <CustomButton
+                    title="Ακύρωση"
+                    backgroundColor="transparent"
+                    onClick={handleCancel}
+                    width="fit-content"
+                    disabled={isSavingUser}
+                    sx={{
+                      px: 3,
+                      minHeight: 32,
+                      color: "var(--color-dark)",
+                      border: "1px solid var(--color-text-muted)",
+                      "&:hover": {
+                        backgroundColor: "transparent",
+                        borderColor: "var(--color-text-muted)",
+                        filter: "none",
+                      },
+                    }}
+                  />
+                  <CustomButton
+                    title="Αποθήκευση"
+                    onClick={handleSave}
+                    width="fit-content"
+                    sx={{ px: 4, minHeight: 32 }}
+                    disabled={isSavingUser || isUpdatingRole || isReinitializingPassword}
+                  />
+            </div>
+          )}
+        </div>
       </div>
+
+      <Snackbar open={isSnackbarOpen && Boolean(navigationNotice)} autoHideDuration={4500} onClose={handleSnackbarClose} anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}>
+        <Alert onClose={handleSnackbarClose} severity={notificationSeverity} variant="filled" sx={{ width: '100%' }}>
+          {navigationNotice}
+        </Alert>
+      </Snackbar>
     </div>
   );
 }

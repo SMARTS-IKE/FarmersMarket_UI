@@ -8,6 +8,8 @@ import { SELLER_TYPE_LABELS } from '../../components/sellers/sellers.utils';
 const inputClass =
   'w-full px-4 py-3 text-[15px] rounded-lg border border-(--color-border) bg-(--color-bg) text-(--color-text-heading) placeholder:text-(--color-text-muted) outline-none transition focus:border-(--color-primary) focus:ring-3 focus:ring-(--color-primary-subtle)';
 
+export const DEFAULT_PASSWORD = 'Aa111111!';
+
 export default function RegisterPage() {
   const [form, setForm] = useState<RegisterCredentials>({
     firstName: '',
@@ -19,10 +21,12 @@ export default function RegisterPage() {
     sellerType: 0,
   });
   const [errors, setErrors] = useState<Partial<Record<keyof RegisterCredentials | 'form', string>>>({});
+  const [successMessage, setSuccessMessage] = useState('');
   const navigate = useNavigate();
   const registerMutation = useRegisterMutation();
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  
 
   function validate(): boolean {
     const next: typeof errors = {};
@@ -32,8 +36,10 @@ export default function RegisterPage() {
     if (!form.lastName.trim())   next.lastName      = 'Το επώνυμο είναι υποχρεωτικό';
 
     if (!form.afm?.trim())       next.afm           = 'Το ΑΦΜ είναι υποχρεωτικό';
+    else if (!/^\d{9}$/.test(form.afm.trim())) next.afm = 'Το ΑΦΜ πρέπει να αποτελείται από 9 ψηφία';
 
     if (!form.phone?.trim())     next.phone         = 'Το τηλέφωνο είναι υποχρεωτικό';
+    else if (!/^\d{10}$/.test(form.phone.trim())) next.phone = 'Το τηλέφωνο πρέπει να αποτελείται από 10 ψηφία';
 
     if (!form.address?.trim())   next.address       = 'Η διεύθυνση είναι υποχρεωτική';
     
@@ -55,12 +61,17 @@ export default function RegisterPage() {
     if (!validate()) return;
 
     try {
-      await registerMutation.mutateAsync(form);
-      setAuthNotification({
-        type: 'success',
-        message: 'Η αίτηση εγγραφής υποβλήθηκε. Ο διαχειριστής θα εγκρίνει ή θα απορρίψει την αίτηση και θα σας στείλει τον κωδικό μέσω email.',
-      });
-      navigate({ to: '/auth/login' });
+      const payload = { ...form, password: DEFAULT_PASSWORD, role: 'User_Access' };
+      await registerMutation.mutateAsync(payload);
+
+      const message = 'Η αίτηση εγγραφής υποβλήθηκε. Ο διαχειριστής θα εγκρίνει ή θα απορρίψει την αίτηση και θα σας στείλει τον κωδικό μέσω email.';
+      setAuthNotification({ type: 'success', message });
+      setSuccessMessage(message);
+
+      // Give the user a moment to read the success message, then redirect to login
+      setTimeout(() => {
+        navigate({ to: '/auth/login' });
+      }, 1400);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Η αίτηση εγγραφής απέτυχε';
       setErrors({ form: message });
@@ -148,6 +159,8 @@ export default function RegisterPage() {
               name="afm"
               type="text"
               value={form.afm}
+              maxLength={9}
+              inputMode="numeric"
               onChange={handleChange}
               placeholder="ΑΦΜ"
               className={`${inputClass} ${errors.afm ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}
@@ -164,6 +177,8 @@ export default function RegisterPage() {
               name="phone"
               type="tel"
               value={form.phone}
+              maxLength={10}
+              inputMode="numeric"
               onChange={handleChange}
               placeholder="Τηλέφωνο"
               className={`${inputClass} ${errors.phone ? 'border-(--color-danger) focus:border-(--color-danger) focus:ring-(--color-danger-subtle)' : ''}`}

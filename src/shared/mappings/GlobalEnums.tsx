@@ -121,6 +121,7 @@ export const GlobalEnumsProvider = ({ children }: { children: ReactNode }) => {
   );
 };
 
+
 export const useGlobalEnums = () => useContext(GlobalEnumsContext);
 
 export default GlobalEnumsProvider;

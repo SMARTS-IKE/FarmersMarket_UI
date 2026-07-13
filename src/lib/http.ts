@@ -70,8 +70,9 @@ export async function apiRequest<TResponse = unknown, TBody = unknown>(
     // ── 401 → clear session and redirect to login ───────────────
     if (response.status === 401) {
       useAuthStore.getState().clearAuth();
+      localStorage.clear();
+      window.location.reload();
       // Redirect straight to the login page and replace history so back doesn't return to protected pages
-      void router.navigate({ to: '/auth/login', replace: true });
       throw new HttpError(401, 'Session expired. Please log in again.');
     }
 

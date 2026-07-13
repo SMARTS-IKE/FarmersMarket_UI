@@ -9,10 +9,13 @@ import CustomInputField from "../../../shared/components/CustomInputField";
 import { useSellerQuery, useSellerMarketsQuery } from "../../../queries/sellerQueries";
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
 import { updateSeller } from "../../../services/sellerService";
+import { setAuthNotification } from '../../../lib/authNotifications';
 import { updateUser, getUserById } from "../../../services/userService";
 import { USER_ROLE_MAPPING } from "../../../shared/mappings/users.mapping";
 import { UserRole } from "../../../shared/mappings/GlobalEnums";
 import { useGlobalEnums } from "../../../shared/mappings/GlobalEnums";
+import { queryClient } from '../../../lib/queryClient';
+import { sellerKeys } from '../../../queries/sellerQueries';
 
 const connectedMarketsColumns: ColumnDef<ConnectedMarket>[] = [
   { key: "marketName", label: "Όνομα Αγοράς" },
@@ -366,7 +369,7 @@ export default function SellerPage() {
               seasonalFromDate: seasonalFromDate || null,
               seasonalToDate: seasonalToDate || null,
               licenseCategory: 0,
-              licenseStatus: 0,
+              licenseStatus: 1,
               licenseNumber: licenseNumber,
               licenseExpiry: seasonalToDate || null,
               notes: null,
@@ -378,7 +381,7 @@ export default function SellerPage() {
               seasonalFromDate: null,
               seasonalToDate: null,
               licenseCategory: 0,
-              licenseStatus: 0,
+              licenseStatus: 1,
               licenseNumber: licenseNumber,
               licenseExpiry: licenseExpiresAt || null,
               notes: null,
@@ -387,7 +390,23 @@ export default function SellerPage() {
 
       // Ensure initialState is updated synchronously so the blocker sees no unsaved changes
       flushSync(() => setInitialState(currentState));
-      showNotification("Οι αλλαγές αποθηκεύτηκαν.", "success");
+
+      // Invalidate seller-related queries so UI shows fresh data
+      try {
+        await Promise.all([
+          queryClient.invalidateQueries({ queryKey: sellerKeys.detail(sellerId) }),
+          queryClient.invalidateQueries({ queryKey: sellerKeys.markets(sellerId) }),
+          queryClient.invalidateQueries({ queryKey: sellerKeys.all }),
+        ]);
+      } catch (e) {
+        // ignore invalidation errors
+      }
+
+      const successMessage = "Οι αλλαγές αποθηκεύτηκαν.";
+      // Persist a short-lived auth notification so the list page can show it after redirect
+      setAuthNotification({ type: 'success', message: successMessage });
+
+      showNotification(successMessage, "success");
       navigate({ to: "/admin/sellers" });
     } catch (err: any) {
       const msg = err?.message ?? "Η αποθήκευση απέτυχε.";

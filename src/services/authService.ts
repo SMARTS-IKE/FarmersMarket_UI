@@ -11,7 +11,12 @@ export async function register(credentials: RegisterCredentials): Promise<AuthRe
 }
 
 export async function requestRegistration(credentials: RegisterCredentials): Promise<AuthResponse> {
-  const payload: RegisterCredentials & { role: string } = { ...credentials, role: USER_ROLE_MAPPING.USER };
+  // Preserve an explicitly provided `role` (e.g. 'User_Access'),
+  // otherwise default to the normalized role string 'User_Access'.
+  const payload: RegisterCredentials & { role: string } = {
+    ...credentials,
+    role: credentials.role ?? 'User_Access',
+  };
   return http.post<AuthResponse, RegisterCredentials & { role: string }>(
     '/auth/register',
     payload,

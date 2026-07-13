@@ -162,7 +162,7 @@ export default function FeeEditPage() {
                   <CustomInputField
                       width="100%"
                       type="NUMBER"
-                      label="Ποσό €"
+                      label="Βασικό Ποσό €"
                       value={fee.basis}
                       onChange={(v) => handleChange('basis', Number(v))}
                   />

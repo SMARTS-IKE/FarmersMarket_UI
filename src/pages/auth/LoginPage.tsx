@@ -33,29 +33,31 @@ export default function LoginPage() {
 
     try {
       const data = await login({ email, password });
+      console.log('login response', data);
       setAuth(data);
 
       const state = useAuthStore.getState();
 
-      // If 'Remember Me' is checked, persist the auth state to localStorage
-      if (remember) {
-        try {
-          // Store a simplified auth object for rehydration
-          localStorage.setItem('auth', JSON.stringify({
-            user: state.user,
-            token: state.token,
-            email: state.email,
-            role: state.role,
-          }));
-        } catch (e) {
-          // ignore storage errors
+      // Persist auth to sessionStorage by default
+      const authObj = {
+        user: state.user,
+        token: state.token,
+        email: state.email,
+        role: state.role,
+      };
+
+      try {
+        if (remember) {
+          // Remember: store in localStorage and remove session copy
+          localStorage.setItem('auth', JSON.stringify(authObj));
+          try { sessionStorage.removeItem('auth'); } catch {}
+        } else {
+          // Not remembered: keep in sessionStorage and remove local copy
+          sessionStorage.setItem('auth', JSON.stringify(authObj));
+          try { localStorage.removeItem('auth'); } catch {}
         }
-      } else {
-        try {
-          localStorage.removeItem('auth');
-        } catch (e) {
-          // ignore
-        }
+      } catch (e) {
+        // ignore storage errors
       }
 
         const role = state.role;

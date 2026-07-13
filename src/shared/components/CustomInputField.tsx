@@ -18,7 +18,7 @@ import { el } from "date-fns/locale";
 
 const GREECE_TIMEZONE = "Europe/Athens";
 
-export type InputFieldType = "TEXT" | "NUMBER" | "TEXTAREA" | "DROPDOWN" | "MULTI_SELECT" | "DATE";
+export type InputFieldType = "TEXT" | "NUMBER" | "TEXTAREA" | "DROPDOWN" | "MULTI_SELECT" | "DATE" | "MONTH_YEAR";
 
 export interface DropdownOption {
   label: string;
@@ -92,17 +92,29 @@ function validate(
   return "";
 }
 
-function toDateInputValue(value: string | number | string[] | undefined): string {
+function toDateInputValue(value: string | number | string[] | undefined, fieldType: InputFieldType = "DATE"): string {
   if (value === undefined || Array.isArray(value) || value === "") return "";
 
   const raw = String(value);
 
+  // Full ISO date (YYYY-MM-DD)
   if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw;
 
+  // Month-year shorthand (YYYY-MM) -> convert to first day of month
+  if (/^\d{4}-\d{2}$/.test(raw)) return `${raw}-01`;
+
+  // Greek format full date DD/MM/YYYY
   const greekFormatMatch = raw.match(/^(\d{2})\/(\d{2})\/(\d{4})$/);
   if (greekFormatMatch) {
     const [, day, month, year] = greekFormatMatch;
     return `${year}-${month}-${day}`;
+  }
+
+  // Greek month/year format MM/YYYY -> convert to YYYY-MM-01
+  const greekMonthYearMatch = raw.match(/^(\d{2})\/(\d{4})$/);
+  if (greekMonthYearMatch && fieldType === "MONTH_YEAR") {
+    const [, month, year] = greekMonthYearMatch;
+    return `${year}-${month}-01`;
   }
 
   const parsed = new Date(raw);
@@ -137,6 +149,19 @@ function parseDateValue(value: string | number | string[] | undefined): Date | n
   return parsed;
 }
 
+function parseMonthYearValue(value: string | number | string[] | undefined): Date | null {
+  if (value === undefined || Array.isArray(value) || value === "") return null;
+
+  // Normalize month-year into YYYY-MM-01 if needed
+  const raw = String(value);
+  const normalized = /^\d{4}-\d{2}$/.test(raw) ? `${raw}-01` : toDateInputValue(value, "MONTH_YEAR");
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(normalized)) return null;
+
+  const parsed = new Date(`${normalized}T00:00:00`);
+  if (Number.isNaN(parsed.getTime())) return null;
+  return parsed;
+}
+
 function toIsoDateString(date: Date): string {
   const parts = new Intl.DateTimeFormat("el-GR", {
     timeZone: GREECE_TIMEZONE,
@@ -151,6 +176,19 @@ function toIsoDateString(date: Date): string {
 
   if (!year || !month || !day) return "";
   return `${year}-${month}-${day}`;
+}
+
+function toIsoMonthYearString(date: Date): string {
+  const parts = new Intl.DateTimeFormat("el-GR", {
+    timeZone: GREECE_TIMEZONE,
+    year: "numeric",
+    month: "2-digit",
+  }).formatToParts(date);
+
+  const year = parts.find((part) => part.type === "year")?.value;
+  const month = parts.find((part) => part.type === "month")?.value;
+  if (!year || !month) return "";
+  return `${year}-${month}-01`;
 }
 
 export default function CustomInputField({
@@ -177,8 +215,8 @@ export default function CustomInputField({
   // Previous Tailwind-like string contained invalid tokens (e.g. border-(--color-border))
   // which prevented correct rendering. Use MUI sx rules instead.
   const inputClass = '';
-  const normalizedDateValue = type === "DATE"
-    ? toDateInputValue((value ?? defaultValue) as string)
+  const normalizedDateValue = (type === "DATE" || type === "MONTH_YEAR")
+    ? toDateInputValue((value ?? defaultValue) as string, type)
     : (value ?? defaultValue ?? "");
 
   const shouldValidate = showValidation !== false;
@@ -781,6 +819,7 @@ export default function CustomInputField({
     };
 
     const showDateOverlay = !normalizedDateValue && !nativeFocused;
+    const monthYearPlaceholder = type === "MONTH_YEAR" ? 'μήνας/έτος' : 'ημέρα/μήνας/έτος';
 
     if (bottomOnly) {
       // Use MUI non-native DatePicker for consistent localized calendar UI
@@ -788,9 +827,10 @@ export default function CustomInputField({
         <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={el}>
           <DatePicker
             label={label}
-            format="dd/MM/yyyy"
-            inputFormat="dd/MM/yyyy"
-            value={parseDateValue(value ?? defaultValue)}
+            format={type === 'MONTH_YEAR' ? 'MM/yyyy' : 'dd/MM/yyyy'}
+            inputFormat={type === 'MONTH_YEAR' ? 'MM/yyyy' : 'dd/MM/yyyy'}
+            views={type === 'MONTH_YEAR' ? ['year','month'] : undefined}
+            value={type === 'MONTH_YEAR' ? parseMonthYearValue(value ?? defaultValue) : parseDateValue(value ?? defaultValue)}
             disabled={disabled}
             onChange={(newValue) => {
               if (!newValue) {
@@ -798,7 +838,7 @@ export default function CustomInputField({
                 return;
               }
 
-              const isoDate = toIsoDateString(newValue);
+              const isoDate = type === 'MONTH_YEAR' ? toIsoMonthYearString(newValue) : toIsoDateString(newValue);
               if (isoDate) onChange?.(isoDate);
             }}
             slotProps={{
@@ -806,7 +846,7 @@ export default function CustomInputField({
                 error: !!internalError,
                 helperText: internalError,
                 onBlur,
-                sx: ({ ...sharedSx,
+                sx: { ...sharedSx,
                   "& .MuiOutlinedInput-root": {
                     borderRadius: 0,
                     border: 'none',
@@ -849,7 +889,7 @@ export default function CustomInputField({
                   '&.show-greek-placeholder': {
                     position: 'relative',
                     '&::after': {
-                      content: '"ημέρα/μήνας/έτος"',
+                      content: `"${monthYearPlaceholder}"`,
                       position: 'absolute',
                       left: 0,
                       top: '20%',
@@ -868,7 +908,7 @@ export default function CustomInputField({
                     },
                     '& input::-moz-placeholder': { color: 'transparent !important', opacity: 0 },
                   },
-                } as any),
+                },
                 // add a class when empty + not focused so we can show an overlay placeholder
                 className: showDateOverlay ? 'show-greek-placeholder' : undefined,
                 slotProps: { inputLabel: { shrink: true } },
@@ -883,9 +923,10 @@ export default function CustomInputField({
       <LocalizationProvider dateAdapter={AdapterDateFns} adapterLocale={el}>
         <DatePicker
           label={label}
-          format="dd/MM/yyyy"
-          inputFormat="dd/MM/yyyy"
-          value={parseDateValue(value ?? defaultValue)}
+          format={type === 'MONTH_YEAR' ? 'MM/yyyy' : 'dd/MM/yyyy'}
+          inputFormat={type === 'MONTH_YEAR' ? 'MM/yyyy' : 'dd/MM/yyyy'}
+          views={type === 'MONTH_YEAR' ? ['year','month'] : undefined}
+          value={type === 'MONTH_YEAR' ? parseMonthYearValue(value ?? defaultValue) : parseDateValue(value ?? defaultValue)}
           disabled={disabled}
           onChange={(newValue) => {
             if (!newValue) {
@@ -893,7 +934,7 @@ export default function CustomInputField({
               return;
             }
 
-            const isoDate = toIsoDateString(newValue);
+            const isoDate = type === 'MONTH_YEAR' ? toIsoMonthYearString(newValue) : toIsoDateString(newValue);
             if (isoDate) {
               onChange?.(isoDate);
             }
@@ -903,7 +944,7 @@ export default function CustomInputField({
               error: !!internalError,
               helperText: internalError,
               onBlur,
-                  sx: ({ ...sharedSx,
+                  sx: { ...sharedSx,
                     ...(bottomOnly
                       ? {
                           "& .MuiOutlinedInput-root": {
@@ -964,7 +1005,7 @@ export default function CustomInputField({
                     '&.show-greek-placeholder': {
                       position: 'relative',
                       '&::after': {
-                        content: '"ημέρα/μήνας/έτος"',
+                        content: `"${monthYearPlaceholder}"`,
                         position: 'absolute',
                         left: prefixIcon ? '40px' : '8px',
                         top: '50%',
@@ -985,10 +1026,10 @@ export default function CustomInputField({
                     },
                     "& .MuiInput-underline:before": { borderBottom: 'none' },
                     "& .MuiInput-underline:after": { borderBottom: 'none' },
-                    } as any),
+                    },
                   // add a class when empty + not focused so we can show an overlay placeholder
                   className: showDateOverlay ? 'show-greek-placeholder' : undefined,
-                  inputProps: { placeholder: 'ημέρα/μήνας/έτος' },
+                  inputProps: { placeholder: monthYearPlaceholder },
                   slotProps: {
                 inputLabel: { shrink: true },
                 input: {
@@ -1075,7 +1116,7 @@ export default function CustomInputField({
           color: 'var(--color-text-muted)',
           fontSize: '0.95rem',
           fontWeight: 500,
-        }}>{placeholder ?? 'Ημέρα/Μήνας/Έτος'}</span>
+        }}>{placeholder ?? (type === 'MONTH_YEAR' ? 'Μήνας/Έτος' : 'Ημέρα/Μήνας/Έτος')}</span>
       )}
       <TextField
         variant="outlined"

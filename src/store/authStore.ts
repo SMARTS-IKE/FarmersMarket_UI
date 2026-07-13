@@ -6,16 +6,31 @@ function safeJwtDecode<T = any>(token: string): T {
   try {
     const parts = token.split('.');
     if (parts.length < 2) return {} as T;
-    const payload = parts[1];
-    // atob is available in browser environments
+    let payload = parts[1];
+
+    // Handle base64url (RFC 7515) -> convert to base64
+    payload = payload.replace(/-/g, '+').replace(/_/g, '/');
+    // Pad with '=' to make length a multiple of 4
+    const pad = payload.length % 4;
+    if (pad === 2) payload += '==';
+    else if (pad === 3) payload += '=';
+    else if (pad === 1) {
+      // invalid base64 string
+      throw new Error('Invalid base64 string in token payload');
+    }
+
+    // atob is available in browser environments; decode UTF-8 safely
+    const decoded = atob(payload);
     const json = decodeURIComponent(
-      atob(payload)
+      decoded
         .split('')
         .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
         .join('')
     );
+
     return JSON.parse(json) as T;
   } catch (e) {
+    console.error('safeJwtDecode error', e);
     return {} as T;
   }
 }
@@ -41,7 +56,7 @@ function getInitialState() {
   };
 
   try {
-    const localAuth = localStorage.getItem('auth');
+    const localAuth = localStorage.getItem('auth') || sessionStorage.getItem('auth');
     if (localAuth) {
       const parsed = JSON.parse(localAuth);
       // localStorage stores the flat state
@@ -65,37 +80,52 @@ export const useAuthStore = create<AuthState>()(
       ...getInitialState(),
 
       setAuth: (data: AuthResponse) => {
+        // Accept tokens from different backend shapes: `accessToken`, `token`, or `access_token`.
+        const maybeToken = (data as any).accessToken ?? (data as any).token ?? (data as any).access_token ?? null;
         try {
-          const decoded = safeJwtDecode<JWTPayload>(data.accessToken);
-          const role =
-            decoded.role ||
-            decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
+          if (maybeToken) {
+            const decoded = safeJwtDecode<JWTPayload>(maybeToken);
+            const role =
+              decoded.role ||
+              decoded['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'];
 
-          const firstName = decoded.firstName ?? '';
-          const lastName = decoded.lastName ?? '';
+              console.log(decoded);
 
-          const user: User = {
-            id: decoded.userId || decoded.sub,
-            email: decoded.email ?? null,
-            firstName,
-            lastName,
-            name: `${firstName} ${lastName}`.trim() || decoded.name || null,
-            role: Array.isArray(role) ? role[0] : (role as string),
-            status: decoded.status
-          };
+            const firstName = decoded.firstName ?? '';
+            const lastName = decoded.lastName ?? '';
 
+            const user: User = {
+              id: decoded.userId || decoded.sub,
+              email: decoded.email ?? null,
+              firstName,
+              lastName,
+              name: `${firstName} ${lastName}`.trim() || decoded.name || null,
+              role: Array.isArray(role) ? role[0] : (role as string),
+              status: decoded.status,
+            };
+
+            set({
+              user,
+              token: maybeToken,
+              email: user.email ?? null,
+              role: user.role ?? null,
+            });
+            return;
+          }
+
+          // If no token is present, fall back to service-provided user fields
           set({
-            user,
-            token: data.accessToken,
-            email: user.email ?? null,
-            role: user.role ?? null,
+            user: data.user ?? null,
+            token: null,
+            email: data.email ?? data.user?.email ?? null,
+            role: data.role ?? data.roles?.[0] ?? data.user?.role ?? null,
           });
         } catch (error) {
           console.error('Failed to decode token:', error);
-          // Fallback if decoding fails but we have data
+          // Final fallback using whatever was provided
           set({
             user: data.user ?? null,
-            token: data.accessToken ?? null,
+            token: maybeToken ?? null,
             email: data.email ?? data.user?.email ?? null,
             role: data.role ?? data.roles?.[0] ?? data.user?.role ?? null,
           });
@@ -104,7 +134,21 @@ export const useAuthStore = create<AuthState>()(
 
       isAdmin: () => {
         const role = get().role;
-        return (role ?? '').trim().toLowerCase() === (USER_ROLE_MAPPING.ADMIN ?? '').trim().toLowerCase();
+        if (!role) return false;
+
+        const roles = Array.isArray(role) ? role : [role];
+
+        return roles.some((r) => {
+          const norm = String(r ?? '').trim().toLowerCase();
+          const mappedAdmin = (USER_ROLE_MAPPING.ADMIN ?? '').trim().toLowerCase();
+
+          // Accept localized admin label, canonical 'Admin_Access', or simple 'admin' variants
+          if (norm === mappedAdmin) return true;
+          if (norm === 'admin_access') return true;
+          if (norm === 'admin') return true;
+          // Fallback: contains 'admin'
+          return norm.includes('admin');
+        });
       },
 
       clearAuth: () => {
