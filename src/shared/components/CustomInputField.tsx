@@ -395,6 +395,21 @@ export default function CustomInputField({
       outline: 'none',
       boxShadow: 'none'
     },
+    // Disabled appearance: use muted text color and muted bottom border
+    "& .MuiInputBase-root.Mui-disabled": {
+      opacity: 1,
+      backgroundColor: 'transparent',
+      borderBottom: '2px solid var(--color-text-muted)'
+    },
+    "& .MuiInputBase-input.Mui-disabled, & .MuiOutlinedInput-input.Mui-disabled, & input:disabled, & textarea:disabled, & .MuiSelect-select.Mui-disabled": {
+      color: 'var(--color-text-muted) !important'
+    },
+    "& input:disabled": {
+      borderBottom: '2px solid var(--color-text-muted) !important'
+    },
+    "& .MuiFormLabel-root.Mui-disabled": {
+      color: 'var(--color-text-muted) !important'
+    },
     // Ensure native date inputs and their picker icons match the input text color
     "& input[type='date']": {
       color: 'var(--color-dark)'

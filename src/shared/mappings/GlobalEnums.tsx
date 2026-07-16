@@ -28,6 +28,32 @@ export enum UserStatus {
   pending = 2,
 }
 
+export enum ParticipationStatus {
+  Present,
+  Absent,
+  Excused,
+  Cancelled,
+}
+
+export enum CheckInMethod {
+  Manual = 1,
+  QRCode = 2,
+  SelfCheckIn = 3
+}
+
+export const ParticipationStatusLabels: Record<number, string> = {
+  [ParticipationStatus.Present]: 'Παρόν',
+  [ParticipationStatus.Absent]: 'Απόν',
+  [ParticipationStatus.Excused]: 'Απουσία με δικαιολογία',
+  [ParticipationStatus.Cancelled]: 'Ακυρώθηκε',
+};
+
+export const CheckInMethodLabels: Record<number, string> = {
+  [CheckInMethod.Manual]: 'Χειροκίνητη',
+  [CheckInMethod.QRCode]: 'Σάρωση QR Code',
+  [CheckInMethod.SelfCheckIn]: 'Αυτοεγγραφή',
+};
+
 export const UserStatusLabels: Record<number, string> = {
   [UserStatus.active]: 'Ενεργός',
   [UserStatus.inactive]: 'Ανενεργός',

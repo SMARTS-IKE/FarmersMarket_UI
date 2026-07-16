@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+import { parseISO, isValid, format } from "date-fns";
 import { useNavigate } from "@tanstack/react-router";
 import { Alert } from "@mui/material";
 import DataTable from "../../shared/components/DataTable";
@@ -60,8 +61,27 @@ export default function UserMarketsPage() {
 
     const sellerMarketColumns: ColumnDef<ConnectedMarket>[] = [
       { key: 'marketName', label: 'Όνομα Αγοράς' },
-      { key: 'fromDate', label: 'Από' , render: (r) => (r.fromDate ? String(r.fromDate).slice(0,10) : '—')},
-      { key: 'spotLocation', label: 'Θέση' },
+        {
+          key: 'fromDate',
+          label: 'Από',
+          render: (r) => {
+            const raw = (r as any).fromDate;
+            if (!raw) return '—';
+            try {
+              const dt = parseISO(String(raw));
+              return isValid(dt) ? format(dt, 'dd/MM/yyyy') : '—';
+            } catch {
+              return '—';
+            }
+          }
+        },
+        { key: 'spotNumber', label: 'Αριθμός Θέσης', render: (r) => {
+            const rawSpot = (r as any).spotNumber ?? (r as any).spotLocation ?? null;
+            if (rawSpot === null || rawSpot === undefined || rawSpot === '') return '—';
+            const num = Number(rawSpot);
+            return Number.isFinite(num) ? String(num) : String(rawSpot);
+          }
+        },
       { key: 'spotLength', label: 'Μήκος Θέσης(μ)' },
     ];
 
@@ -122,7 +142,8 @@ export default function UserMarketsPage() {
           rows={rows}
           columns={sellerMarketColumns}
           rowKey="id"
-          showFilter={false}
+            showFilter={false}
+            onRowClick={handleRowClick}
         />
       </div>
     </div>

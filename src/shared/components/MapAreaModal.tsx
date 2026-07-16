@@ -32,6 +32,7 @@ interface MapAreaModalProps {
   onSave: (points: MapPoint[]) => void;
   initialPoints?: MapPoint[];
   title?: string;
+  isViewMode?: boolean;
 }
 
 function RecenterMap({ points }: { points: MapPoint[] }) {
@@ -91,6 +92,7 @@ export default function MapAreaModal({
   onSave,
   initialPoints = [],
   title = "Επιλογή Περιοχής στον Χάρτη",
+  isViewMode = false,
 }: MapAreaModalProps) {
   const [points, setPoints] = useState<MapPoint[]>(initialPoints);
   const [selectedPointId, setSelectedPointId] = useState<string | null>(null);
@@ -98,6 +100,10 @@ export default function MapAreaModal({
   useEffect(() => {
     setPoints(initialPoints);
   }, [initialPoints, open]);
+
+  useEffect(() => {
+    if (open) console.debug("MapAreaModal open, isViewMode:", isViewMode);
+  }, [open, isViewMode]);
 
   const handlePointAdded = (lat: number, lng: number) => {
     const newPoint: MapPoint = {
@@ -144,7 +150,9 @@ export default function MapAreaModal({
   const polygonPoints = points.map((p) => [p.lat, p.lng] as [number, number]);
   return (
     <Dialog open={open} onClose={handleCancel} maxWidth="md" fullWidth>
-      <DialogTitle>{title}</DialogTitle>
+      <DialogTitle>
+        {title}{isViewMode ? ' — Προβολή' : ''}
+      </DialogTitle>
       <DialogContent sx={{ display: "flex", gap: 2, height: 500 }}>
         {/* Map Section */}
         <Box sx={{ flex: 2, borderRadius: "8px", overflow: "hidden", border: "1px solid var(--color-border)" }}>
@@ -159,25 +167,30 @@ export default function MapAreaModal({
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
             />
 
-            <PointClickHandler onPointAdded={handlePointAdded} />
+            {!isViewMode && <PointClickHandler onPointAdded={handlePointAdded} />}
             <RecenterMap points={points} />
             <SelectedPointPan pointId={selectedPointId} points={points} />
 
             {points.length > 0 && (
               <>
-                {points.map((point, index) => (
+                {!isViewMode && points.map((point, index) => (
                   <Marker
                     key={point.id}
                     position={[point.lat, point.lng]}
-                    draggable
-                    eventHandlers={{
-                      dragend: (e) => {
-                        const trg = e.target as L.Marker;
-                        const ll = trg.getLatLng();
-                        handlePointMoved(point.id, Math.round(ll.lat * 1e6) / 1e6, Math.round(ll.lng * 1e6) / 1e6);
-                      },
-                      click: () => setSelectedPointId(point.id),
-                    }}
+                    draggable={!isViewMode}
+                    eventHandlers={
+                      !isViewMode
+                        ? {
+                            dragend: (e) => {
+                              const trg = e.target as L.Marker;
+                              const ll = trg.getLatLng();
+                              handlePointMoved(point.id, Math.round(ll.lat * 1e6) / 1e6, Math.round(ll.lng * 1e6) / 1e6);
+                            },
+                            click: () => setSelectedPointId(point.id),
+                          }
+                        : undefined
+                    }
+                    interactive={!isViewMode}
                     icon={L.divIcon({
                       className: "numbered-map-marker",
                       html: `<div style="width:26px;height:26px;border-radius:9999px;background:${selectedPointId === point.id ? '#ef4444' : '#1d4ed8'};color:#fff;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;box-shadow:0 2px 6px rgba(0,0,0,0.35);">${index + 1}</div>`,
@@ -189,6 +202,7 @@ export default function MapAreaModal({
                 {polygonPoints.length >= 3 && (
                   <Polygon
                     positions={polygonPoints}
+                    interactive={!isViewMode}
                     pathOptions={{
                       color: "#3b82f6",
                       fillColor: "#3b82f6",
@@ -201,8 +215,9 @@ export default function MapAreaModal({
           </MapContainer>
         </Box>
 
-        {/* Points List Section */}
-        <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, overflow: "auto" }}>
+        {/* Points List Section (hidden in view-only mode) */}
+        {!isViewMode && (
+          <Box sx={{ flex: 1, display: "flex", flexDirection: "column", gap: 2, overflow: "auto" }}>
           <Box>
             <Typography variant="subtitle2" sx={{ fontWeight: 600, mb: 1 }}>
               Σημεία ({points.length})
@@ -265,28 +280,34 @@ export default function MapAreaModal({
               </Typography>
             </Box>
           )} */}
-        </Box>
+          </Box>
+        )}
       </DialogContent>
-
       <DialogActions sx={{ gap: 1, '& .MuiButton-root': { textTransform: 'none' } }}>
-        <Button
-          onClick={handleClearPoints}
-          variant="text"
-          color="error"
-          disabled={points.length === 0}
-        >
-          Καθαρισμός όλων των σημείων
-        </Button>
-        <Button onClick={handleCancel} variant="outlined">
-          Ακύρωση
-        </Button>
-        <Button
-          onClick={handleSave}
-          variant="contained"
-          disabled={points.length === 0}
-        >
-          Αποθήκευση ({points.length} σημεία)
-        </Button>
+        {isViewMode ? (
+          <Button onClick={onClose} variant="contained">Κλείσιμο</Button>
+        ) : (
+          <>
+            <Button
+              onClick={handleClearPoints}
+              variant="text"
+              color="error"
+              disabled={points.length === 0}
+            >
+              Καθαρισμός όλων των σημείων
+            </Button>
+            <Button onClick={handleCancel} variant="outlined">
+              Ακύρωση
+            </Button>
+            <Button
+              onClick={handleSave}
+              variant="contained"
+              disabled={points.length === 0}
+            >
+              Αποθήκευση ({points.length} σημεία)
+            </Button>
+          </>
+        )}
       </DialogActions>
     </Dialog>
   );

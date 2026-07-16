@@ -11,6 +11,7 @@ import type { RequestStatus, SellerRequest, SellerRequestSearchRequest } from ".
 import type { SellerSearchRequest } from "../../models/seller";
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 import { useSellerRequestsQuery, useSetRequestStatusMutation } from "../../queries/requestQueries";
+import { queryClient } from "../../lib/queryClient";
 import { useAuthStore } from "../../store/authStore";
 import { useSellersQuery } from "../../queries/sellerQueries";
 import { useRequestFormsQuery } from "../../queries/formsQueries";
@@ -52,19 +53,64 @@ export default function FetchedSellerRequests({ userMode }: { userMode?: boolean
 
   const handleMenuClose = () => {
     setMenuState(null);
-    menuRowRef.current = null;
   };
 
   const handleApprove = (reason?: string) => {
     if (menuRowRef.current) {
-      setStatusMutation.mutate({ id: menuRowRef.current.id, payload: { reason: reason ?? '', processedByUserId: String(currentUser?.id ?? ''), status: RequestStatus.Approved } });
+      setStatusMutation.mutate(
+        { id: menuRowRef.current.id, payload: { reason: reason ?? '', processedByUserId: String(currentUser?.id ?? ''), status: RequestStatus.Approved } },
+        {
+          onSuccess: async () => {
+            try {
+              await queryClient.invalidateQueries({ queryKey: ['requests', 'seller-list'] });
+              await queryClient.invalidateQueries({ queryKey: ['requests'] });
+              await queryClient.refetchQueries({ queryKey: ['requests', 'seller-list'], exact: false });
+            } catch (e) {
+              // ignore
+            }
+            try {
+              window.dispatchEvent(new CustomEvent('app-notification', { detail: { type: 'success', message: 'Το αίτημα εγκρίθηκε.' } }));
+            } catch (e) {
+              // ignore
+            }
+          },
+          onError: (err: any) => {
+            try {
+              window.dispatchEvent(new CustomEvent('app-notification', { detail: { type: 'error', message: err?.message || 'Σφάλμα κατά την έγκριση της αίτησης.' } }));
+            } catch (e) {}
+          },
+        }
+      );
     }
     menuRowRef.current = null;
   };
 
   const handleReject = (reason?: string) => {
     if (menuRowRef.current) {
-      setStatusMutation.mutate({ id: menuRowRef.current.id, payload: { reason: reason ?? '', processedByUserId: String(currentUser?.id ?? ''), status: RequestStatus.Rejected } });
+      setStatusMutation.mutate(
+        { id: menuRowRef.current.id, payload: { reason: reason ?? '', processedByUserId: String(currentUser?.id ?? ''), status: RequestStatus.Rejected } },
+        {
+          onSuccess: async () => {
+            try {
+              await queryClient.invalidateQueries({ queryKey: ['requests', 'seller-list'] });
+              await queryClient.invalidateQueries({ queryKey: ['requests'] });
+              await queryClient.refetchQueries({ queryKey: ['requests', 'seller-list'], exact: false });
+            } catch (e) {
+              // ignore
+            }
+            try {
+              window.dispatchEvent(new CustomEvent('app-notification', { detail: { type: 'success', message: 'Το αίτημα απορρίφθηκε.' } }));
+            } catch (e) {
+              // ignore
+            }
+          },
+          onError: (err: any) => {
+            try {
+              window.dispatchEvent(new CustomEvent('app-notification', { detail: { type: 'error', message: err?.message || 'Σφάλμα κατά την απόρριψη της αίτησης.' } }));
+            } catch (e) {}
+          },
+        }
+      );
     }
     menuRowRef.current = null;
   };

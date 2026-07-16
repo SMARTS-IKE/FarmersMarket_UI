@@ -2,12 +2,13 @@ import { createRoute, redirect } from '@tanstack/react-router';
 import RoleBasedLayout from '../layouts/RoleBasedLayout';
 import UserPage from '../pages/userPages/UserPage';
 import UserDashboardPage from '../pages/userPages/UserDashboardPage';
-import AdminMarketDetailPage from '../pages/adminPages/markets/AdminMarketDetailPage';
+import UserAttendancesPage from '../pages/userPages/UserAttendancesPage';
+import UserMarketDetailPage from '../pages/userPages/UserMarketDetailPage';
 import UserRequestsPage from '../pages/userPages/UserRequestsPage';
 import UserRequestCreationDetailsPage from '../pages/userPages/UserRequestCreationDetailsPage';
 import UserRequestCreationPage from '../pages/userPages/UserRequestCreationPage';
 import UserMarketsPage from '../pages/userPages/UserMarketsPage';
-import SubmittedRequestDetailedPage from '../pages/adminPages/requests/SubmittedRequestDetailedPage';
+import AdminSubmittedRequestPage from '../pages/adminPages/requests/AdminSubmittedRequestPage';
 import { requireAuth, requireUserRole, rootRoute } from './baseRoutes';
 import { useAuthStore } from '../store/authStore';
 import { getSellers } from '../services/sellerService';
@@ -38,10 +39,16 @@ export const userMarketsRoute = createRoute({
   component: UserMarketsPage,
 });
 
+export const userAttendacesRoute = createRoute({
+  getParentRoute: () => userProtectedRoute,
+  path: '/users/attendances',
+  component: UserAttendancesPage,
+});
+
 export const userMarketDetailRoute = createRoute({
   getParentRoute: () => userProtectedRoute,
   path: '/users/markets/$marketId',
-  component: AdminMarketDetailPage,
+  component: UserMarketDetailPage,
 });
 
 export const userRequestsRoute = createRoute({
@@ -109,6 +116,7 @@ export const userRouteTree = userProtectedRoute.addChildren([
   userDashboardRoute,
   userProfileRoute,
   userMarketsRoute,
+  userAttendacesRoute,
   userMarketDetailRoute,
   userRequestsRoute,
   userRequestCreationRoute,
@@ -116,6 +124,6 @@ export const userRouteTree = userProtectedRoute.addChildren([
   createRoute({
     getParentRoute: () => userProtectedRoute,
     path: '/users/requests/{$id}',
-    component: SubmittedRequestDetailedPage,
+    component: AdminSubmittedRequestPage,
   }),
 ]);

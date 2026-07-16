@@ -1,4 +1,4 @@
-import { Alert, Chip, Box, Tab, Tabs, Divider, IconButton, Button } from "@mui/material";
+import { Alert, Box, Tab, Tabs, Divider, IconButton, Button } from "@mui/material";
 import { useNavigate, useParams } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 import { queryClient } from "../../lib/queryClient";
@@ -8,6 +8,7 @@ import CustomInputField from "../../shared/components/CustomInputField";
 import type { RequestFormField } from "../../models/request";
 import { useRequestFormByIdQuery } from "../../queries/formsQueries";
 import { useMarketsQuery } from '../../queries/marketQueries';
+import { getSellers } from '../../services/sellerService';
 import { useSellerQuery, useSellersQuery } from "../../queries/sellerQueries";
 import { useAuthStore } from "../../store/authStore";
 import { TYPE_OF_FIELDS_TO_DESIGN_FIELD } from "../../components/requests/request.utils";
@@ -60,6 +61,36 @@ export default function UserRequestCreationDetailsPage() {
 
     return null;
   })();
+
+  const [fallbackSeller, setFallbackSeller] = useState<any | null>(null);
+
+  useEffect(() => {
+    let mounted = true;
+    if (!matchedSeller && authUser) {
+      (async () => {
+        try {
+          const resp = await getSellers({ name: '', afm: '', sellerType: '', page: 1, pageSize: 1000 } as any);
+          const list = resp?.items ?? [];
+
+          const byUser = list.find((s: any) => s.userId != null && String(s.userId) === String(authUser.id));
+          if (byUser && mounted) return setFallbackSeller(byUser);
+
+          const byAfm = list.find((s: any) => s.afm && (authUser as any)?.afm && String(s.afm) === String((authUser as any).afm));
+          if (byAfm && mounted) return setFallbackSeller(byAfm);
+
+          const authName = (authUser?.name ?? `${(authUser as any)?.firstName ?? ''} ${(authUser as any)?.lastName ?? ''}`).trim();
+          const byName = list.find((s: any) => {
+            const sName = `${s.firstName ?? ''} ${s.lastName ?? ''}`.trim();
+            return sName && authName && sName === authName;
+          });
+          if (byName && mounted) return setFallbackSeller(byName);
+        } catch (e) {
+          // ignore
+        }
+      })();
+    }
+    return () => { mounted = false; };
+  }, [matchedSeller, authUser]);
   const createRequestMutation = useCreateRequestMutation();
 
   const renderCounter = useRef(0);
@@ -75,13 +106,13 @@ export default function UserRequestCreationDetailsPage() {
   const resolvedApplicantName =
     (authUser?.name as string) ||
     (authUser ? `${authUser.firstName ?? ""} ${authUser.lastName ?? ""}`.trim() : "") ||
-    (matchedSeller ? `${(matchedSeller as any).firstName} ${(matchedSeller as any).lastName}`.trim() : "");
+    ((matchedSeller ?? fallbackSeller) ? `${((matchedSeller ?? fallbackSeller) as any).firstName} ${((matchedSeller ?? fallbackSeller) as any).lastName}`.trim() : "");
 
-  const resolvedApplicantAfm = (matchedSeller as any)?.afm ?? (authUser as any)?.afm ?? "";
-  const sellerTypeNum = Number((matchedSeller as any)?.sellerType ?? (authUser as any)?.sellerType ?? 0);
+  const resolvedApplicantAfm = ((matchedSeller ?? fallbackSeller) as any)?.afm ?? (authUser as any)?.afm ?? "";
+  const sellerTypeNum = Number(((matchedSeller ?? fallbackSeller) as any)?.sellerType ?? (authUser as any)?.sellerType ?? 0);
   const resolvedLicenseCategory = SellerTypeLabels[sellerTypeNum] ?? String(sellerTypeNum ?? "");
-  const resolvedLicenseNumber = (matchedSeller as any)?.licenses?.[0]?.number ?? (authUser as any)?.licenseNumber ?? "";
-
+  const resolvedLicenseNumber =
+    ((matchedSeller ?? fallbackSeller) as any)?.currentLicense?.licenseNumber ?? ((matchedSeller ?? fallbackSeller) as any)?.licenses?.[0]?.number ?? (authUser as any)?.licenseNumber ?? "";
   const [applicantInfo, setApplicantInfo] = useState({
     name: "",
     afm: "",
@@ -99,9 +130,17 @@ export default function UserRequestCreationDetailsPage() {
     });
   }, [resolvedApplicantName, resolvedApplicantAfm, resolvedLicenseCategory, resolvedLicenseNumber]);
 
-  const license = (matchedSeller as any)?.licenses?.[0];
-  const licenseIssuedAt = license?.issuedAt ? new Date(license.issuedAt).toLocaleDateString("el-GR") : "";
-  const licenseExpiresAt = license?.expiresAt ? new Date(license.expiresAt).toLocaleDateString("el-GR") : "";
+  const currentLicense = ((matchedSeller ?? fallbackSeller) as any)?.currentLicense ?? null;
+
+  function formatMaybeDate(d?: string | null) {
+    if (!d) return "";
+    const dt = new Date(d);
+    if (Number.isNaN(dt.getTime())) return String(d);
+    return dt.toLocaleDateString("el-GR");
+  }
+
+  const licenseIssuedAt = currentLicense?.fromDate ? formatMaybeDate(currentLicense.fromDate) : "";
+  const licenseExpiresAt = currentLicense?.toDate ? formatMaybeDate(currentLicense.toDate) : "";
 
   const isDocumentField = (field: RequestFormField) => {
     const label = field.label.toLowerCase();
@@ -156,26 +195,7 @@ export default function UserRequestCreationDetailsPage() {
 
   // Load available markets for the multiselect
 
-  const renderFieldChip = (field: RequestFormField) => {
-    const typeLabelMap: Record<number, string> = {
-      1: "Κείμενο",
-      2: "Αριθμός",
-      3: "Ημερομηνία",
-      4: "Μεγάλο κείμενο",
-      5: "Dropdown",
-      6: "Ναι / Όχι",
-    };
-
-    return (
-      <div key={field.id} className="flex items-center justify-between rounded-lg border border-(--color-border) bg-(--color-surface) px-4 py-3">
-        <div className="flex flex-col gap-1">
-          <span className="font-medium text-(--color-dark)">{field.label}</span>
-          <span className="text-sm text-(--color-text-muted)">{typeLabelMap[field.typeOfFields] ?? "Άγνωστο"}</span>
-        </div>
-        {field.isRequired && <Chip size="small" label="Υποχρεωτικό" />}
-      </div>
-    );
-  };
+  
 
   const renderDynamicFieldInput = (field: RequestFormField) => {
     const fieldType = TYPE_OF_FIELDS_TO_DESIGN_FIELD[field.typeOfFields] ?? "TEXT";
@@ -313,6 +333,7 @@ export default function UserRequestCreationDetailsPage() {
                     width="100%"
                   />
                 </div>
+
 
                 <div className="flex flex-col gap-1">
                   <CustomInputField
@@ -577,8 +598,17 @@ export default function UserRequestCreationDetailsPage() {
 
                   createRequestMutation.mutate(formData as any, {
                     onSuccess: async () => {
-                      // Invalidate and refetch all requests queries to avoid returning cached results
-                      await queryClient.invalidateQueries({ queryKey: ['requests'], refetchActive: true, refetchInactive: true });
+                      // Invalidate seller list and related requests queries and force refetch
+                      await queryClient.invalidateQueries({ queryKey: ['requests', 'seller-list'] });
+                      await queryClient.invalidateQueries({ queryKey: ['requests'] });
+                      // Ensure active queries are refetched before navigating back
+                      await queryClient.refetchQueries({ queryKey: ['requests', 'seller-list'], exact: false });
+                      // Notify user of successful submission
+                      try {
+                        window.dispatchEvent(new CustomEvent('app-notification', { detail: { type: 'success', message: 'Η αίτηση υποβλήθηκε με επιτυχία.' } }));
+                      } catch (e) {
+                        // ignore if CustomEvent not supported
+                      }
                       navigate({ to: "/users/requests" });
                     },
                   });

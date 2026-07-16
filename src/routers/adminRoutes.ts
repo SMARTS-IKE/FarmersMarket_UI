@@ -16,7 +16,7 @@ import AdminFeesPaymentsPage from '../pages/adminPages/FeesAndPayments/AdminFees
 import FeeCreationPage from '../pages/adminPages/FeesAndPayments/FeeCreationPage';
 import FeeEditPage from '../pages/adminPages/FeesAndPayments/FeeEditPage';
 import AdminRequestsPage from '../pages/adminPages/requests/AdminRequestsPage';
-import SubmittedRequestDetailedPage from '../pages/adminPages/requests/SubmittedRequestDetailedPage';
+import AdminSubmittedRequestPage from '../pages/adminPages/requests/AdminSubmittedRequestPage';
 import DesignRequestFormPage from '../pages/adminPages/requests/DesignRequestFormPage';
 import CreateMarketPeriodPage from '../pages/adminPages/requests/CreateMarketPeriodPage';
 import { requireAuth, rootRoute } from './baseRoutes';
@@ -129,7 +129,7 @@ export const requestsRoute = createRoute({
 export const submittedRequestDetailRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/admin/requests/$id',
-  component: SubmittedRequestDetailedPage,
+  component: AdminSubmittedRequestPage,
 });
 
 export const designRequestFormRoute = createRoute({

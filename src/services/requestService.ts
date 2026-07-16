@@ -63,23 +63,31 @@ function normalizeSubmittedRequestDetail(item: Record<string, unknown>): Submitt
   
   // Extract seller data - could be at root level or nested in seller object
   const seller = item.seller && typeof item.seller === 'object' ? (item.seller as Record<string, unknown>) : {};
-  const sellerType = item.sellerType ?? seller.sellerType;
+  const sellerType = item.sellerType ?? seller.sellerType ?? (seller.currentLicense && (seller.currentLicense.sellerType ?? seller.currentLicense.seller_type));
   
   // Extract license number from licenses array if available (could be at root or in seller)
   let licenseNumber: string | undefined;
-  const licenses = (Array.isArray(item.licenses) ? item.licenses : undefined) || 
-                   (Array.isArray(seller.licenses) ? seller.licenses : undefined);
-  if (Array.isArray(licenses) && licenses.length > 0) {
-    const firstLicense = licenses[0] as Record<string, unknown>;
-    licenseNumber = firstLicense.number ? String(firstLicense.number) : undefined;
+  // Check for currentLicense on seller first (common shape), then licenses arrays
+  if (seller && typeof seller === 'object' && seller.currentLicense) {
+    const cl = seller.currentLicense as Record<string, unknown>;
+    licenseNumber = String(cl.licenseNumber ?? cl.number ?? cl.license_number ?? '') || undefined;
+    if (licenseNumber === '') licenseNumber = undefined;
+  }
+  if (!licenseNumber) {
+    const licenses = (Array.isArray(item.licenses) ? item.licenses : undefined) || 
+                     (Array.isArray(seller.licenses) ? seller.licenses : undefined);
+    if (Array.isArray(licenses) && licenses.length > 0) {
+      const firstLicense = licenses[0] as Record<string, unknown>;
+      licenseNumber = firstLicense.number ? String(firstLicense.number) : undefined;
+    }
   }
 
   return {
     id: Number(item.id ?? 0),
     sellerId: Number(item.sellerId ?? 0),
     formId: item.formId == null ? null : Number(item.formId),
-    sellerFullName: String(item.sellerFullName ?? ''),
-    sellerAfm: String(item.sellerAfm ?? ''),
+    sellerFullName: String(item.sellerFullName ?? seller.fullName ?? seller.name ?? ''),
+    sellerAfm: String(item.sellerAfm ?? seller.afm ?? seller.taxId ?? ''),
     sellerType: sellerType,
     sellerLicenseNumber: licenseNumber,
     status: Number(item.status ?? 0) as SubmittedRequestDetail['status'],

@@ -37,6 +37,20 @@ export const userTabs: UserTab[] = [
     description: '',
     hasList: true,
   },
+  {
+    to: '/users/attendances',
+    label: 'Οι Παρουσίες μου',
+    title: 'Οι Παρουσίες μου',
+    description: '',
+    hasList: true,
+  },
+  {
+    to: '/users/fees',
+    label: 'Οι Χρεώσεις μου',
+    title: 'Οι Χρεώσεις μου',
+    description: '',
+    hasList: true,
+  },
 ];
 
 export function getUserTab(pathname: string) {

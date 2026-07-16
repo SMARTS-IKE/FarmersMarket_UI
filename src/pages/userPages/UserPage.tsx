@@ -16,6 +16,7 @@ import { SELLER_TYPE_LABELS } from '../../components/sellers/sellers.utils';
 import CustomInputField from '../../shared/components/CustomInputField';
 import CustomButton from '../../shared/components/CustomButton';
 import { USER_ROLE_MAPPING_TITLES, USER_ROLE_MAPPING } from '../../shared/mappings/users.mapping';
+import { updateSeller } from '../../services/sellerService';
 
 const ROLE_OPTIONS = USER_ROLE_MAPPING_TITLES ? Object.values(USER_ROLE_MAPPING_TITLES) : [];
 const ROLE_KEYS = USER_ROLE_MAPPING_TITLES ? Object.keys(USER_ROLE_MAPPING_TITLES) : [];
@@ -48,6 +49,10 @@ export default function UserPage() {
   const [initialStatus, setInitialStatus] = useState<number>(0);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [initialSelectedRoles, setInitialSelectedRoles] = useState<string[]>([]);
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
+  const [initialPhone, setInitialPhone] = useState('');
+  const [initialAddress, setInitialAddress] = useState('');
   const [isNavigationLocked, setIsNavigationLocked] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
@@ -94,6 +99,21 @@ export default function UserPage() {
     setMatchedSeller(found);
   }, [sellersResp, user]);
 
+  useEffect(() => {
+    if (!matchedSeller) {
+      setPhone('');
+      setAddress('');
+      setInitialPhone('');
+      setInitialAddress('');
+      return;
+    }
+
+    setPhone((matchedSeller as any)?.phone ?? '');
+    setAddress((matchedSeller as any)?.address ?? '');
+    setInitialPhone((matchedSeller as any)?.phone ?? '');
+    setInitialAddress((matchedSeller as any)?.address ?? '');
+  }, [matchedSeller]);
+
   const isSavingUser = updateUserMutation.isPending;
   const isUpdatingRole = assignRoleMutation.isPending || removeRoleMutation.isPending;
   const isReinitializingPassword = reinitializePasswordMutation.isPending;
@@ -108,7 +128,9 @@ export default function UserPage() {
   const hasUserChanges =
     firstName !== initialFirstName ||
     lastName !== initialLastName ||
-    status !== initialStatus;
+    status !== initialStatus ||
+    phone !== initialPhone ||
+    address !== initialAddress;
   const hasPendingChanges = hasUserChanges || hasRoleChanges;
 
   const showNotification = (message: string, severity: 'success' | 'warning' | 'error' = 'warning') => {
@@ -138,6 +160,7 @@ export default function UserPage() {
     if (!hasPendingChanges) return;
     setErrors({});
 
+    // First: update user and role changes. If this fails, abort and notify.
     try {
       await updateUserMutation.mutateAsync({
         firstName: firstName.trim(),
@@ -149,19 +172,79 @@ export default function UserPage() {
         ...rolesToAdd.map((role) => assignRoleMutation.mutateAsync({ role })),
         ...rolesToRemove.map((role) => removeRoleMutation.mutateAsync(role)),
       ]);
-
-      setInitialFirstName(firstName);
-      setInitialLastName(lastName);
-      setInitialStatus(status);
-      setInitialSelectedRoles(selectedRoles);
-      setIsNavigationLocked(false);
-      setAuthNotification({ type: 'success', message: 'Οι αλλαγές χρήστη και ρόλων αποθηκεύτηκαν.' });
-      allowProgrammaticNavigationRef.current = true;
-      const redirectTarget = connectedIsUserRole ? '/users' : '/admin/users';
-      navigate({ to: redirectTarget });
-    } catch (mutationError) {
-      showNotification(mutationError instanceof Error ? mutationError.message : 'Η αποθήκευση απέτυχε.', 'error');
+    } catch (userErr) {
+      showNotification('Κάποιο σφάλμα κατά την αποθήκευση των στοιχείων χρήστη. Προσπαθήστε ξανά αργότερα.', 'error');
+      return;
     }
+
+    // Second: if there's a matched seller, update seller phone/address. If this fails, notify and abort.
+    if (matchedSeller && (matchedSeller as any).id) {
+      try {
+        const currentLicense = (matchedSeller as any).currentLicense ?? null;
+        const licensePayload = currentLicense
+          ? (currentLicense.isSeasonal
+              ? {
+                  fromDate: currentLicense.seasonalFromDate ?? currentLicense.fromDate ?? null,
+                  sellerType: Number(currentLicense.sellerType) || 0,
+                  isSeasonal: true,
+                  seasonalFromDate: currentLicense.seasonalFromDate ?? null,
+                  seasonalToDate: currentLicense.seasonalToDate ?? null,
+                  licenseCategory: currentLicense.licenseCategory ?? 0,
+                  licenseStatus: currentLicense.licenseStatus ?? 1,
+                  licenseNumber: currentLicense.licenseNumber ?? '',
+                  licenseExpiry: currentLicense.licenseExpiry ?? null,
+                  notes: currentLicense.notes ?? null,
+                }
+              : {
+                  fromDate: currentLicense.fromDate ?? null,
+                  sellerType: Number(currentLicense.sellerType) || 0,
+                  isSeasonal: false,
+                  seasonalFromDate: null,
+                  seasonalToDate: null,
+                  licenseCategory: currentLicense.licenseCategory ?? 0,
+                  licenseStatus: currentLicense.licenseStatus ?? 1,
+                  licenseNumber: currentLicense.licenseNumber ?? '',
+                  licenseExpiry: currentLicense.licenseExpiry ?? null,
+                  notes: currentLicense.notes ?? null,
+                })
+          : {
+              fromDate: null,
+              sellerType: Number((matchedSeller as any).sellerType) || 0,
+              isSeasonal: false,
+              seasonalFromDate: null,
+              seasonalToDate: null,
+              licenseCategory: 0,
+              licenseStatus: 1,
+              licenseNumber: '',
+              licenseExpiry: null,
+              notes: null,
+            };
+
+        await updateSeller(String((matchedSeller as any).id), {
+          seller: {
+            phone: phone || null,
+            address: address || null,
+          },
+          license: licensePayload,
+        });
+      } catch (sellerErr) {
+        showNotification('Συνέβη κάποιο σφάλμα κατά την αποθήκευση των αλλαγών. Προσπαθήστε ξανά αργότερα.', 'error');
+        return;
+      }
+    }
+
+    // If we reached here, both updates (where applicable) succeeded
+    setInitialFirstName(firstName);
+    setInitialLastName(lastName);
+    setInitialStatus(status);
+    setInitialSelectedRoles(selectedRoles);
+    setInitialPhone(phone);
+    setInitialAddress(address);
+    setIsNavigationLocked(false);
+    setAuthNotification({ type: 'success', message: 'Οι αλλαγές αποθηκεύτηκαν.' });
+    allowProgrammaticNavigationRef.current = true;
+    const redirectTarget = connectedIsUserRole ? '/users' : '/admin/users';
+    navigate({ to: redirectTarget });
   }
 
   function handleCancel() {
@@ -169,6 +252,8 @@ export default function UserPage() {
     setLastName(initialLastName);
     setStatus(initialStatus);
     setSelectedRoles(initialSelectedRoles);
+    setPhone(initialPhone);
+    setAddress(initialAddress);
     setErrors({});
     setIsNavigationLocked(false);
     allowProgrammaticNavigationRef.current = true;
@@ -241,11 +326,11 @@ export default function UserPage() {
       <div className="flex-1 overflow-y-auto pr-2 max-h-[calc(100svh-300px)]">
         <div className="flex flex-col gap-6 pt-2">
           <div className="flex flex-col gap-4">
-            {errors.form && (
+            {/* {errors.form && (
               <div className="bg-danger-subtle border border-(--color-danger-border) text-danger rounded-lg px-4 py-3 text-sm" role="alert">
                 {errors.form}
               </div>
-            )}
+            )} */}
 
             <div className="grid grid-cols-2 gap-3">
               <CustomInputField 
@@ -265,14 +350,13 @@ export default function UserPage() {
 
             </div>
             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-               <CustomInputField
-                  type="DROPDOWN"
+                 <CustomInputField
+                  type="TEXT"
                   label="Τύπος Πωλητή"
-                  value={String((matchedSeller as any)?.sellerType ?? '')}
+                  value={SELLER_TYPE_LABELS?.[(matchedSeller as any)?.sellerType] ?? String((matchedSeller as any)?.sellerType ?? '')}
                   disabled
                   width="100%"
-                  dropdownItems={[{ label: '-- Επιλέξτε --', value: '' }, ...Object.entries(SELLER_TYPE_LABELS).map(([k, v]) => ({ label: v, value: String(k) }))]}
-              />
+                />
               <CustomInputField 
                 type="TEXT" 
                 label="ΑΦΜ" 
@@ -292,13 +376,13 @@ export default function UserPage() {
                 width="100%" 
               />
 
-               <CustomInputField 
+              <CustomInputField 
                 type="TEXT" 
                 label="Τηλέφωνο" 
-                value={(matchedSeller as any)?.phone ?? ''} 
-                disabled 
+                value={phone} 
+                onChange={(v) => setPhone(String(v ?? ''))}
                 width="100%" 
-               />
+              />
 
             </div>
 
@@ -307,40 +391,38 @@ export default function UserPage() {
               <CustomInputField 
                 type="TEXT" 
                 label="Διεύθυνση" 
-                value={(matchedSeller as any)?.address ?? ''} 
-                disabled 
+                value={address} 
+                onChange={(v) => setAddress(String(v ?? ''))}
                 width="100%" 
               />
 
               <CustomInputField
-                type="DROPDOWN"
+                type="TEXT"
                 label="Ρόλος Χρήστη"
-                value={selectedRoles[0] || ''}
-                dropdownItems={ROLE_KEYS.map((roleKey, index) => ({ value: roleKey, label: ROLE_OPTIONS[index] }))}
-                onChange={(v) => handleRoleToggle(String(v ?? ''))}
-                disabled={connectedIsUserRole}
+                value={selectedRoles[0] ? (USER_ROLE_MAPPING_TITLES?.[selectedRoles[0]] ?? selectedRoles[0]) : ''}
+                onChange={(v) => {
+                  const input = String(v ?? '');
+                  // If user typed a known Greek label, map it back to the role key
+                  const matchingKey = Object.keys(USER_ROLE_MAPPING_TITLES || {}).find((k) => USER_ROLE_MAPPING_TITLES[k] === input);
+                  if (matchingKey) {
+                    setSelectedRoles([matchingKey]);
+                  } else {
+                    setSelectedRoles(input ? [input] : []);
+                  }
+                }}
+                disabled
                 width="100%"
               />
-
             </div>
 
             
 
             <div className="grid grid-cols-2 gap-3">
               <CustomInputField
-                type="DROPDOWN"
+                type="TEXT"
                 label="Κατάσταση"
-                value={String(status)}
-                dropdownItems={(() => {
-                  const keys = Object.keys(UserStatus) as string[];
-                  return keys
-                    .filter((k) => isNaN(Number(k)))
-                    .map((name) => {
-                      const val = (UserStatus as any)[name] as number;
-                      return { value: String(val), label: UserStatusLabels?.[val] ?? name };
-                    });
-                })()}
-                onChange={(v) => setStatus(Number(v ?? 0))}
+                value={UserStatusLabels?.[Number(status)] ?? String(status)}
+                disabled
                 width="100%"
               />
             </div>
