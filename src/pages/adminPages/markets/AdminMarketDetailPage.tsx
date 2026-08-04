@@ -545,7 +545,7 @@ export default function AdminMarketDetailPage() {
   }
 
   return (
-    <div className="flex h-full min-h-0 w-full flex-col gap-4 text-left overflow-hidden">
+    <div style={{ maxHeight: 'calc(100vh - 220px)' }} className="flex h-full min-h-0 w-full flex-col gap-4 text-left overflow-y-auto">
       <LayoutTabsSlot>
         <Box className="w-full flex items-start justify-between gap-3 mb-2">
           <div>

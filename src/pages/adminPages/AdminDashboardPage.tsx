@@ -1,4 +1,6 @@
 import MetricsBox from '../../components/MetricsBox';
+import { Link } from '@tanstack/react-router';
+import CustomButton from '../../shared/components/CustomButton';
 
 export default function DashboardPage() {
   return (

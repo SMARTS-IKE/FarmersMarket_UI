@@ -135,6 +135,7 @@ export interface ConnectedMarket {
   toDate: string | null;
   isActive: boolean;
   spotLength: number | null;
+  spotNumber: number | null;
   spotLocation: string | null;
   licenseCategory: number;
   requestId: number | null;

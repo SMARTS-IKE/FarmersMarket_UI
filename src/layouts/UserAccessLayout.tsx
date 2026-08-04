@@ -39,7 +39,7 @@ function UserAccessLayoutInner() {
 
   return (
     <div className="min-h-svh">
-      <div className="flex min-h-svh w-full flex-col overflow-visible border border-(--color-border) bg-(--color-surface) shadow-[var(--shadow-lg)] md:overflow-hidden">
+      <div className="flex min-h-svh w-full flex-col overflow-hidden border border-(--color-border) bg-(--color-surface) shadow-[var(--shadow-lg)] md:overflow-hidden">
         <Header onLogout={handleLogout} onAccountClick={handleAccountClick} />
 
         <div className="flex flex-1 items-stretch gap-px bg-(--color-border-subtle)">
@@ -57,7 +57,10 @@ function UserAccessLayoutInner() {
               </div>
             )}
 
-            <div className="flex flex-1 min-h-0 flex-col">
+            <div
+              className="flex flex-1 min-h-0 flex-col overflow-y-auto"
+              style={{ height: 'calc(100vh - 160px)' }}
+            >
               <Outlet />
             </div>
           </main>

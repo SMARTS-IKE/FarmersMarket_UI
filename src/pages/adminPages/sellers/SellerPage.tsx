@@ -1,5 +1,7 @@
 import { Alert, Box, Snackbar, Tab, Tabs, Checkbox, FormControlLabel } from "@mui/material";
 import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
+import { parseISO, isValid, format } from 'date-fns';
+import { useAttendanceQuery } from '../../../queries/attendanceQueries';
 import { flushSync } from "react-dom";
 import { useBlocker, useNavigate, useParams } from "@tanstack/react-router";
 import type { ConnectedMarket } from "../../../models/market";
@@ -20,7 +22,7 @@ import { sellerKeys } from '../../../queries/sellerQueries';
 const connectedMarketsColumns: ColumnDef<ConnectedMarket>[] = [
   { key: "marketName", label: "Όνομα Αγοράς" },
   { key: "fromDate", label: "Από" },
-  { key: "spotLocation", label: "Θέση", render: (row) => row.spotLocation || "-" },
+  { key: "sportNumber", label: "Αρ. Θέσης", render: (row) => ( (row as any).sportNumber ?? (row as any).spotNumber ?? "-" ) }
 ];
 
 function asRecord(value: unknown): Record<string, unknown> | null {
@@ -118,6 +120,90 @@ export default function SellerPage() {
     navigate({
       to: `/admin/sellers/${sellerId}/market/${market.id}`,
     });
+  };
+
+  // Attendance / participations for this seller (admin view)
+  const [appliedDateFrom, setAppliedDateFrom] = useState<string>(`${new Date().getFullYear()}-01-01`);
+  const [appliedDateTo, setAppliedDateTo] = useState<string>(`${new Date().getFullYear()}-12-31`);
+
+  const [pendingDateFrom, setPendingDateFrom] = useState<string>(appliedDateFrom);
+  const [pendingDateTo, setPendingDateTo] = useState<string>(appliedDateTo);
+
+  // Keep pending in sync when applied changes or seller changes
+  useEffect(() => {
+    setPendingDateFrom(appliedDateFrom);
+    setPendingDateTo(appliedDateTo);
+  }, [appliedDateFrom, appliedDateTo, sellerId]);
+
+  const attendanceQuery = useAttendanceQuery({
+    sellerId: sellerId ? Number(sellerId) : "",
+    marketId: "",
+    dateFrom: appliedDateFrom,
+    dateTo: appliedDateTo,
+    page: 1,
+    pageSize: 1000,
+  });
+
+  const participationsAggregated = useMemo(() => {
+    const items = attendanceQuery.data?.items ?? [];
+    const map = new Map();
+
+    for (const r of items) {
+      const mid = (r as any).marketId ?? "";
+      const mname = (r as any).marketName ?? `Αγορά ${mid}`;
+      const date = (r as any).attendanceDate ?? "";
+
+      const entry = map.get(mid) ?? { marketId: mid, marketName: mname, count: 0 };
+      entry.count += 1;
+
+      if (date) {
+        if (!entry.first) entry.first = date;
+        if (!entry.last) entry.last = date;
+        try {
+          const d = parseISO(String(date));
+          if (isValid(d)) {
+            if (entry.first) {
+              const fd = parseISO(String(entry.first));
+              if (isValid(fd) && d < fd) entry.first = date;
+            }
+            if (entry.last) {
+              const ld = parseISO(String(entry.last));
+              if (isValid(ld) && d > ld) entry.last = date;
+            }
+          }
+        } catch {}
+      }
+
+      map.set(mid, entry);
+    }
+
+    return Array.from(map.values()).sort((a: any, b: any) => String(a.marketName).localeCompare(String(b.marketName)));
+  }, [attendanceQuery.data]);
+
+  const participationsColumns: ColumnDef<typeof participationsAggregated[number]>[] = [
+    { key: 'marketName', label: 'Αγορά' },
+    { key: 'count', label: 'Παρουσίες' },
+    {
+      key: 'first',
+      label: 'Πρώτη παρουσία',
+      render: (r: any) => (r.first ? (isValid(parseISO(String(r.first))) ? format(parseISO(String(r.first)), 'dd/MM/yyyy') : '—') : '—'),
+    },
+    {
+      key: 'last',
+      label: 'Τελευταία παρουσία',
+      render: (r: any) => (r.last ? (isValid(parseISO(String(r.last))) ? format(parseISO(String(r.last)), 'dd/MM/yyyy') : '—') : '—'),
+    },
+  ];
+
+  const participationsFilters = [
+    { title: "DateFrom", label: "Από", type: "DATE" as const },
+    { title: "DateTo", label: "Έως", type: "DATE" as const },
+  ];
+
+  const handleParticipationsSearch = (values: Record<string, any>) => {
+    // Update pending filters when using DataTable native filters
+    setPendingDateFrom(values.DateFrom ?? "");
+    setPendingDateTo(values.DateTo ?? "");
   };
 
   const currentState = useMemo(
@@ -485,10 +571,62 @@ export default function SellerPage() {
         >
           <Tab label="Στοιχεία πωλητή" />
           <Tab label={`Συμμετοχή σε αγορές (${connectedMarkets.length})`} />
+          <Tab label="Παρουσίες" />
         </Tabs>
       </Box>
 
-      <div className="flex-1 overflow-y-auto pr-2 max-h-[calc(100svh-300px)]">
+      {/* Filters area (rendered under tabs) */}
+      <div className="w-full mt-4">
+        {activeTab === 2 && (
+          <div className="flex justify-center items-center gap-4 mb-4">
+            <CustomInputField
+              type="DATE"
+              label="Από"
+              value={pendingDateFrom}
+              onChange={(v) => setPendingDateFrom(String(v))}
+              width="220px"
+            />
+            <CustomInputField
+              type="DATE"
+              label="Έως"
+              value={pendingDateTo}
+              onChange={(v) => setPendingDateTo(String(v))}
+              width="220px"
+            />
+            <div className="flex items-center gap-2 ml-2">
+              <CustomButton
+                title="Καθαρισμός"
+                backgroundColor="transparent"
+                onClick={() => {
+                  setPendingDateFrom(appliedDateFrom);
+                  setPendingDateTo(appliedDateTo);
+                }}
+                width={120}
+                sx={{
+                  border: "1px solid var(--color-border)",
+                  color: "var(--color-text-heading)",
+                  boxShadow: "0px 3px 1px -2px rgba(0,0,0,0.2),0px 2px 2px 0px rgba(0,0,0,0.14),0px 1px 5px 0px rgba(0,0,0,0.12)",
+                }}
+              />
+              <CustomButton
+                title="Αναζήτηση"
+                onClick={() => {
+                  setAppliedDateFrom(pendingDateFrom || appliedDateFrom);
+                  setAppliedDateTo(pendingDateTo || appliedDateTo);
+                }}
+                width={120}
+                sx={{
+                  backgroundColor: "var(--color-text-heading)",
+                  color: "#fff",
+                  boxShadow: "0px 3px 1px -2px rgba(0,0,0,0.2),0px 2px 2px 0px rgba(0,0,0,0.14),0px 1px 5px 0px rgba(0,0,0,0.12)",
+                }}
+              />
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div className="flex-1 overflow-y-auto pr-2 max-h-[calc(100svh-200px)]">
         <div className="flex flex-col gap-6 pt-2">
         
           {activeTab === 0 ? (
@@ -643,7 +781,7 @@ export default function SellerPage() {
               )}
             </div>
           </div>
-        ) : (
+        ) : activeTab === 1 ? (
           <DataTable<ConnectedMarket>
             rows={connectedMarkets}
             columns={connectedMarketsColumns}
@@ -651,6 +789,17 @@ export default function SellerPage() {
             showFilter={false}
             onRowClick={handleConnectedMarketClick}
           />
+        ) : (
+          <div>
+            <DataTable
+              title="Παρουσίες ανά Αγορά"
+              rows={participationsAggregated}
+              columns={participationsColumns}
+              rowKey="marketId"
+              showFilter={false}
+              hidePagination={false}
+            />
+          </div>
         )}
         </div>
       </div>

@@ -6,7 +6,7 @@ import { useAuthStore } from "../../store/authStore";
 import { useUsersQuery } from "../../queries/userQueries";
 import type { AppUser, UserListResult } from "../../models/user";
 import { useSellersQuery, useSellerQuery, useSellerMarketsQuery } from "../../queries/sellerQueries";
-import { UserRole, CheckInMethodLabels } from "../../shared/mappings/GlobalEnums";
+import { UserRole, useGlobalEnums } from "../../shared/mappings/GlobalEnums";
 import { useAttendanceQuery } from "../../queries/attendanceQueries";
 import type { AttendanceRecord } from "../../models/attendance";
 
@@ -27,6 +27,7 @@ function resolveConnectedSeller(sellers: any[], email: string, userId: any) {
 
 export default function UserAttendancesPage() {
   const { user, email } = useAuthStore();
+  const { CheckInMethodLabels } = useGlobalEnums();
 
   const { data: sellersData } = useSellersQuery(ALL_SELLERS_FILTERS);
   const sellerByUserQuery = useSellerQuery(user?.id ? String(user.id) : "");

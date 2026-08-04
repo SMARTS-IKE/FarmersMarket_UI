@@ -23,41 +23,15 @@ export const RequestStatusLabels: Record<number, string> = {
 };
 
 export enum UserStatus {
-  active = 0,
-  inactive = 1,
-  pending = 2,
+  Inactive = 0,
+  Active = 1,
+  Pending = 2,
 }
-
-export enum ParticipationStatus {
-  Present,
-  Absent,
-  Excused,
-  Cancelled,
-}
-
-export enum CheckInMethod {
-  Manual = 1,
-  QRCode = 2,
-  SelfCheckIn = 3
-}
-
-export const ParticipationStatusLabels: Record<number, string> = {
-  [ParticipationStatus.Present]: 'Παρόν',
-  [ParticipationStatus.Absent]: 'Απόν',
-  [ParticipationStatus.Excused]: 'Απουσία με δικαιολογία',
-  [ParticipationStatus.Cancelled]: 'Ακυρώθηκε',
-};
-
-export const CheckInMethodLabels: Record<number, string> = {
-  [CheckInMethod.Manual]: 'Χειροκίνητη',
-  [CheckInMethod.QRCode]: 'Σάρωση QR Code',
-  [CheckInMethod.SelfCheckIn]: 'Αυτοεγγραφή',
-};
 
 export const UserStatusLabels: Record<number, string> = {
-  [UserStatus.active]: 'Ενεργός',
-  [UserStatus.inactive]: 'Ανενεργός',
-  [UserStatus.pending]: 'Υπό Εξέταση',
+  [UserStatus.Inactive]: 'Ανενεργός',
+  [UserStatus.Active]: 'Ενεργός',
+  [UserStatus.Pending]: 'Υπό Εξέταση',
 };
 
 export enum UserRole {
@@ -66,8 +40,20 @@ export enum UserRole {
 }
 
 export const UserRoleLabels: Record<number, string> = {
-  [UserRole.User_Access]: 'Χρήστης',
-  [UserRole.Admin_Access]: 'Διαχειριστής',
+  [UserRole.User_Access]: 'User_Access',
+  [UserRole.Admin_Access]: 'Admin_Access',
+};
+
+export enum CheckInMethod {
+  Manual = 1,
+  Automatic = 2,
+  Other = 3,
+}
+
+export const CheckInMethodLabels: Record<number, string> = {
+  [CheckInMethod.Manual]: 'Χειροκίνητο',
+  [CheckInMethod.Automatic]: 'Αυτόματο',
+  [CheckInMethod.Other]: 'Άλλο',
 };
 
 export type GlobalEnumsShape = {
@@ -79,6 +65,8 @@ export type GlobalEnumsShape = {
   UserStatusLabels: Record<number, string>;
   UserRole: typeof UserRole;
   UserRoleLabels: Record<number, string>;
+  CheckInMethod: typeof CheckInMethod;
+  CheckInMethodLabels: Record<number, string>;
   refresh?: () => Promise<void>;
 };
 
@@ -91,6 +79,8 @@ export const GlobalEnumsContext = createContext<GlobalEnumsShape>({
   UserStatusLabels,
   UserRole,
   UserRoleLabels,
+  CheckInMethod,
+  CheckInMethodLabels,
   refresh: async () => {},
 });
 
@@ -139,6 +129,8 @@ export const GlobalEnumsProvider = ({ children }: { children: ReactNode }) => {
         UserStatusLabels: userStatusLabels,
         UserRole,
         UserRoleLabels: userRoleLabels,
+        CheckInMethod,
+        CheckInMethodLabels,
         refresh: fetchEnums,
       }}
     >
@@ -146,7 +138,6 @@ export const GlobalEnumsProvider = ({ children }: { children: ReactNode }) => {
     </GlobalEnumsContext.Provider>
   );
 };
-
 
 export const useGlobalEnums = () => useContext(GlobalEnumsContext);
 
