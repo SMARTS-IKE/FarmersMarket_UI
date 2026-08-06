@@ -82,5 +82,12 @@ export const columns: ColumnDef<Market>[] = [
   { key: "address", label: "Διεύθυνση" },
   { key: "area", label: "Περιοχή" },
   { key: "totalSpots", label: "Σύνολο Θέσεων" },
-  { key: "occupiedSpots", label: "Δεσμευμένες Θέσεις" },
+  {
+    key: "occupiedSpots",
+    label: "Δεσμευμένες Θέσεις",
+    render: (row: Market) => {
+      const val = row.currentHistory?.occupiedSpots ?? row.occupiedSpots;
+      return val != null && val !== "" ? String(val) : "—";
+    },
+  },
 ];

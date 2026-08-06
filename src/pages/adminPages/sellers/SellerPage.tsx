@@ -1,4 +1,4 @@
-import { Alert, Box, Snackbar, Tab, Tabs, Checkbox, FormControlLabel } from "@mui/material";
+import { Alert, Box, Snackbar, Tab, Tabs, Checkbox, FormControlLabel, Typography } from "@mui/material";
 import { useEffect, useMemo, useState, type SyntheticEvent } from "react";
 import { parseISO, isValid, format } from 'date-fns';
 import { useAttendanceQuery } from '../../../queries/attendanceQueries';
@@ -571,7 +571,7 @@ export default function SellerPage() {
         >
           <Tab label="Στοιχεία πωλητή" />
           <Tab label={`Συμμετοχή σε αγορές (${connectedMarkets.length})`} />
-          <Tab label="Παρουσίες" />
+          <Tab label={`Παρουσίες (${participationsAggregated.length})`} />
         </Tabs>
       </Box>
 
@@ -791,8 +791,14 @@ export default function SellerPage() {
           />
         ) : (
           <div>
+            <Box className="flex items-center justify-between gap-4 flex-wrap">
+                <Typography variant="subtitle1">
+                  Συνολικές παρουσίες την επιλεγμένη περίοδο: {participationsAggregated.length}
+                </Typography>
+            </Box>
+          
             <DataTable
-              title="Παρουσίες ανά Αγορά"
+              title="Ανάλυση ανά Αγορά"
               rows={participationsAggregated}
               columns={participationsColumns}
               rowKey="marketId"

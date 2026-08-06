@@ -36,6 +36,7 @@ export interface MarketCurrentHistory {
   closeTime: string;
   notes: string;
   createdAt: string;
+  occupiedSpots: number;
 }
 
 export interface MarketLocation {

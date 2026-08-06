@@ -68,10 +68,10 @@ export default function AdminSellersPage() {
   const sellers: Seller[] = sellersQueryResults?.items ?? [];
 
   const USER_STATUS_COLORS: Record<number, string> = {
-    [UserStatus.active ?? 0]: '#166534',
-    [UserStatus.inactive ?? 1]: '#991b1b',
+    [UserStatus.Active ?? 1]: '#166534',
+    [UserStatus.Inactive ?? 0]: '#991b1b',
     // pending / other statuses
-    [UserStatus.pending ?? 2]: '#b45309',
+    [UserStatus.Pending ?? 2]: '#b45309',
   };
 
   const handleSearch = (values: FilterValues) => {
@@ -103,8 +103,8 @@ export default function AdminSellersPage() {
       label: 'Κατάσταση χρήστη',
       render: (row) => {
         const rawStatus = (row as any).status;
-        const statusValue = typeof rawStatus === 'number' ? rawStatus : (row.isActive ? 0 : 1);
-        const label = UserStatusLabels?.[statusValue] ?? (statusValue === 0 ? 'Ενεργός' : 'Ανενεργός');
+        const statusValue = typeof rawStatus === 'number' ? rawStatus : (row.isActive ? UserStatus.Active : UserStatus.Inactive);
+        const label = UserStatusLabels?.[statusValue] ?? (statusValue === UserStatus.Active ? 'Ενεργός' : 'Ανενεργός');
         const color = USER_STATUS_COLORS[statusValue] ?? '#374151';
         return <span style={{ color, fontWeight: 700 }}>{label}</span>;
       },

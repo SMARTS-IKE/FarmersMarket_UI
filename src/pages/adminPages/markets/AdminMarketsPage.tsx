@@ -64,7 +64,7 @@ export default function AdminMarketsPage() {
 
   const { data } = useMarketsQuery(filters);
   const markets: Market[] = data?.items ?? [];
-
+  
   const tableFilters: FilterDef[] = useMemo(() => [
     { title: "name", label: "Όνομα", type: "TEXT" }
   ], []);

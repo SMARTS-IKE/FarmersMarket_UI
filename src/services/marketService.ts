@@ -63,6 +63,7 @@ function normalizeCurrentHistory(rawHistory: unknown): MarketCurrentHistory | nu
     toDate: readString(record, ['toDate']) || null,
     isActive: Boolean(record.isActive),
     capacity: readNumber(record, ['capacity']) ?? 0,
+    occupiedSpots: readNumber(record, ['occupiedSpots']) ?? 0,
     licenseCategory: readNumber(record, ['licenseCategory']) ?? 0,
     lotteryEnabled: Boolean(record.lotteryEnabled),
     dailyFee: readNumber(record, ['dailyFee']) ?? 0,
