@@ -123,7 +123,7 @@ export default function EditMarketSellerModal({
 
           <CustomInputField
             type="NUMBER"
-            label="Μήκος θέσης"
+            label="Μήκος θέσης (μέτρα)"
             value={spotLength}
             onChange={(v) => setSpotLength(String(v))}
             width="100%"

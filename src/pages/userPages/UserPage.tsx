@@ -40,6 +40,8 @@ export default function UserPage() {
   const [isSnackbarOpen, setIsSnackbarOpen] = useState(false);
   const allowProgrammaticNavigationRef = useRef(false);
 
+  const { UserStatus, UserStatusLabels } = useGlobalEnums();
+
   useEffect(() => {
     if (!user) return;
     const nextFirstName = user.firstName ?? '';
@@ -292,16 +294,12 @@ export default function UserPage() {
                 type="DROPDOWN"
                 label="Κατάσταση"
                 value={String(status)}
-                dropdownItems={(() => {
-                  const { UserStatus, UserStatusLabels } = useGlobalEnums();
-                  const keys = Object.keys(UserStatus) as string[];
-                  return keys
-                    .filter((k) => isNaN(Number(k)))
-                    .map((name) => {
-                      const val = (UserStatus as any)[name] as number;
-                      return { value: String(val), label: UserStatusLabels?.[val] ?? name };
-                    });
-                })()}
+                dropdownItems={Object.keys(UserStatus || {})
+                  .filter((k) => isNaN(Number(k)))
+                  .map((name) => {
+                    const val = (UserStatus as any)[name] as number;
+                    return { value: String(val), label: UserStatusLabels?.[val] ?? name };
+                  })}
                 onChange={(v) => setStatus(Number(v ?? 0))}
                 width="100%"
               />

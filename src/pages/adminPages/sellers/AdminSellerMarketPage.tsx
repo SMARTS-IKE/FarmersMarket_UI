@@ -121,7 +121,7 @@ export default function AdminSellerMarketPage() {
             />
             <CustomInputField
               type="NUMBER"
-              label="Μήκος θέσης"
+              label="Μήκος θέσης (μέτρα)"
               value={spotLength !== null && spotLength !== undefined ? String(spotLength) : ""}
               disabled={!isEditing}
               width="100%"

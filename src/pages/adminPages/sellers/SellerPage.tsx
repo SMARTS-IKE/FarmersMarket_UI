@@ -626,7 +626,7 @@ export default function SellerPage() {
         )}
       </div>
 
-      <div className="flex-1 overflow-y-auto pr-2 max-h-[calc(100svh-200px)]">
+      <div className="flex-1 overflow-y-auto pr-2 max-h-[calc(100svh-300px)]">
         <div className="flex flex-col gap-6 pt-2">
         
           {activeTab === 0 ? (

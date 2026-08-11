@@ -82,7 +82,7 @@ export default function UserMarketsPage() {
             return Number.isFinite(num) ? String(num) : String(rawSpot);
           }
         },
-      { key: 'spotLength', label: 'Μήκος Θέσης(μ)' },
+      { key: 'spotLength', label: 'Μήκος Θέσης (μέτρα)' },
     ];
 
   // No extra market fetching — table shows seller-specific connected markets directly

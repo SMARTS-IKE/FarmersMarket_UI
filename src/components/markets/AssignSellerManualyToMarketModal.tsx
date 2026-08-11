@@ -114,7 +114,7 @@ export default function AssignSellerManualyToMarketModal({
 
           <CustomInputField
             type="NUMBER"
-            label="Μήκος θέσης"
+            label="Μήκος θέσης (μέτρα)"
             value={sellerSpotLength}
             onChange={(value) => setSellerSpotLength(String(value))}
             width="100%"

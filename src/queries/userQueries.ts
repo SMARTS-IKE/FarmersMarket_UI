@@ -39,6 +39,11 @@ export function useUpdateUserMutation(id: string) {
         queryClient.invalidateQueries({ queryKey: userKeys.detail(id) }),
         queryClient.invalidateQueries({ queryKey: userKeys.all }),
       ]);
+      try {
+        await queryClient.refetchQueries({ queryKey: userKeys.all, exact: false });
+      } catch (e) {
+        // ignore
+      }
     },
   });
 }
@@ -51,6 +56,11 @@ export function useAssignUserRoleMutation(id: string) {
         queryClient.invalidateQueries({ queryKey: userKeys.detail(id) }),
         queryClient.invalidateQueries({ queryKey: userKeys.all }),
       ]);
+      try {
+        await queryClient.refetchQueries({ queryKey: userKeys.all, exact: false });
+      } catch (e) {
+        // ignore
+      }
     },
   });
 }
@@ -63,6 +73,11 @@ export function useRemoveUserRoleMutation(id: string) {
         queryClient.invalidateQueries({ queryKey: userKeys.detail(id) }),
         queryClient.invalidateQueries({ queryKey: userKeys.all }),
       ]);
+      try {
+        await queryClient.refetchQueries({ queryKey: userKeys.all, exact: false });
+      } catch (e) {
+        // ignore
+      }
     },
   });
 }
