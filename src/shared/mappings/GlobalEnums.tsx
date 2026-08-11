@@ -23,8 +23,8 @@ export const RequestStatusLabels: Record<number, string> = {
 };
 
 export enum UserStatus {
-  Inactive = 0,
-  Active = 1,
+  Active = 0,
+  Inactive = 1,
   Pending = 2,
 }
 
