@@ -33,7 +33,6 @@ export default function LoginPage() {
 
     try {
       const data = await login({ email, password });
-      console.log('login response', data);
       setAuth(data);
 
       const state = useAuthStore.getState();

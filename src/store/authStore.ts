@@ -102,6 +102,7 @@ export const useAuthStore = create<AuthState>()(
               name: `${firstName} ${lastName}`.trim() || decoded.name || null,
               role: Array.isArray(role) ? role[0] : (role as string),
               status: decoded.status,
+              userId: decoded.userId
             };
 
             set({

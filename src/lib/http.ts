@@ -67,13 +67,19 @@ export async function apiRequest<TResponse = unknown, TBody = unknown>(
       body: body !== undefined ? (isFormData || isUrlSearchParams ? (body as any) : JSON.stringify(body)) : undefined,
     });
 
-    // ── 401 → clear session and redirect to login ───────────────
+    // ── 401 → clear session and redirect to login (but NOT for public endpoints)
     if (response.status === 401) {
-      useAuthStore.getState().clearAuth();
-      localStorage.clear();
-      window.location.reload();
-      // Redirect straight to the login page and replace history so back doesn't return to protected pages
-      throw new HttpError(401, 'Session expired. Please log in again.');
+      const parsed = await parseError(response);
+      // For protected endpoints, clear auth and force a reload so the app returns
+      // to the login screen. For public endpoints (e.g. `/auth/login`) we should
+      // not reload the page because a normal authentication failure may return
+      // 401 and we want the UI to display the error without a hard reload.
+      if (!isPublic) {
+        useAuthStore.getState().clearAuth();
+        localStorage.clear();
+        window.location.reload();
+      }
+      throw parsed;
     }
 
     if (!response.ok) {

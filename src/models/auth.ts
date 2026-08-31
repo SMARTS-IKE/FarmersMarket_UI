@@ -34,6 +34,8 @@ export interface User {
   roles?: string[];
   status?: string;
   aspNetUserId?: string;
+  userId?: string;
+  sellerId?: string;
   [key: string]: unknown;
 }
 
