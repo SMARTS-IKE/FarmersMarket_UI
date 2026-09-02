@@ -7,6 +7,7 @@ interface CustomButtonProps {
   backgroundColor?: string;
   disabled?: boolean;
   width?: number | string;
+  selected?: boolean;
   onClick?: () => void;
   sx?: SxProps<Theme>;
 }
@@ -17,6 +18,7 @@ export default function CustomButton({
   backgroundColor = "var(--color-text)",
   disabled = false,
   width = 140,
+  selected = false,
   onClick,
   sx,
 }: CustomButtonProps) {
@@ -32,7 +34,9 @@ export default function CustomButton({
         height: 30,
         width,
         minWidth: 0,
-        backgroundColor,
+        backgroundColor: selected ? backgroundColor : "transparent",
+        color: selected ? "#fff" : "var(--color-text)",
+        border: selected ? "none" : "1px solid var(--color-text)",
         textTransform: "none",
         ...(!hasTitle && {
           "& .MuiButton-startIcon": {
@@ -41,7 +45,7 @@ export default function CustomButton({
           },
         }),
         "&:hover": {
-          backgroundColor,
+          backgroundColor: selected ? backgroundColor : "rgba(0,0,0,0.04)",
           filter: "brightness(0.9)",
         },
         ...sx,
