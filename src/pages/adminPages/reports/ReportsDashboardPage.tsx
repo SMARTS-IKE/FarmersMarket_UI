@@ -124,7 +124,7 @@ export default function ReportsDashboardPage() {
 
     return [
       { label: "Νέοι Πωλητές", value: String(newSellers), delta: "+0.0%", tone: "positive", producersCount: newSellersTypes.producers, professionalsCount: newSellersTypes.professionals },
-      { label: "Αιτήσεις", value: String(requestsInRange.length), delta: "+0.0%", tone: "info", producersCount: requestsTypes.producers, professionalsCount: requestsTypes.professionals },
+      { label: "Νέες Αιτήσεις", value: String(requestsInRange.length), delta: "+0.0%", tone: "info", producersCount: requestsTypes.producers, professionalsCount: requestsTypes.professionals },
       { label: "Νέες άδειες", value: String(approvedInRange.length), delta: "+0.0%", tone: "positive", producersCount: approvedTypes.producers, professionalsCount: approvedTypes.professionals },
       { label: "Συμμετοχή στις αγορές", value: "—", delta: "+0.0%", tone: "positive", producersCount: newSellersTypes.producers + requestsTypes.producers, professionalsCount: newSellersTypes.professionals + requestsTypes.professionals },
     ];
@@ -166,7 +166,7 @@ export default function ReportsDashboardPage() {
       <div style={{ maxHeight: "calc(95vh - 300px)" }} className="flex-1 overflow-y-auto flex flex-col gap-5 px-2">
         <ReportsStatsSection metrics={metrics} />
         <ReportsChartSection metrics={metrics} />
-        <ReportsListSection reports={reportRows} />
+        <ReportsListSection reports={reportRows} fromDate={fromDate} toDate={toDate} period={period} />
       </div>
     </div>
   );
