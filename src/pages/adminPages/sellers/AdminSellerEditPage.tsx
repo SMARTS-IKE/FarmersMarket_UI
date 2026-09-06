@@ -28,6 +28,10 @@ export default function AdminSellerEditPage() {
   const sellerTypeValue = String(sellerType ?? "");
 
   const { UserRoleLabels, UserStatusLabels } = useGlobalEnums();
+  const greekUserRoleLabels: Record<string, string> = {
+    '0': 'Χρήστης',
+    '1': 'Διαχειριστής',
+  };
 
   const firstNameError = submitAttempted
     ? !firstNameTrimmed
@@ -118,9 +122,6 @@ export default function AdminSellerEditPage() {
       },
     };
 
-    // TODO: call edit seller API. For now log the payload and return to list
-    // eslint-disable-next-line no-console
-    console.log("Edit payload:", payload);
     navigate({ to: "/admin/sellers" });
   };
 
@@ -198,7 +199,10 @@ export default function AdminSellerEditPage() {
             value={String(userRole)}
             onChange={(value) => setUserRole(value)}
             width="100%"
-            dropdownItems={Object.entries(UserRoleLabels).map(([k, v]) => ({ label: v, value: String(k) }))}
+            dropdownItems={Object.entries(UserRoleLabels).map(([k, v]) => ({
+              label: greekUserRoleLabels[String(k)] ?? v,
+              value: String(k),
+            }))}
           />
           <CustomInputField
             type="DROPDOWN"

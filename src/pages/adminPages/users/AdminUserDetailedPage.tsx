@@ -3,7 +3,7 @@ import { useNavigate, useParams } from '@tanstack/react-router';
 import { setAuthNotification } from '../../../lib/authNotifications';
 import type { RegisterCredentials } from '../../../models/auth';
 import { useRegisterMutation } from '../../../queries/authQueries';
-import { useUserQuery } from '../../../queries/userQueries';
+import { useAssignUserRoleMutation, useRemoveUserRoleMutation, useUpdateUserMutation, useUserQuery } from '../../../queries/userQueries';
 import { useAllSellersQuery } from '../../../queries/sellerQueries';
 import { USER_ROLE_MAPPING, USER_ROLE_MAPPING_TITLES } from '../../../shared/mappings/users.mapping';
 import { SELLER_TYPE_LABELS } from '../../../components/sellers/sellers.utils';
@@ -32,6 +32,9 @@ export default function AdminUserDetailedPage({ isCreation = false }: AdminUserD
   const routeUserId = params['id'] ?? '';
   const isEditMode = !isCreation && Boolean(routeUserId && routeUserId !== 'new');
   const registerMutation = useRegisterMutation();
+  const updateUserMutation = useUpdateUserMutation(isEditMode ? routeUserId : '');
+  const removeUserRoleMutation = useRemoveUserRoleMutation(isEditMode ? routeUserId : '');
+  const assignUserRoleMutation = useAssignUserRoleMutation(isEditMode ? routeUserId : '');
   const { data: userData } = useUserQuery(isEditMode ? routeUserId : '');
   const allSellersQuery = useAllSellersQuery({ name: '', afm: '', sellerType: '' });
   const [form, setForm] = useState<UserCreationForm>({
@@ -71,6 +74,7 @@ export default function AdminUserDetailedPage({ isCreation = false }: AdminUserD
   }, [allSellersQuery.data, isEditMode, userData]);
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  const isAdminRole = form.role === USER_ROLE_MAPPING.ADMIN || form.role === 'Admin_Access';
 
   function validate(): boolean {
     const next: typeof errors = {};
@@ -81,11 +85,11 @@ export default function AdminUserDetailedPage({ isCreation = false }: AdminUserD
     if (!form.lastName.trim()) next.lastName = 'Το επώνυμο είναι υποχρεωτικό';
     else if (form.lastName.trim().length < 2) next.lastName = 'Ελάχιστος αριθμός χαρακτήρων: 2.';
 
-    if (!form.afm?.trim()) next.afm = 'Το ΑΦΜ είναι υποχρεωτικό';
-
-    if (!form.phone?.trim()) next.phone = 'Το τηλέφωνο είναι υποχρεωτικό';
-
-    if (!form.address?.trim()) next.address = 'Η διεύθυνση είναι υποχρεωτική';
+    if (!isAdminRole) {
+      if (!form.afm?.trim()) next.afm = 'Το ΑΦΜ είναι υποχρεωτικό';
+      if (!form.phone?.trim()) next.phone = 'Το τηλέφωνο είναι υποχρεωτικό';
+      if (!form.address?.trim()) next.address = 'Η διεύθυνση είναι υποχρεωτική';
+    }
 
     if (!form.email.trim()) next.email = 'Το email είναι υποχρεωτικό';
     else if (!EMAIL_RE.test(form.email)) next.email = 'Μη έγκυρη διεύθυνση email';
@@ -115,25 +119,48 @@ export default function AdminUserDetailedPage({ isCreation = false }: AdminUserD
     if (!validate()) return;
 
     try {
-      await registerMutation.mutateAsync({
-        firstName: form.firstName.trim(),
-        lastName: form.lastName.trim(),
-        email: form.email.trim(),
-        afm: form.afm?.trim() || '',
-        phone: form.phone?.trim() || '',
-        address: form.address?.trim() || '',
-        sellerType: form.sellerType,
-        password: INITIAL_PASSWORD,
-        role: form.role,
-      });
+      if (isCreation) {
+        await registerMutation.mutateAsync({
+          firstName: form.firstName.trim(),
+          lastName: form.lastName.trim(),
+          email: form.email.trim(),
+          afm: form.afm?.trim() || '',
+          phone: form.phone?.trim() || '',
+          address: form.address?.trim() || '',
+          sellerType: form.sellerType,
+          password: INITIAL_PASSWORD,
+          role: form.role,
+        });
 
-      setAuthNotification({
-        type: 'success',
-        message: 'Ο χρήστης δημιουργήθηκε επιτυχώς.',
-      });
+        setAuthNotification({
+          type: 'success',
+          message: 'Ο χρήστης δημιουργήθηκε επιτυχώς.',
+        });
+      } else {
+        const previousRole = userData?.roles?.[0];
+        const nextRole = form.role;
+
+        if (previousRole && previousRole !== nextRole) {
+          await removeUserRoleMutation.mutateAsync(previousRole);
+          await assignUserRoleMutation.mutateAsync({ role: nextRole });
+        }
+
+        const status = Number((userData as any)?.status ?? 1);
+        await updateUserMutation.mutateAsync({
+          firstName: form.firstName.trim(),
+          lastName: form.lastName.trim(),
+          status,
+        });
+
+        setAuthNotification({
+          type: 'success',
+          message: 'Ο χρήστης ενημερώθηκε επιτυχώς.',
+        });
+      }
+
       navigate({ to: '/admin/users' });
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Η δημιουργία χρήστη απέτυχε';
+      const message = err instanceof Error ? err.message : (isCreation ? 'Η δημιουργία χρήστη απέτυχε' : 'Η ενημέρωση χρήστη απέτυχε');
       setErrors({ form: message });
       setAuthNotification({ type: 'error', message });
     }
@@ -199,43 +226,47 @@ export default function AdminUserDetailedPage({ isCreation = false }: AdminUserD
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div className="flex flex-col gap-1">
-              <CustomInputField
-                type="TEXT"
-                label="ΑΦΜ *"
-                value={form.afm}
-                placeholder="ΑΦΜ"
-                onChange={(v) => { setForm((p) => ({ ...p, afm: String(v ?? '') })); setErrors((s) => ({ ...s, afm: undefined })); }}
-                error={errors.afm}
-                width="100%"
-              />
-            </div>
+          {!isAdminRole && (
+            <>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <CustomInputField
+                    type="TEXT"
+                    label="ΑΦΜ *"
+                    value={form.afm}
+                    placeholder="ΑΦΜ"
+                    onChange={(v) => { setForm((p) => ({ ...p, afm: String(v ?? '') })); setErrors((s) => ({ ...s, afm: undefined })); }}
+                    error={errors.afm}
+                    width="100%"
+                  />
+                </div>
 
-            <div className="flex flex-col gap-1">
-              <CustomInputField
-                type="TEXT"
-                label="Τηλέφωνο *"
-                value={form.phone}
-                placeholder="Τηλέφωνο"
-                onChange={(v) => { setForm((p) => ({ ...p, phone: String(v ?? '') })); setErrors((s) => ({ ...s, phone: undefined })); }}
-                error={errors.phone}
-                width="100%"
-              />
-            </div>
-          </div>
+                <div className="flex flex-col gap-1">
+                  <CustomInputField
+                    type="TEXT"
+                    label="Τηλέφωνο *"
+                    value={form.phone}
+                    placeholder="Τηλέφωνο"
+                    onChange={(v) => { setForm((p) => ({ ...p, phone: String(v ?? '') })); setErrors((s) => ({ ...s, phone: undefined })); }}
+                    error={errors.phone}
+                    width="100%"
+                  />
+                </div>
+              </div>
 
-          <div className="flex flex-col gap-1">
-            <CustomInputField
-              type="TEXT"
-              label="Διεύθυνση *"
-              value={form.address}
-              placeholder="Διεύθυνση"
-              onChange={(v) => { setForm((p) => ({ ...p, address: String(v ?? '') })); setErrors((s) => ({ ...s, address: undefined })); }}
-              error={errors.address}
-              width="100%"
-            />
-          </div>
+              <div className="flex flex-col gap-1">
+                <CustomInputField
+                  type="TEXT"
+                  label="Διεύθυνση *"
+                  value={form.address}
+                  placeholder="Διεύθυνση"
+                  onChange={(v) => { setForm((p) => ({ ...p, address: String(v ?? '') })); setErrors((s) => ({ ...s, address: undefined })); }}
+                  error={errors.address}
+                  width="100%"
+                />
+              </div>
+            </>
+          )}
 
           <div className="grid grid-cols-2 gap-3">
             <div className="flex flex-col gap-1">

@@ -3,6 +3,7 @@ import { Box, Tabs, Tab } from "@mui/material";
 import CustomInputField from "../../shared/components/CustomInputField";
 import { SELLER_TYPE_LABELS } from "../sellers/sellers.utils";
 import { useSellerQuery } from "../../queries/sellerQueries";
+import { useAuthStore } from "../../store/authStore";
 
 type Props = {
   request: any;
@@ -12,6 +13,12 @@ export default function SubmittedRequestForm({ request }: Props) {
   const [activeTab, setActiveTab] = useState(0);
 
   if (!request) return null;
+
+  const notifyError = (message: string) => {
+    window.dispatchEvent(new CustomEvent('app-notification', {
+      detail: { type: 'error', message },
+    }));
+  };
 
   const sellerIdStr = request.sellerId ? String(request.sellerId) : '';
   const { data: seller } = useSellerQuery(sellerIdStr);
@@ -28,6 +35,53 @@ export default function SubmittedRequestForm({ request }: Props) {
     displayLicenseNumber = seller.licenses[0].number ?? undefined;
   }
   displayLicenseNumber = displayLicenseNumber ?? request.sellerLicenseNumber ?? request.licenseNumber ?? '—';
+
+  const handleDownloadDocument = async (doc: any) => {
+    const documentId = doc?.id ?? doc?.documentId;
+
+    if (!documentId) {
+      if (doc?.downloadUrl || doc?.url) {
+        window.open(doc.downloadUrl ?? doc.url, '_blank');
+      }
+      return;
+    }
+
+    try {
+      const authToken = useAuthStore.getState().token;
+      const BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
+      const response = await fetch(`${BASE_URL}/requests/documents/${documentId}/download`, {
+        method: 'GET',
+        headers: {
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
+        },
+      });
+
+      if (!response.ok) {
+        const text = await response.text().catch(() => 'Download failed');
+        throw new Error(text || 'Download failed');
+      }
+
+      const blob = await response.blob();
+      const disposition = response.headers.get('Content-Disposition') || '';
+      let filename = doc?.fileName || doc?.name || doc?.title || `document-${documentId}`;
+      const match = disposition.match(/filename\*=UTF-8''(.+)|filename="?([^";]+)"?/);
+      if (match) {
+        filename = decodeURIComponent(match[1] || match[2]);
+      }
+
+      const downloadUrl = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = downloadUrl;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      window.URL.revokeObjectURL(downloadUrl);
+    } catch (error) {
+      console.error('Document download failed', error);
+      notifyError('Η λήψη του εγγράφου απέτυχε.');
+    }
+  };
 
   return (
     <>
@@ -126,14 +180,7 @@ export default function SubmittedRequestForm({ request }: Props) {
                     {doc.fileName && <p className="text-xs text-(--color-text-muted) mt-1">{doc.fileName}</p>}
                   </div>
                   <button
-                    onClick={() => {
-                      if (doc.downloadUrl) {
-                        window.open(doc.downloadUrl, "_blank");
-                      } else if (doc.url) {
-                        window.open(doc.url, "_blank");
-                      }
-                    }}
-                    disabled={!doc.downloadUrl && !doc.url}
+                    onClick={() => handleDownloadDocument(doc)}
                     className="ml-4 px-4 py-2 bg-(--color-primary) text-white rounded-lg hover:bg-(--color-primary-hover) transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
                   >
                     <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

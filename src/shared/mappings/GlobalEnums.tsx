@@ -84,8 +84,8 @@ export enum UserRole {
 }
 
 export const UserRoleLabels: Record<number, string> = {
-  [UserRole.User_Access]: 'User_Access',
-  [UserRole.Admin_Access]: 'Admin_Access',
+  [UserRole.User_Access]: 'Χρήστης',
+  [UserRole.Admin_Access]: 'Διαχειριστής',
 };
 
 export enum CheckInMethod {

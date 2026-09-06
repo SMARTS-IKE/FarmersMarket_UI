@@ -168,9 +168,9 @@ export default function LoginPage() {
             />
             Να με θυμάσαι
           </label>
-          <a href="#" className="font-medium text-[#6f3f16] hover:underline">
+          <Link to="/auth/forgot-password" className="font-medium text-[#6f3f16] hover:underline">
             Ξέχασα τον κωδικό μου
-          </a>
+          </Link>
         </div>
 
         <button

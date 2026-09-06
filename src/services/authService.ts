@@ -10,6 +10,10 @@ export async function register(credentials: RegisterCredentials): Promise<AuthRe
   return http.post<AuthResponse, RegisterCredentials>('/auth/register', credentials, { public: true });
 }
 
+export async function forgotPassword(payload: { email: string }): Promise<void> {
+  return http.post<void, { email: string }>('/auth/forgot-password', payload, { public: true });
+}
+
 export async function requestRegistration(credentials: RegisterCredentials): Promise<AuthResponse> {
   // Preserve an explicitly provided `role` (e.g. 'User_Access'),
   // otherwise default to the normalized role string 'User_Access'.
