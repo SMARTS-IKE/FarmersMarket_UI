@@ -1,8 +1,10 @@
-import { useState } from 'react';
-import { useNavigate } from '@tanstack/react-router';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from '@tanstack/react-router';
 import { setAuthNotification } from '../../../lib/authNotifications';
 import type { RegisterCredentials } from '../../../models/auth';
 import { useRegisterMutation } from '../../../queries/authQueries';
+import { useUserQuery } from '../../../queries/userQueries';
+import { useAllSellersQuery } from '../../../queries/sellerQueries';
 import { USER_ROLE_MAPPING, USER_ROLE_MAPPING_TITLES } from '../../../shared/mappings/users.mapping';
 import { SELLER_TYPE_LABELS } from '../../../components/sellers/sellers.utils';
 import CustomInputField from '../../../shared/components/CustomInputField';
@@ -20,9 +22,18 @@ interface UserCreationForm extends RegisterCredentials {
   role: string;
 }
 
-export default function UserCreation() {
+interface AdminUserDetailedPageProps {
+  isCreation?: boolean;
+}
+
+export default function AdminUserDetailedPage({ isCreation = false }: AdminUserDetailedPageProps) {
   const navigate = useNavigate();
+  const params = useParams({ strict: false });
+  const routeUserId = params['id'] ?? '';
+  const isEditMode = !isCreation && Boolean(routeUserId && routeUserId !== 'new');
   const registerMutation = useRegisterMutation();
+  const { data: userData } = useUserQuery(isEditMode ? routeUserId : '');
+  const allSellersQuery = useAllSellersQuery({ name: '', afm: '', sellerType: '' });
   const [form, setForm] = useState<UserCreationForm>({
     firstName: '',
     lastName: '',
@@ -34,6 +45,30 @@ export default function UserCreation() {
     role: DEFAULT_ROLE,
   });
   const [errors, setErrors] = useState<Partial<Record<keyof UserCreationForm | 'form', string>>>({});
+
+  useEffect(() => {
+    if (!isEditMode || !userData) return;
+
+    const candidateSeller = Array.isArray(allSellersQuery.data?.items)
+      ? allSellersQuery.data.items.find((seller: any) => {
+          const userIdMatches = seller.userId != null && String(seller.userId) === String(userData.id);
+          const afmMatches = !!seller.afm && !!(userData as any)?.afm && String(seller.afm) === String((userData as any).afm);
+          const nameMatches = !!seller.firstName && !!seller.lastName && `${seller.firstName} ${seller.lastName}`.trim() === `${userData.firstName ?? ''} ${userData.lastName ?? ''}`.trim();
+          return userIdMatches || afmMatches || nameMatches;
+        })
+      : null;
+
+    setForm({
+      firstName: userData.firstName ?? '',
+      lastName: userData.lastName ?? '',
+      email: userData.email ?? '',
+      afm: candidateSeller?.afm ?? (userData as any)?.afm ?? '',
+      phone: candidateSeller?.phone ?? '',
+      address: candidateSeller?.address ?? '',
+      sellerType: Number(candidateSeller?.sellerType ?? 0),
+      role: userData.roles?.[0] ?? DEFAULT_ROLE,
+    });
+  }, [allSellersQuery.data, isEditMode, userData]);
 
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -108,8 +143,12 @@ export default function UserCreation() {
     <div className="min-h-screen p-6 md:px-10 bg-transparent">
       <div className="mx-auto max-w-2xl">
         <div className="mb-8">
-          <h2 className="text-2xl font-semibold text-(--color-text-heading) mb-2">Δημιουργία Χρήστη</h2>
-          <p className="text-sm text-(--color-text-muted)">Συμπληρώστε τα στοιχεία του νέου χρήστη</p>
+          <h2 className="text-2xl font-semibold text-(--color-text-heading) mb-2">
+            {isCreation ? 'Δημιουργία Χρήστη' : 'Ενημέρωση Χρήστη'}
+          </h2>
+          <p className="text-sm text-(--color-text-muted)">
+            {isCreation ? 'Συμπληρώστε τα στοιχεία του νέου χρήστη' : 'Επεξεργαστείτε τα στοιχεία του υπάρχοντος χρήστη'}
+          </p>
         </div>
 
         <form className="flex flex-col gap-4" onSubmit={handleSubmit} noValidate>

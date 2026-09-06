@@ -1,10 +1,13 @@
-import { Outlet, useLocation, useNavigate } from '@tanstack/react-router';
-import { router } from '../routers/router';
-import Header from '../shared/components/Header';
-import Sidebar from '../shared/components/Sidebar';
+import { Link, Outlet, useLocation, useNavigate } from '@tanstack/react-router';
+import IconButton from '@mui/material/IconButton';
+import Tooltip from '@mui/material/Tooltip';
+import LogoutRoundedIcon from '@mui/icons-material/LogoutRounded';
+import UserCircleIcon from '@mui/icons-material/AccountCircleOutlined';
+import MenuRoundedIcon from '@mui/icons-material/MenuRounded';
+import CloseRoundedIcon from '@mui/icons-material/CloseRounded';
 import { useState } from 'react';
 import logo02 from '../assets/logo-02.svg';
-
+import logo03 from '../assets/logo-03.svg';
 import { getUserTab, userTabs } from '../lib/userTabs';
 import { useAuthStore } from '../store/authStore';
 import { LayoutSlotProvider, useLayoutSlot } from '../lib/layoutSlotContext';
@@ -19,31 +22,98 @@ export default function UserAccessLayout() {
 
 function UserAccessLayoutInner() {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, email, clearAuth } = useAuthStore();
   const activeTab = getUserTab(location.pathname);
   const { filterSlot, tabSlot } = useLayoutSlot();
   const [collapsed, setCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   function handleLogout() {
     clearAuth();
-    void router.navigate({ to: '/auth/login' });
-  }
-
-  const navigate = useNavigate();
-
-  function handleAccountClick() {
-    const userId = user?.id ? String(user.id) : '';
-    if (!userId) return;
-    navigate({ to: '/admin/users/$id', params: { id: userId } });
+    navigate({ to: '/auth/login' });
   }
 
   return (
     <div className="min-h-svh">
-      <div className="flex min-h-svh w-full flex-col overflow-hidden border border-(--color-border) bg-(--color-surface) shadow-[var(--shadow-lg)] md:overflow-hidden">
-        <Header onLogout={handleLogout} onAccountClick={handleAccountClick} />
+      <div className="flex min-h-svh w-full flex-col overflow-visible border border-(--color-border) bg-(--color-surface) shadow-[var(--shadow-lg)] md:overflow-hidden">
+        <header className="relative z-20 border-b-4 border-[#ef4123] bg-[#C4B5A0] px-4 md:px-6">
+          <div className="flex items-center justify-between gap-4 py-2 xl:py-0">
+            <div className="flex items-center gap-4">
+              <img src={logo02} alt="Farmers Market logo" className="h-auto max-h-[70px] w-auto rounded-lg object-contain xl:max-h-[88px]" />
+              <div className="flex flex-col items-start leading-tight">
+                <p className="text-base font-bold text-(--color-text) whitespace-nowrap">Πλατφόρμα Διαχείρισης</p>
+                <p className="text-sm text-(--color-text)">Λαϊκών Αγορών</p>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end pr-6">
+              <Tooltip title="Διαχείριση λογαριασμού">
+                <IconButton
+                  aria-label="account_circle"
+                  onClick={() => null}
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    color: '#3D2817',
+                    '&:hover': {
+                      backgroundColor: 'rgba(61, 40, 23, 0.1)',
+                    },
+                  }}
+                >
+                  <UserCircleIcon />
+                </IconButton>
+              </Tooltip>
+              <Tooltip title="Αποσύνδεση">
+                <IconButton
+                  aria-label="logout"
+                  onClick={handleLogout}
+                  sx={{
+                    width: 32,
+                    height: 32,
+                    color: '#3D2817',
+                    '&:hover': {
+                      backgroundColor: 'rgba(61, 40, 23, 0.1)',
+                    },
+                  }}
+                >
+                  <LogoutRoundedIcon />
+                </IconButton>
+              </Tooltip>
+            </div>
+          </div>
+        </header>
 
         <div className="flex flex-1 items-stretch gap-px bg-(--color-border-subtle)">
-          <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} activeTab={activeTab} tabs={userTabs} />
+          <aside className={`relative z-10 flex flex-col gap-4 bg-(--color-bg-subtle) p-3 transition-all ${collapsed ? 'w-20' : 'w-72'}`}>
+            <div className="flex items-center justify-end">
+              <IconButton aria-label="toggle_menu" onClick={() => setCollapsed((s) => !s)} size="small">
+                {collapsed ? <MenuRoundedIcon /> : <CloseRoundedIcon />}
+              </IconButton>
+            </div>
+
+            <div className="mt-2 flex flex-1 flex-col gap-1">
+              {userTabs.map((tab) => {
+                const isActive = activeTab.to === tab.to;
+
+                return (
+                  <Link
+                    key={tab.to}
+                    to={tab.to}
+                    className={`flex items-center gap-3 rounded px-3 py-2 text-sm transition ${isActive ? 'bg-(--color-text-muted) text-(--color-surface) border border-(--color-border) font-bold' : 'text-(--color-text) hover:bg-(--color-primary-subtle)'} `}
+                  >
+                    <span className="truncate">{!collapsed ? tab.label : tab.label.charAt(0)}</span>
+                  </Link>
+                );
+              })}
+            </div>
+
+            {!collapsed && (
+              <div className="mt-auto">
+                <img src={logo03} alt="Farmers Market emblem" className="h-auto w-full object-contain" />
+              </div>
+            )}
+          </aside>
 
           <main className={`flex-1 min-w-0 flex h-full min-h-0 flex-col bg-(--color-surface) p-5 md:p-7 transition-all`}>
             {(tabSlot || filterSlot) && (
@@ -57,10 +127,7 @@ function UserAccessLayoutInner() {
               </div>
             )}
 
-            <div
-              className="flex flex-1 min-h-0 flex-col overflow-y-auto"
-              style={{ height: 'calc(100vh - 160px)' }}
-            >
+            <div className="flex flex-1 min-h-0 flex-col">
               <Outlet />
             </div>
           </main>

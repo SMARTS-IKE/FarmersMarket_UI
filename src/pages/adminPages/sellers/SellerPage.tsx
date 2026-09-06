@@ -18,6 +18,7 @@ import { UserRole } from "../../../shared/mappings/GlobalEnums";
 import { useGlobalEnums } from "../../../shared/mappings/GlobalEnums";
 import { queryClient } from '../../../lib/queryClient';
 import { sellerKeys } from '../../../queries/sellerQueries';
+import FilterBar from '../../../shared/components/FilterBar';
 
 const connectedMarketsColumns: ColumnDef<ConnectedMarket>[] = [
   { key: "marketName", label: "Όνομα Αγοράς" },
@@ -578,51 +579,36 @@ export default function SellerPage() {
       {/* Filters area (rendered under tabs) */}
       <div className="w-full mt-4">
         {activeTab === 2 && (
-          <div className="flex justify-center items-center gap-4 mb-4">
-            <CustomInputField
-              type="DATE"
-              label="Από"
-              value={pendingDateFrom}
-              onChange={(v) => setPendingDateFrom(String(v))}
-              width="220px"
-            />
-            <CustomInputField
-              type="DATE"
-              label="Έως"
-              value={pendingDateTo}
-              onChange={(v) => setPendingDateTo(String(v))}
-              width="220px"
-            />
-            <div className="flex items-center gap-2 ml-2">
-              <CustomButton
-                title="Καθαρισμός"
-                backgroundColor="transparent"
-                onClick={() => {
-                  setPendingDateFrom(appliedDateFrom);
-                  setPendingDateTo(appliedDateTo);
-                }}
-                width={120}
-                sx={{
-                  border: "1px solid var(--color-border)",
-                  color: "var(--color-text-heading)",
-                  boxShadow: "0px 3px 1px -2px rgba(0,0,0,0.2),0px 2px 2px 0px rgba(0,0,0,0.14),0px 1px 5px 0px rgba(0,0,0,0.12)",
-                }}
-              />
-              <CustomButton
-                title="Αναζήτηση"
-                onClick={() => {
-                  setAppliedDateFrom(pendingDateFrom || appliedDateFrom);
-                  setAppliedDateTo(pendingDateTo || appliedDateTo);
-                }}
-                width={120}
-                sx={{
-                  backgroundColor: "var(--color-text-heading)",
-                  color: "#fff",
-                  boxShadow: "0px 3px 1px -2px rgba(0,0,0,0.2),0px 2px 2px 0px rgba(0,0,0,0.14),0px 1px 5px 0px rgba(0,0,0,0.12)",
-                }}
-              />
-            </div>
-          </div>
+          <FilterBar
+            fields={[
+              {
+                name: 'DateFrom',
+                label: 'Από',
+                type: 'date',
+                value: pendingDateFrom,
+                onChange: (value) => setPendingDateFrom(String(value ?? '')),
+              },
+              {
+                name: 'DateTo',
+                label: 'Έως',
+                type: 'date',
+                value: pendingDateTo,
+                onChange: (value) => setPendingDateTo(String(value ?? '')),
+              },
+            ]}
+            onSearch={() => {
+              setAppliedDateFrom(pendingDateFrom || appliedDateFrom);
+              setAppliedDateTo(pendingDateTo || appliedDateTo);
+            }}
+            onClear={() => {
+              setPendingDateFrom(appliedDateFrom);
+              setPendingDateTo(appliedDateTo);
+            }}
+            searchLabel="Αναζήτηση"
+            clearLabel="Καθαρισμός"
+            showSearchButton={true}
+            showClearButton={true}
+          />
         )}
       </div>
 

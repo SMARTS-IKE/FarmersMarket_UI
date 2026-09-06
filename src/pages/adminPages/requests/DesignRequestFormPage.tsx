@@ -549,9 +549,14 @@ export default function DesignRequestFormPage() {
         </h2>
         <CustomButton
           title="Επιστροφή"
-          backgroundColor="var(--color-text-muted)"
+          backgroundColor="transparent"
           width="fit-content"
           onClick={handleBack}
+          sx={{
+            color: 'var(--color-dark)',
+            border: '1px solid var(--color-dark)',
+            '&:hover': { backgroundColor: 'transparent' },
+          }}
         />
       </div>
 
@@ -576,12 +581,17 @@ export default function DesignRequestFormPage() {
               onClick={() => setSelectedStep(index)}
               disabled={index > maxReachableStep}
               width="100%"
-              backgroundColor={
-                selectedStep === index
-                  ? "var(--color-dark)"
-                  : "var(--color-text-muted)"
-              }
-              sx={{ justifyContent: "flex-start", px: 1.5 }}
+              selected={selectedStep === index}
+              backgroundColor="var(--color-dark)"
+              sx={{
+                justifyContent: "flex-start",
+                px: 1.5,
+                border: selectedStep === index ? '1px solid var(--color-dark)' : '1px solid var(--color-border)',
+                color: selectedStep === index ? '#fff' : 'var(--color-dark)',
+                '&:hover': {
+                  backgroundColor: selectedStep === index ? 'var(--color-dark)' : 'var(--color-surface)',
+                },
+              }}
             />
           ))}
         </Box>
@@ -617,16 +627,27 @@ export default function DesignRequestFormPage() {
             <div className="mt-auto flex flex-wrap justify-end gap-3 pt-6">
               <CustomButton
                 title="Προηγούμενο"
-                backgroundColor="var(--color-text-muted)"
+                backgroundColor="transparent"
                 width="fit-content"
                 disabled={selectedStep === 0}
                 onClick={moveToPreviousStep}
+                sx={{
+                  color: 'var(--color-dark)',
+                  border: '1px solid var(--color-dark)',
+                  '&:hover': { backgroundColor: 'transparent' },
+                }}
               />
               <CustomButton
                 title="Επόμενο"
                 width="fit-content"
                 disabled={!canGoNext}
                 onClick={moveToNextStep}
+                sx={{
+                  backgroundColor: 'var(--color-dark)',
+                  color: '#fff',
+                  border: '1px solid var(--color-dark)',
+                  '&:hover': { backgroundColor: 'var(--color-dark)' },
+                }}
               />
             </div>
           )}

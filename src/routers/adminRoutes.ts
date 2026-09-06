@@ -1,8 +1,9 @@
+import { createElement } from 'react';
 import { createRoute } from '@tanstack/react-router';
 import RoleBasedLayout from '../layouts/RoleBasedLayout';
 import DashboardPage from '../pages/adminPages/AdminDashboardPage';
 import AdminUsersPage from '../pages/adminPages/users/AdminUsersPage';
-import UserCreation from '../pages/adminPages/users/UserCreation';
+import UserCreation from '../pages/adminPages/users/AdminUserDetailedPage';
 import UserPage from '../pages/userPages/UserPage';
 import AdminSellersPage from '../pages/adminPages/sellers/AdminSellersPage';
 import AdminSellerEditPage from '../pages/adminPages/sellers/AdminSellerEditPage';
@@ -21,6 +22,7 @@ import DesignRequestFormPage from '../pages/adminPages/requests/DesignRequestFor
 import CreateMarketPeriodPage from '../pages/adminPages/requests/CreateMarketPeriodPage';
 import AdminSellerPartisipationsPage from '../pages/adminPages/sellers/AdminSellerPartisipationsPage';
 import { requireAuth, rootRoute } from './baseRoutes';
+import AdminUserDetailedPage from '../pages/adminPages/users/AdminUserDetailedPage';
 
 export const protectedRoute = createRoute({
   getParentRoute: () => rootRoute,
@@ -50,13 +52,13 @@ export const usersRoute = createRoute({
 export const userCreateRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/admin/users/new',
-  component: UserCreation,
+  component: () => createElement(AdminUserDetailedPage, { isCreation: true }),
 });
 
 export const userDetailRoute = createRoute({
   getParentRoute: () => protectedRoute,
   path: '/admin/users/$id',
-  component: UserPage,
+  component: () => createElement(AdminUserDetailedPage, { isCreation: false }),
 });
 
 export const sellersRoute = createRoute({

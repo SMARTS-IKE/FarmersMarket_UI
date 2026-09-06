@@ -82,8 +82,28 @@ export default function FilterBar({
   };
 
   return (
-    <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 2, flexWrap: "wrap" }}>
-      <Box sx={{ display: "flex", alignItems: "center", gap: 2, flexWrap: "wrap", flex: "1 1 auto", minWidth: 0 }}>
+    <Box
+      sx={{
+        display: 'flex',
+        alignItems: 'flex-start',
+        justifyContent: 'flex-start',
+        gap: 2,
+        flexWrap: 'wrap',
+        width: '100%',
+        textAlign: 'left',
+      }}
+    >
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 2,
+          flexWrap: 'wrap',
+          flex: '1 1 auto',
+          minWidth: 0,
+          justifyContent: 'flex-start',
+        }}
+      >
         {customFilters}
         {fields.map((f) => {
           if (f.type === "custom") return <React.Fragment key={f.name}>{f.component}</React.Fragment>;
@@ -91,9 +111,9 @@ export default function FilterBar({
           const inputType = mapType(f.type);
 
           return (
-            <div key={f.name} style={{ minWidth: 120, flex: '0 0 auto' }}>
+            <div key={f.name} style={{ minWidth: 120, flex: '0 0 auto', textAlign: 'left' }}>
               <CustomInputField
-                width="250px"
+                width="300px"
                 type={inputType as any}
                 label={f.label}
                 placeholder={f.placeholder}
@@ -106,7 +126,16 @@ export default function FilterBar({
         })}
       </Box>
 
-      <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+      <Box
+        sx={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'flex-start',
+          gap: 2,
+          flexWrap: 'wrap',
+          marginLeft: 0,
+        }}
+      >
         {extraActions}
         {showClearButton && (
           <CustomButton
@@ -122,7 +151,17 @@ export default function FilterBar({
           />
         )}
         {showSearchButton && (
-          <CustomButton title={searchLabel} onClick={handleSearch} width={110} />
+          <CustomButton
+            title={searchLabel}
+            onClick={handleSearch}
+            width={110}
+            sx={{
+              backgroundColor: 'var(--color-dark)',
+              color: '#fff',
+              border: '1px solid var(--color-dark)',
+              '&:hover': { backgroundColor: 'var(--color-dark)' },
+            }}
+          />
         )}
       </Box>
     </Box>

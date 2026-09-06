@@ -11,6 +11,7 @@ import {
 } from '../../queries/userQueries';
 import { useGlobalEnums } from '../../shared/mappings/GlobalEnums';
 import { useSellerQuery, useAllSellersQuery } from '../../queries/sellerQueries';
+import { updateSeller } from '../../services/sellerService';
 import CustomInputField from '../../shared/components/CustomInputField';
 import { USER_ROLE_MAPPING_TITLES } from '../../shared/mappings/users.mapping';
 
@@ -61,9 +62,13 @@ export default function UserPage() {
   const reinitializePasswordMutation = useReinitializeUserPasswordMutation(userId);
   const [firstName, setFirstName] = useState('');
   const [lastName, setLastName] = useState('');
+  const [phone, setPhone] = useState('');
+  const [address, setAddress] = useState('');
   const [status, setStatus] = useState<number>(0);
   const [initialFirstName, setInitialFirstName] = useState('');
   const [initialLastName, setInitialLastName] = useState('');
+  const [initialPhone, setInitialPhone] = useState('');
+  const [initialAddress, setInitialAddress] = useState('');
   const [initialStatus, setInitialStatus] = useState<number>(0);
   const [selectedRoles, setSelectedRoles] = useState<string[]>([]);
   const [initialSelectedRoles, setInitialSelectedRoles] = useState<string[]>([]);
@@ -111,7 +116,7 @@ export default function UserPage() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [explicitSellerId, user, authUser, allSellersQuery.data]);
 
-  const sellerId = resolvedSellerId;
+  const sellerId = String(resolvedSellerId || (user as any)?.sellerId || authUser?.sellerId || '');
   const { data: seller, isLoading: isSellerLoading } = useSellerQuery(sellerId);
 
   useEffect(() => {
@@ -120,18 +125,24 @@ export default function UserPage() {
     const nextLastName = user.lastName ?? '';
     const nextStatus = typeof user.status === 'number' ? Number(user.status) : 0;
     const nextRoles = user.roles ?? [];
+    const nextPhone = seller?.phone ?? '';
+    const nextAddress = seller?.address ?? '';
     setFirstName(nextFirstName);
     setLastName(nextLastName);
+    setPhone(nextPhone);
+    setAddress(nextAddress);
     setStatus(nextStatus);
     setSelectedRoles(nextRoles);
     setInitialFirstName(nextFirstName);
     setInitialLastName(nextLastName);
+    setInitialPhone(nextPhone);
+    setInitialAddress(nextAddress);
     setInitialStatus(nextStatus);
     setInitialSelectedRoles(nextRoles);
     setIsNavigationLocked(false);
     allowProgrammaticNavigationRef.current = false;
     setErrors({});
-  }, [user]);
+  }, [user, seller]);
 
   const isSavingUser = updateUserMutation.isPending;
   const isUpdatingRole = assignRoleMutation.isPending || removeRoleMutation.isPending;
@@ -147,6 +158,8 @@ export default function UserPage() {
   const hasUserChanges =
     firstName !== initialFirstName ||
     lastName !== initialLastName ||
+    phone !== initialPhone ||
+    address !== initialAddress ||
     status !== initialStatus;
   const hasPendingChanges = hasUserChanges || hasRoleChanges;
   const currentRoleKey = selectedRoles[0] ?? initialSelectedRoles[0] ?? '';
@@ -180,25 +193,45 @@ export default function UserPage() {
     setErrors({});
 
     try {
+      const sellerUpdateId = String((user as any)?.sellerId ?? authUser?.sellerId ?? seller?.id ?? resolvedSellerId ?? '');
+
       await updateUserMutation.mutateAsync({
         firstName: firstName.trim(),
         lastName: lastName.trim(),
         status,
       });
 
-      await Promise.all([
-        ...rolesToAdd.map((role) => assignRoleMutation.mutateAsync({ role })),
-        ...rolesToRemove.map((role) => removeRoleMutation.mutateAsync(role)),
-      ]);
+      if (sellerUpdateId) {
+        await updateSeller(sellerUpdateId, {
+          seller: {
+            phone: phone.trim(),
+            address: address.trim(),
+          },
+          license: {
+            fromDate: seller?.currentLicense?.fromDate ?? '',
+            sellerType: Number(seller?.sellerType ?? seller?.currentLicense?.sellerType ?? 0),
+            isSeasonal: Boolean(seller?.currentLicense?.isSeasonal),
+            seasonalFromDate: seller?.currentLicense?.seasonalFromDate ?? '',
+            seasonalToDate: seller?.currentLicense?.seasonalToDate ?? '',
+            licenseCategory: Number(seller?.currentLicense?.licenseCategory ?? 0),
+            licenseStatus: Number(seller?.currentLicense?.licenseStatus ?? 0),
+            licenseNumber: seller?.currentLicense?.licenseNumber ?? '',
+            licenseExpiry: seller?.currentLicense?.licenseExpiry ?? seller?.currentLicense?.toDate ?? '',
+            notes: seller?.currentLicense?.notes ?? '',
+          },
+        });
+      }
 
       setInitialFirstName(firstName);
       setInitialLastName(lastName);
+      setInitialPhone(phone);
+      setInitialAddress(address);
       setInitialStatus(status);
       setInitialSelectedRoles(selectedRoles);
       setIsNavigationLocked(false);
       setAuthNotification({
         type: 'success',
-        message: 'Οι αλλαγές χρήστη και ρόλων αποθηκεύτηκαν.',
+        message: 'Οι αλλαγές αποθηκεύτηκαν.',
       });
       allowProgrammaticNavigationRef.current = true;
       navigate({ to: '/admin/users' });
@@ -210,6 +243,8 @@ export default function UserPage() {
   function handleCancel() {
     setFirstName(initialFirstName);
     setLastName(initialLastName);
+    setPhone(initialPhone);
+    setAddress(initialAddress);
     setStatus(initialStatus);
     setSelectedRoles(initialSelectedRoles);
     setErrors({});
@@ -313,8 +348,8 @@ export default function UserPage() {
     }
 
     return (
-      <div className="min-h-screen p-6 md:px-10 bg-transparent">
-        <div className="mx-auto max-w-5xl">
+      <div className="min-h-screen p-4 md:px-8 bg-transparent">
+        <div className="mx-auto max-w-5xl ">
           <div className="mb-8">
             <h2 className="text-2xl font-semibold text-(--color-text-heading) mb-2">Στοιχεία Πωλητή</h2>
             <p className="text-sm text-(--color-text-muted)">Προβολή στοιχείων πωλητή</p>
@@ -324,10 +359,10 @@ export default function UserPage() {
             <div className="flex flex-col gap-4">
               <div className="grid grid-cols-2 gap-3 mt-2">
                 <div className="flex flex-col gap-1">
-                  <CustomInputField type="TEXT" label="Όνομα" value={seller.firstName ?? ''} disabled width="100%" />
+                  <CustomInputField type="TEXT" label="Όνομα" value={seller.firstName ?? ''} width="100%" />
                 </div>
                 <div className="flex flex-col gap-1">
-                  <CustomInputField type="TEXT" label="Επώνυμο" value={seller.lastName ?? ''} disabled width="100%" />
+                  <CustomInputField type="TEXT" label="Επώνυμο" value={seller.lastName ?? ''} width="100%" />
                 </div>
               </div>
 
@@ -385,14 +420,14 @@ export default function UserPage() {
   }
 
   return (
-    <div className="min-h-screen p-6 md:px-10 bg-transparent">
+    <div className="min-h-screen p-4 md:px-6 bg-transparent ove">
       <div className="mx-auto max-w-5xl" >
         <div className="mb-8">
           <h2 className="text-2xl font-semibold text-(--color-text-heading) mb-2">Στοιχεία χρήστη</h2>
           <p className="text-sm text-(--color-text-muted)">Επεξεργασία στοιχείων χρήστη</p>
         </div>
 
-        <div style={{maxHeight: '70vh', overflowY: 'auto'}}>
+        <div style={{maxHeight: '70vh', overflowY: 'auto', overflowX: 'hidden'}}>
           <form className="flex flex-col gap-4" onSubmit={(e) => { e.preventDefault(); handleSave(); }} noValidate>
             {errors.form && (
               <div
@@ -405,28 +440,26 @@ export default function UserPage() {
 
             <div className="grid grid-cols-2 gap-3 mt-2">
               {/* Top rows: user + seller fields laid out in two columns to match design */}
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex flex-col gap-1">
-                  <CustomInputField
-                    type="TEXT"
-                    label="Όνομα"
-                    value={firstName}
-                    placeholder="Όνομα"
-                    onChange={(v) => setFirstName(String(v ?? ''))}
-                    width="100%"
-                  />
-                </div>
+              <div className="flex flex-col gap-1">
+                <CustomInputField
+                  type="TEXT"
+                  label="Όνομα"
+                  value={firstName}
+                  placeholder="Όνομα"
+                  onChange={(v) => setFirstName(String(v ?? ''))}
+                  width="100%"
+                />
+              </div>
 
-                <div className="flex flex-col gap-1">
-                  <CustomInputField
-                    type="TEXT"
-                    label="Επώνυμο"
-                    value={lastName}
-                    placeholder="Επώνυμο"
-                    onChange={(v) => setLastName(String(v ?? ''))}
-                    width="100%"
-                  />
-                </div>
+              <div className="flex flex-col gap-1">
+                <CustomInputField
+                  type="TEXT"
+                  label="Επώνυμο"
+                  value={lastName}
+                  placeholder="Επώνυμο"
+                  onChange={(v) => setLastName(String(v ?? ''))}
+                  width="100%"
+                />
               </div>
             </div>
 
@@ -436,31 +469,52 @@ export default function UserPage() {
                   SellerTypeLabels[
                     Number((seller?.sellerType !== undefined && seller?.sellerType !== '') ? seller?.sellerType : (seller?.currentLicense?.sellerType ?? ''))
                   ] ?? String((seller?.sellerType !== undefined && seller?.sellerType !== '') ? seller?.sellerType : (seller?.currentLicense?.sellerType ?? ''))
-                } disabled width="100%" />
+                } width="100%" />
               </div>
 
               <div className="flex flex-col gap-1">
-                <CustomInputField type="TEXT" label="ΑΦΜ" value={seller?.afm ?? ''} disabled width="100%" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3">
-              <div className="flex flex-col gap-1">
-                <CustomInputField type="TEXT" label="Email" value={seller?.email ?? user.email ?? ''} disabled width="100%" />
-              </div>
-
-              <div className="flex flex-col gap-1">
-                <CustomInputField type="TEXT" label="Τηλέφωνο" value={seller?.phone ?? ''} disabled width="100%" />
+                <CustomInputField type="TEXT" label="ΑΦΜ" value={seller?.afm ?? ''} width="100%" />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div className="flex flex-col gap-1">
-                <CustomInputField type="TEXT" label="Διεύθυνση" value={seller?.address ?? ''} disabled width="100%" />
+                <CustomInputField type="TEXT" label="Email" value={seller?.email ?? user.email ?? ''} width="100%" />
               </div>
 
               <div className="flex flex-col gap-1">
-                <CustomInputField type="TEXT" label="Ρόλος χρήστη" value={currentRoleTitle} disabled width="100%" />
+                <CustomInputField
+                  type="TEXT"
+                  label="Τηλέφωνο"
+                  value={phone}
+                  placeholder="Τηλέφωνο"
+                  onChange={(v) => setPhone(String(v ?? ''))}
+                  width="100%"
+                />
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3">
+              <div className="flex flex-col gap-1">
+                <CustomInputField
+                  type="TEXT"
+                  label="Διεύθυνση"
+                  value={address}
+                  placeholder="Διεύθυνση"
+                  onChange={(v) => setAddress(String(v ?? ''))}
+                  width="100%"
+                />
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <CustomInputField
+                  type="DROPDOWN"
+                  label="Ρόλος χρήστη"
+                  value={selectedRoles[0] || ''}
+                  dropdownItems={ROLE_KEYS.map((roleKey, index) => ({ value: roleKey, label: ROLE_OPTIONS[index] }))}
+                  onChange={(v) => handleRoleToggle(String(v ?? ''))}
+                  width="100%"
+                />
               </div>
             </div>
 
@@ -488,15 +542,18 @@ export default function UserPage() {
 
             {/* License block */}
             <div className="mt-6">
-              <h3 className="text-xl font-semibold text-(--color-text-heading) mb-3">Άδεια</h3>
+              <h3 className="text-xl font-semibold text-(--color-text-heading) mb-3">
+                Άδεια
+                <div className="flex items-center gap-2 mt-3">
+                  <input type="checkbox" checked={!!seller?.currentLicense?.isSeasonal} />
+                  <label className="text-sm">Περιορισμένης διάρκειας</label>
+                </div>
+              </h3>
+
               <div className="grid grid-cols-3 gap-3 items-end">
-                <CustomInputField type="TEXT" label="Αριθμός" value={seller?.currentLicense?.licenseNumber ?? ''} disabled width="100%" />
-                <CustomInputField type="DATE" label="Από" value={seller?.currentLicense?.fromDate ?? ''} disabled width="100%" />
-                <CustomInputField type="DATE" label="Έως" value={seller?.currentLicense?.toDate ?? seller?.currentLicense?.licenseExpiry ?? ''} disabled width="100%" />
-              </div>
-              <div className="flex items-center gap-2 mt-3">
-                <input type="checkbox" disabled checked={!!seller?.currentLicense?.isSeasonal} />
-                <label className="text-sm">Περιορισμένης διάρκειας</label>
+                <CustomInputField type="TEXT" label="Αριθμός" value={seller?.currentLicense?.licenseNumber ?? ''} width="100%" />
+                <CustomInputField type="DATE" label="Από" value={seller?.currentLicense?.fromDate ?? ''} width="100%" />
+                <CustomInputField type="DATE" label="Έως" value={seller?.currentLicense?.toDate ?? seller?.currentLicense?.licenseExpiry ?? ''} width="100%" />
               </div>
             </div>
 
@@ -514,26 +571,21 @@ export default function UserPage() {
 
               <div className="flex flex-col gap-1">
                 <CustomInputField
-                  type="DROPDOWN"
+                  type="TEXT"
                   label="Κατάσταση"
-                  value={String(status)}
-                  dropdownItems={Object.keys(UserStatus || {})
-                    .filter((k) => isNaN(Number(k)))
-                    .map((name) => {
-                      const val = (UserStatus as any)[name] as number;
-                      return { value: String(val), label: UserStatusLabels?.[val] ?? name };
-                    })}
-                  onChange={(v) => setStatus(Number(v ?? 0))}
+                  value={UserStatusLabels?.[status] ?? String(status)}
                   width="100%"
+                  disabled
                 />
               </div>
-          
+            </div>
 
-            <div className="flex gap-3 mb-4">
+            
+             <div className="flex gap-3 mb-4 w-full justify-end">
               <button
                 type="submit"
                 disabled={isSavingUser || isUpdatingRole || isReinitializingPassword}
-                className="w-full py-3 px-4 text-[15px] font-semibold rounded-lg bg-(--color-text) text-white transition hover:brightness-90 active:brightness-75 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                className="w-50 py-3 px-4 text-[15px] font-semibold rounded-lg bg-(--color-text) text-white transition hover:brightness-90 active:brightness-75 disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
               >
                 {isSavingUser || isUpdatingRole ? 'Αποθήκευση...' : 'Αποθήκευση'}
               </button>
@@ -541,11 +593,10 @@ export default function UserPage() {
                 type="button"
                 onClick={handleCancel}
                 disabled={isSavingUser}
-                className="w-full py-3 px-4 text-[15px] font-semibold rounded-lg bg-transparent border border-(--color-text-muted) text-(--color-text-heading) transition hover:bg-(--color-bg-hover) disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+                className="w-50 py-3 px-4 text-[15px] font-semibold rounded-lg bg-transparent border border-(--color-text-muted) text-(--color-text-heading) transition hover:bg-(--color-bg-hover) disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
               >
                 Ακύρωση
               </button>
-            </div>
             </div>
           </form>
         </div>
