@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import CustomButton from "../../../shared/components/CustomButton";
+import ExportSelector from '../../../shared/components/ExportSelector';
 import { useNavigate } from "@tanstack/react-router";
 import { Snackbar, Alert } from '@mui/material';
 import { consumeAuthNotification } from '../../../lib/authNotifications';
@@ -7,6 +9,7 @@ import type { Seller, SellerSearchRequest, SellerType } from "../../../models/se
 import { useSellersQuery } from "../../../queries/sellerQueries";
 import { SELLER_TYPE_LABELS } from "../../../components/sellers/sellers.utils";
 import { useGlobalEnums } from '../../../shared/mappings/GlobalEnums';
+import { useAuthStore } from '../../../store/authStore';
 import RestartAltIcon from "@mui/icons-material/RestartAlt";
 
 
@@ -39,6 +42,8 @@ const tableFilters: FilterDef[] = [
 ];
 
 export default function AdminSellersPage() {
+  const { ExportFormatLabels } = useGlobalEnums();
+  const [exportFormat, setExportFormat] = useState<string>('xlsx');
   const navigate = useNavigate();
   const { UserStatusLabels, UserStatus } = useGlobalEnums();
   const [notificationMessage, setNotificationMessage] = useState("");
@@ -111,8 +116,42 @@ export default function AdminSellersPage() {
     },
   ];
 
+  
+
+  const openCreateUser = () => navigate({ to: "/admin/sellers/new" });
+
   return (
     <div className="flex h-full flex-col gap-6 text-left">
+      <div className="flex items-center justify-between">
+        <ExportSelector onExport={async (format) => {
+          try {
+            const authToken = useAuthStore.getState().token;
+            const qs = new URLSearchParams();
+            if (filters.name) qs.set('name', String(filters.name));
+            if (filters.afm) qs.set('afm', String(filters.afm));
+            if (filters.sellerType !== undefined && filters.sellerType !== '') qs.set('sellerType', String(filters.sellerType));
+            qs.set('page', '1'); qs.set('pageSize', '10000');
+            const BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
+            const url = `${BASE_URL}/sellers?${qs.toString()}&format=${encodeURIComponent((format||'xlsx').toLowerCase())}`;
+            const resp = await fetch(url, { method: 'GET', headers: { ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}) } });
+            if (!resp.ok) { const t = await resp.text().catch(()=> 'Export failed'); throw new Error(t); }
+            const blob = await resp.blob();
+            const disposition = resp.headers.get('Content-Disposition') || '';
+            let filename = `sellers.${format}`;
+            const match = disposition.match(/filename\*=UTF-8''(.+)|filename="?([^";]+)"?/);
+            if (match) filename = decodeURIComponent(match[1] || match[2]);
+            const downloadUrl = window.URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = downloadUrl; a.download = filename; document.body.appendChild(a); a.click(); a.remove(); window.URL.revokeObjectURL(downloadUrl);
+          } catch (e) {
+            // eslint-disable-next-line no-console
+            console.error('Export failed', e);
+            alert('Η εξαγωγή απέτυχε.');
+          }
+        }} />
+        <div>
+          <CustomButton title="Νέος Χρήστης" onClick={openCreateUser} />
+        </div>
+      </div>
 
       <DataTable<Seller>
           rows={sellers}

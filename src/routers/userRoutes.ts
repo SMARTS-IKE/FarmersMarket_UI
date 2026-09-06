@@ -9,6 +9,7 @@ import UserRequestCreationDetailsPage from '../pages/userPages/UserRequestCreati
 import UserRequestCreationPage from '../pages/userPages/UserRequestCreationPage';
 import UserMarketsPage from '../pages/userPages/UserMarketsPage';
 import AdminSubmittedRequestPage from '../pages/adminPages/requests/AdminSubmittedRequestPage';
+import UserCharges from '../pages/userPages/UserCharges';
 import { requireAuth, requireUserRole, rootRoute } from './baseRoutes';
 import { useAuthStore } from '../store/authStore';
 import { getSellers } from '../services/sellerService';
@@ -125,5 +126,10 @@ export const userRouteTree = userProtectedRoute.addChildren([
     getParentRoute: () => userProtectedRoute,
     path: '/users/requests/{$id}',
     component: AdminSubmittedRequestPage,
+  }),
+  createRoute({
+    getParentRoute: () => userProtectedRoute,
+    path: '/users/fees',
+    component: UserCharges
   }),
 ]);

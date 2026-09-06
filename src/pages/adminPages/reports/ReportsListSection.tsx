@@ -37,12 +37,15 @@ export default function ReportsListSection({ reports, fromDate, toDate, period }
     }
     return fallbackKeys.map((k) => (
       <option key={String(k)} value={String(k)}>
-        {`Value-${String(k)}`}
+        {'Value-' + String(k)}
       </option>
     ));
   };
 
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const SAVED_REPORTS_KEY = 'fm_saved_reports_v1';
+  const [savedReports, setSavedReports] = useState<Array<{ name: string; payload: any }>>([]);
+  const [saveName, setSaveName] = useState<string>('');
   const [selectedField, setSelectedField] = useState<string>("Πωλητές");
   const [sellerLicenseCategory, setSellerLicenseCategory] = useState<string>("");
   const [sellerLicenseStatus, setSellerLicenseStatus] = useState<string>("");
@@ -116,6 +119,58 @@ export default function ReportsListSection({ reports, fromDate, toDate, period }
     fetchResults(1, 10, payload);
     closeModal();
   }
+
+  // localStorage helpers
+  const loadSavedReports = () => {
+    try {
+      const raw = localStorage.getItem(SAVED_REPORTS_KEY);
+      if (!raw) return setSavedReports([]);
+      const parsed = JSON.parse(raw) as Array<{ name: string; payload: any }>;
+      setSavedReports(parsed || []);
+    } catch (e) {
+      setSavedReports([]);
+    }
+  };
+
+  const persistSavedReports = (items: Array<{ name: string; payload: any }>) => {
+    try {
+      localStorage.setItem(SAVED_REPORTS_KEY, JSON.stringify(items));
+      setSavedReports(items);
+    } catch (e) {
+      // ignore
+    }
+  };
+
+  const handleSavePayload = (payload: any) => {
+    if (!saveName || !payload) return alert('Παρακαλώ δώστε όνομα και ρυθμίσεις πριν αποθηκεύσετε.');
+    const existing = savedReports.filter((s) => s.name !== saveName);
+    const next = [...existing, { name: saveName, payload }];
+    persistSavedReports(next);
+    setSaveName('');
+    closeModal();
+  };
+
+  const handleSelectSaved = (name: string) => {
+    const found = savedReports.find((s) => s.name === name);
+    if (!found) return;
+    setLastPayload(found.payload);
+    fetchResults(1, 10, found.payload);
+  };
+
+  const handleDeleteSaved = (name: string) => {
+    const next = savedReports.filter((s) => s.name !== name);
+    persistSavedReports(next);
+  };
+
+  const buildCurrentPayload = () => {
+    if (!selectedField) return { field: selectedField, filters: {} };
+    if (selectedField === 'Πωλητές') return { field: selectedField, filters: { licenseCategory: sellerLicenseCategory, licenseStatus: sellerLicenseStatus, sellerType } };
+    if (selectedField === 'Αγορές') return { field: selectedField, filters: { fromDate: fromDate ?? null, toDate: toDate ?? null, isActive: marketIsActive, area: marketArea } };
+    if (selectedField === 'Αιτήματα') return { field: selectedField, filters: { fromDate: fromDate ?? null, toDate: toDate ?? null, status: requestStatus } };
+    if (selectedField === 'Χρεώσεις') { const { month, year } = deriveMonthYear(); return { field: selectedField, filters: { status: chargeStatus, exportedToFinance: chargeExportedToFinance, ...(month ? { month } : {}), year: year ?? null } };
+    }
+    return { field: selectedField, filters: {} };
+  };
 
   const [tableItems, setTableItems] = useState<any[]>(reports ?? []);
   const [totalItems, setTotalItems] = useState<number | null>(null);
@@ -256,10 +311,24 @@ export default function ReportsListSection({ reports, fromDate, toDate, period }
   }
 
   useEffect(() => {
-    // initialize with provided reports prop
-    setTableItems(reports ?? []);
-    setTotalItems(reports?.length ?? null);
-  }, [reports]);
+    loadSavedReports();
+    // initialize with provided reports prop only if a report payload was created
+    if (lastPayload) {
+      setTableItems(reports ?? []);
+      setTotalItems(reports?.length ?? null);
+    } else {
+      setTableItems([]);
+      setTotalItems(null);
+    }
+  }, [reports, lastPayload]);
+
+  // Clear current list when the selected period changes
+  useEffect(() => {
+    setTableItems([]);
+    setTotalItems(null);
+    setLastPayload(undefined);
+    setPage(1);
+  }, [period]);
 
   const sellerColumns: ColumnDef<any>[] = useMemo(() => [
     { key: "firstName", label: "Όνομα" },
@@ -334,181 +403,184 @@ export default function ReportsListSection({ reports, fromDate, toDate, period }
     'Χρεώσεις': chargesColumns,
   };
 
+  const hasSelectedField = Boolean(selectedField);
+  const effectiveTotal = typeof totalItems === 'number' ? totalItems : tableItems.length;
+  const isExportDisabled = loadingResults || !hasSelectedField || effectiveTotal === 0;
+
   return (
-    <div className="rounded-[20px] border border-(--color-border) bg-(--color-surface) p-5">
+    <div className="rounded-[20px] border border-(--color-border) p-5" style={{ backgroundColor: 'var(--color-surface)' }}>
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <p className="text-sm font-semibold uppercase tracking-[0.1em] text-(--color-text-muted)">Αναφορές</p>
-          <p className="mt-1 text-sm text-(--color-text-muted)">Κατάλογος διαθέσιμων αναφορών και εξαγωγών.</p>
+          <p className="text-sm font-semibold uppercase tracking-[0.1em]" style={{ color: 'var(--color-text-muted)' }}>Αναφορές</p>
+          <p className="mt-1 text-sm" style={{ color: 'var(--color-text-muted)' }}>Κατάλογος διαθέσιμων αναφορών και εξαγωγών.</p>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-          <select value={exportFormat} onChange={(e) => setExportFormat(e.target.value)} className="rounded border px-2 py-1 text-sm">
+          <select value={exportFormat} onChange={(e) => setExportFormat(e.target.value)} className="rounded border px-2 py-1 text-sm" style={{ borderColor: 'var(--color-border)' }}>
             <option value="xlsx">XLSX</option>
             <option value="csv">CSV</option>
             <option value="pdf">PDF</option>
           </select>
-          <CustomButton title="Export to" backgroundColor="var(--color-surface)" width={120} onClick={handleExport} />
+          <CustomButton title="Export" backgroundColor="var(--color-surface)" width={120} onClick={handleExport} disabled={isExportDisabled} />
           <CustomButton title="Νέα Αναφορά" backgroundColor="var(--color-primary)" width={140} onClick={openModal} />
         </div>
       </div>
 
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div className="absolute inset-0 bg-black/40" onClick={closeModal} />
-          <div className="relative z-10 w-full max-w-md rounded-lg bg-(--color-surface) p-5" style={{ backgroundColor: 'var(--color-surface)' }}>
-            <h3 className="mb-3 text-lg font-semibold text-(--color-text-heading)">Νέα Αναφορά - Επιλογή Πεδίου</h3>
-            <label className="mb-2 block text-sm text-(--color-text)">Επιλέξτε πεδίο</label>
-            <select
-              value={selectedField}
-              onChange={(e) => setSelectedField(e.target.value)}
-              className="mb-4 w-full rounded border border-(--color-border) bg-transparent px-3 py-2 text-sm"
-            >
-              <option value="Πωλητές">Πωλητές</option>
-              <option value="Αγορές">Αγορές</option>
-              <option value="Αιτήματα">Αιτήματα</option>
-              <option value="Χρεώσεις">Χρεώσεις</option>
-            </select>
+        <div className="fixed inset-0 flex items-center justify-center" style={{ zIndex: 9990 }}>
+          <div className="absolute inset-0" onClick={closeModal} style={{ backgroundColor: 'rgba(0,0,0,0.4)', zIndex: 9990 }} />
+            <div className="relative w-full max-w-md rounded-lg p-5" style={{ backgroundColor: 'rgba(255,255,255,0.98)', boxShadow: '0 8px 24px rgba(0,0,0,0.2)', zIndex: 9999 }}>
+              <h3 className="mb-3 text-lg font-semibold" style={{ color: 'var(--color-text-heading)' }}>Νέα Αναφορά - Επιλογή Πεδίου</h3>
 
-            {selectedField === "Πωλητές" && (
-              <div className="space-y-3">
-                <label className="block text-sm text-(--color-text)">Κατηγορία Άδειας</label>
-                <select
-                  value={sellerLicenseCategory}
-                  onChange={(e) => setSellerLicenseCategory(e.target.value)}
-                  className="w-full rounded border border-(--color-border) bg-transparent px-3 py-2 text-sm"
-                >
-                  <option value="">Όλοι</option>
-                  {renderOptions(LicenseCategoryLabels, [0, 1, 2])}
-                </select>
+              <label className="mb-2 block text-sm" style={{ color: 'var(--color-text)' }}>Επιλέξτε πεδίο</label>
+              <select
+                value={selectedField}
+                onChange={(e) => {
+                  const v = e.target.value;
+                  setSelectedField(v);
+                  setTableItems([]);
+                  setTotalItems(null);
+                  setLastPayload(undefined);
+                }}
+                className="mb-4 w-full rounded border px-3 py-2 text-sm"
+                style={{ borderColor: 'var(--color-border)', backgroundColor: 'rgba(255,255,255,0.98)' }}
+              >
+                <option value="Πωλητές">Πωλητές</option>
+                <option value="Αγορές">Αγορές</option>
+                <option value="Αιτήματα">Αιτήματα</option>
+                <option value="Χρεώσεις">Χρεώσεις</option>
+              </select>
 
-                <label className="block text-sm text-(--color-text)">Κατάσταση Άδειας</label>
-                <select
-                  value={sellerLicenseStatus}
-                  onChange={(e) => setSellerLicenseStatus(e.target.value)}
-                  className="w-full rounded border border-(--color-border) bg-transparent px-3 py-2 text-sm"
-                >
-                  <option value="">Όλοι</option>
-                  {renderOptions(LicenseStatusLabels, [0, 1, 2, 3])}
-                </select>
+              {/* Field-specific filters */}
+              {selectedField === 'Πωλητές' && (
+                <div className="space-y-3">
+                  <label className="block text-sm" style={{ color: 'var(--color-text)' }}>Κατηγορία Άδειας</label>
+                  <select value={sellerLicenseCategory} onChange={(e) => setSellerLicenseCategory(e.target.value)} className="w-full rounded border px-3 py-2 text-sm" style={{ borderColor: 'var(--color-border)' }}>
+                    <option value="">Όλοι</option>
+                    {renderOptions(LicenseCategoryLabels, [0, 1, 2])}
+                  </select>
 
-                <label className="block text-sm text-(--color-text)">Τύπος Πωλητή</label>
-                <select
-                  value={sellerType}
-                  onChange={(e) => setSellerType(e.target.value)}
-                  className="w-full rounded border border-(--color-border) bg-transparent px-3 py-2 text-sm"
-                >
-                  <option value="">Όλοι</option>
-                  {renderOptions(SellerTypeLabels, [0, 1, 2])}
-                </select>
-              </div>
-            )}
+                  <label className="block text-sm" style={{ color: 'var(--color-text)' }}>Κατάσταση Άδειας</label>
+                  <select value={sellerLicenseStatus} onChange={(e) => setSellerLicenseStatus(e.target.value)} className="w-full rounded border px-3 py-2 text-sm" style={{ borderColor: 'var(--color-border)' }}>
+                    <option value="">Όλοι</option>
+                    {renderOptions(LicenseStatusLabels, [0, 1, 2, 3])}
+                  </select>
 
-            {selectedField === "Αγορές" && (
-              <div className="space-y-3">
-                <p className="text-sm text-(--color-text-muted)">Η περίοδος χρησιμοποιείται από την επιλογή στην κορυφή της σελίδας.</p>
-                <label className="block text-sm text-(--color-text)">Ενεργό</label>
-                <select
-                  value={marketIsActive}
-                  onChange={(e) => setMarketIsActive(e.target.value)}
-                  className="w-full rounded border border-(--color-border) bg-transparent px-3 py-2 text-sm"
-                >
-                  <option value="">Όλοι</option>
-                  <option value="true">Ναι</option>
-                  <option value="false">Όχι</option>
-                </select>
+                  <label className="block text-sm" style={{ color: 'var(--color-text)' }}>Τύπος Πωλητή</label>
+                  <select value={sellerType} onChange={(e) => setSellerType(e.target.value)} className="w-full rounded border px-3 py-2 text-sm" style={{ borderColor: 'var(--color-border)' }}>
+                    <option value="">Όλοι</option>
+                    {renderOptions(SellerTypeLabels, [0, 1, 2])}
+                  </select>
+                </div>
+              )}
 
-                <label className="block text-sm text-(--color-text)">Περιοχή</label>
-                <input
-                  type="text"
-                  value={marketArea}
-                  onChange={(e) => setMarketArea(e.target.value)}
-                  className="w-full rounded border border-(--color-border) bg-transparent px-3 py-2 text-sm"
-                />
-              </div>
-            )}
+              {selectedField === 'Αγορές' && (
+                <div className="space-y-3">
+                  <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Η περίοδος χρησιμοποιείται από την επιλογή στην κορυφή της σελίδας.</p>
+                  <label className="block text-sm" style={{ color: 'var(--color-text)' }}>Ενεργό</label>
+                  <select value={marketIsActive} onChange={(e) => setMarketIsActive(e.target.value)} className="w-full rounded border px-3 py-2 text-sm" style={{ borderColor: 'var(--color-border)' }}>
+                    <option value="">Όλοι</option>
+                    <option value="true">Ναι</option>
+                    <option value="false">Όχι</option>
+                  </select>
 
-            {selectedField === "Αιτήματα" && (
-              <div className="space-y-3">
-                <label className="block text-sm text-(--color-text)">Κατάσταση</label>
-                <select
-                  value={requestStatus}
-                  onChange={(e) => setRequestStatus(e.target.value)}
-                  className="w-full rounded border border-(--color-border) bg-transparent px-3 py-2 text-sm"
-                >
-                  <option value="">Όλοι</option>
+                  <label className="block text-sm" style={{ color: 'var(--color-text)' }}>Περιοχή</label>
+                  <input type="text" value={marketArea} onChange={(e) => setMarketArea(e.target.value)} className="w-full rounded border px-3 py-2 text-sm" style={{ borderColor: 'var(--color-border)' }} />
+                </div>
+              )}
+
+              {selectedField === 'Αιτήματα' && (
+                <div className="space-y-3">
+                  <label className="block text-sm" style={{ color: 'var(--color-text)' }}>Κατάσταση</label>
+                  <select value={requestStatus} onChange={(e) => setRequestStatus(e.target.value)} className="w-full rounded border px-3 py-2 text-sm" style={{ borderColor: 'var(--color-border)' }}>
+                    <option value="">Όλοι</option>
                     {renderOptions(RequestStatusLabels, [0, 1, 2, 3, 4])}
-                </select>
+                  </select>
+                  <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Η περίοδος χρησιμοποιείται από την επιλογή στην κορυφή της σελίδας.</p>
+                </div>
+              )}
 
-                {/* SellerId and MarketId inputs removed per UX decision */}
+              {selectedField === 'Χρεώσεις' && (
+                <div className="space-y-3">
+                  <label className="block text-sm" style={{ color: 'var(--color-text)' }}>Κατάσταση</label>
+                  <select value={chargeStatus} onChange={(e) => setChargeStatus(e.target.value)} className="w-full rounded border px-3 py-2 text-sm" style={{ borderColor: 'var(--color-border)' }}>
+                    <option value="">Όλοι</option>
+                    {renderOptions(ChargeStatusLabels, [0, 1, 2, 3, 4, 5])}
+                  </select>
 
-                <p className="text-sm text-(--color-text-muted)">Η περίοδος χρησιμοποιείται από την επιλογή στην κορυφή της σελίδας.</p>
+                  <label className="block text-sm" style={{ color: 'var(--color-text)' }}>Εξαγωγή σε Χρηματοοικονομικά</label>
+                  <select value={chargeExportedToFinance} onChange={(e) => setChargeExportedToFinance(e.target.value)} className="w-full rounded border px-3 py-2 text-sm" style={{ borderColor: 'var(--color-border)' }}>
+                    <option value="">Όλοι</option>
+                    <option value="true">Ναι</option>
+                    <option value="false">Όχι</option>
+                  </select>
+
+                  <p className="text-sm" style={{ color: 'var(--color-text-muted)' }}>Η περίοδος χρησιμοποιείται για τον υπολογισμό Μήνα/Έτους.</p>
+                </div>
+              )}
+
+              <div className="mt-4 flex justify-end gap-3">
+                <CustomButton title="Ακύρωση" backgroundColor="var(--color-surface)" width={120} onClick={closeModal} />
+                <CustomButton title="Δημιουργία" backgroundColor="var(--color-primary)" width={120} onClick={createReport} />
               </div>
-            )}
 
-            {selectedField === "Χρεώσεις" && (
-              <div className="space-y-3">
-                {/* SellerId and MarketId inputs removed per UX decision */}
-
-                <label className="block text-sm text-(--color-text)">Κατάσταση</label>
-                <select
-                  value={chargeStatus}
-                  onChange={(e) => setChargeStatus(e.target.value)}
-                  className="w-full rounded border border-(--color-border) bg-transparent px-3 py-2 text-sm"
-                >
-                  <option value="">Όλοι</option>
-                  {renderOptions(ChargeStatusLabels, [0, 1, 2, 3, 4, 5])}
-                </select>
-
-                <label className="block text-sm text-(--color-text)">Εξαγωγή σε Χρηματοοικονομικά</label>
-                <select
-                  value={chargeExportedToFinance}
-                  onChange={(e) => setChargeExportedToFinance(e.target.value)}
-                  className="w-full rounded border border-(--color-border) bg-transparent px-3 py-2 text-sm"
-                >
-                  <option value="">Όλοι</option>
-                  <option value="true">Ναι</option>
-                  <option value="false">Όχι</option>
-                </select>
-
-                <p className="text-sm text-(--color-text-muted)">Η περίοδος χρησιμοποιείται για τον υπολογισμό Μήνα/Έτους.</p>
+              <div className="mt-3 border-t pt-3">
+                <label className="block text-sm" style={{ color: 'var(--color-text)' }}>Αποθήκευση ρυθμίσεων ως</label>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  <input value={saveName} onChange={(e) => setSaveName(e.target.value)} placeholder="Τίτλος αναφοράς" className="w-full rounded border px-3 py-2 text-sm" style={{ borderColor: 'var(--color-border)' }} />
+                  <CustomButton title="Αποθήκευση" backgroundColor="var(--color-surface)" width={120} onClick={() => handleSavePayload(buildCurrentPayload())} />
+                </div>
               </div>
-            )}
-
-            <div className="mt-4 flex justify-end gap-3">
-              <CustomButton title="Ακύρωση" backgroundColor="var(--color-surface)" width={120} onClick={closeModal} />
-              <CustomButton title="Δημιουργία" backgroundColor="var(--color-primary)" width={120} onClick={createReport} />
-            </div>
           </div>
         </div>
       )}
 
-      <div className="overflow-hidden rounded-[14px] border border-(--color-border)">
-        <div className="w-full">
-          <DataTable<any>
-            rows={tableItems}
-            columns={columnsByField[selectedField] ?? []}
-            rowKey="id"
-            showFilter={false}
-          />
+        <div className="overflow-hidden rounded-[14px] border border-(--color-border)">
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '12px 16px', borderBottom: '1px solid var(--color-border)', backgroundColor: 'var(--color-surface)'}}>
+              <div>
+                {effectiveTotal > 0 && hasSelectedField && (
+                  <div className="text-lg font-semibold" style={{ color: 'var(--color-text-heading)' }}>{selectedField}</div>
+                )}
+              </div>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <label style={{ color: 'var(--color-text-muted)', fontSize: 12 }}>Αποθηκευμένες Ρυθμίσεις</label>
+                <select value={''} onChange={(e) => handleSelectSaved(e.target.value)} className="rounded border px-2 py-1 text-sm" style={{ borderColor: 'var(--color-border)' }}>
+                  <option value="">-- Φορτώστε --</option>
+                  {savedReports.map((s) => (
+                    <option key={s.name} value={s.name}>{s.name}</option>
+                  ))}
+                </select>
+                <select onChange={(e) => handleDeleteSaved(e.target.value)} className="rounded border px-2 py-1 text-sm" style={{ borderColor: 'var(--color-border)' }}>
+                  <option value="">-- Διαγραφή --</option>
+                  {savedReports.map((s) => (
+                    <option key={s.name} value={s.name}>{s.name}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+            <DataTable<any>
+              rows={hasSelectedField ? tableItems : []}
+              columns={hasSelectedField ? (columnsByField[selectedField] ?? []) : []}
+              rowKey="id"
+              showFilter={false}
+            />
         </div>
 
         <div className="flex items-center justify-between px-4 py-3">
-          <div className="text-sm text-(--color-text-muted)">{loadingResults ? 'Φόρτωση...' : `${totalItems ?? tableItems.length} εγγραφές`}</div>
+          <div className="text-sm text-(--color-text-muted)">{loadingResults ? 'Φόρτωση...' : (hasSelectedField ? String(totalItems ?? tableItems.length) + ' εγγραφές' : '0 εγγραφές')}</div>
           <div className="flex items-center gap-2">
             <button
               className="rounded border px-3 py-1 text-sm"
               onClick={() => lastPayload && fetchResults(Math.max(1, page - 1), pageSize, lastPayload)}
               disabled={loadingResults || page <= 1}
             >Προηγούμενη</button>
-            <div className="text-sm">{page}{totalItems ? ` / ${Math.max(1, Math.ceil(totalItems / pageSize))}` : ''}</div>
-            <button
-              className="rounded border px-3 py-1 text-sm"
-              onClick={() => lastPayload && fetchResults(page + 1, pageSize, lastPayload)}
-              disabled={loadingResults || (typeof totalItems === 'number' ? page >= Math.ceil(totalItems / pageSize) : tableItems.length < pageSize)}
-            >Επόμενη</button>
+            <div className="text-sm">{page}{totalItems ? ' / ' + String(Math.max(1, Math.ceil(totalItems / pageSize))) : ''}</div>
+              <button
+                className="rounded border px-3 py-1 text-sm"
+                onClick={() => lastPayload && fetchResults(page + 1, pageSize, lastPayload)}
+                disabled={loadingResults || (typeof totalItems === 'number' ? page >= Math.ceil(totalItems / pageSize) : tableItems.length < pageSize)}
+              >Επόμενη</button>
+            </div>
           </div>
         </div>
-      </div>
-    </div>
   );
 }

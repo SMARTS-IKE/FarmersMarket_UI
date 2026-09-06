@@ -31,9 +31,9 @@ export default function UserPage() {
   if (!userId) {
     // Prefer authenticated user's id when available (self-profile)
     try {
-      const authUser = useAuthStore.getState().user;
-      if (authUser && authUser.userId) {
-        userId = String(authUser.userId);
+      const authStateUser = useAuthStore.getState().user;
+      if (authStateUser && authStateUser.userId) {
+        userId = String(authStateUser.userId);
       }
     } catch (e) {
       // ignore
@@ -48,7 +48,13 @@ export default function UserPage() {
       // ignore and keep userId as empty
     }
   }
-  const { data: user, isLoading, isError, error } = useUserQuery(userId);
+  // Determine sellerId from the loaded user or the authenticated session (if present)
+  const authUser = useAuthStore.getState().user;
+
+  // Determine if we're in user-facing mode: authenticated user viewing their own profile
+  const isUserMode = !!authUser && !!authUser.sellerId && (String(userId) === String(authUser.userId ?? authUser.id ?? '') || !params['id'] && !params['userId']);
+  const userQueryId = isUserMode ? '' : userId;
+  const { data: user, isLoading, isError, error } = useUserQuery(userQueryId);
   const updateUserMutation = useUpdateUserMutation(userId);
   const assignRoleMutation = useAssignUserRoleMutation(userId);
   const removeRoleMutation = useRemoveUserRoleMutation(userId);
@@ -69,7 +75,6 @@ export default function UserPage() {
   const { UserStatus, UserStatusLabels, SellerTypeLabels } = useGlobalEnums();
 
   // Determine sellerId from the loaded user or the authenticated session (if present)
-  const authUser = useAuthStore.getState().user;
   const explicitSellerId = (user as any)?.sellerId ?? authUser?.sellerId ?? '';
   const [resolvedSellerId, setResolvedSellerId] = useState<string>('');
 
@@ -279,6 +284,86 @@ export default function UserPage() {
     );
   }
 
+  // If we're in user mode, show seller details instead of the editable user form
+  if (isUserMode) {
+    if (isSellerLoading) {
+      return (
+        <div className="min-h-screen p-6 md:px-10 bg-transparent">
+          <div className="mx-auto max-w-2xl">
+            <div className="rounded-lg border border-(--color-border) bg-(--color-surface) p-6">
+              <h1 className="text-2xl font-semibold text-(--color-text-heading) mb-2">Στοιχεία Πωλητή</h1>
+              <p className="text-sm text-(--color-text-muted)">Φόρτωση στοιχείων πωλητή...</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    if (!seller) {
+      return (
+        <div className="min-h-screen p-6 md:px-10 bg-transparent">
+          <div className="mx-auto max-w-2xl">
+            <div className="rounded-lg border border-(--color-danger-border) bg-danger-subtle p-6">
+              <h1 className="text-2xl font-semibold text-(--color-text-heading) mb-2">Στοιχεία Πωλητή</h1>
+              <p className="text-sm text-(--color-danger)">Δεν βρέθηκαν στοιχεία πωλητή.</p>
+            </div>
+          </div>
+        </div>
+      );
+    }
+
+    return (
+      <div className="min-h-screen p-6 md:px-10 bg-transparent">
+        <div className="mx-auto max-w-5xl">
+          <div className="mb-8">
+            <h2 className="text-2xl font-semibold text-(--color-text-heading) mb-2">Στοιχεία Πωλητή</h2>
+            <p className="text-sm text-(--color-text-muted)">Προβολή στοιχείων πωλητή</p>
+          </div>
+
+          <div style={{maxHeight: '70vh', overflowY: 'auto'}}>
+            <div className="flex flex-col gap-4">
+              <div className="grid grid-cols-2 gap-3 mt-2">
+                <div className="flex flex-col gap-1">
+                  <CustomInputField type="TEXT" label="Όνομα" value={seller.firstName ?? ''} disabled width="100%" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <CustomInputField type="TEXT" label="Επώνυμο" value={seller.lastName ?? ''} disabled width="100%" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <CustomInputField type="TEXT" label="Τύπος Πωλητή" value={SellerTypeLabels[Number(seller?.sellerType ?? '')] ?? String(seller?.sellerType ?? '')} disabled width="100%" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <CustomInputField type="TEXT" label="ΑΦΜ" value={seller?.afm ?? ''} disabled width="100%" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <CustomInputField type="TEXT" label="Email" value={seller?.email ?? ''} disabled width="100%" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <CustomInputField type="TEXT" label="Τηλέφωνο" value={seller?.phone ?? ''} disabled width="100%" />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div className="flex flex-col gap-1">
+                  <CustomInputField type="TEXT" label="Διεύθυνση" value={seller?.address ?? ''} disabled width="100%" />
+                </div>
+                <div className="flex flex-col gap-1">
+                  <CustomInputField type="TEXT" label="Ρόλος χρήστη" value={currentRoleTitle} disabled width="100%" />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   if (isError || !user) {
     return (
       <div className="min-h-screen p-6 md:px-10 bg-transparent">
@@ -286,6 +371,13 @@ export default function UserPage() {
           <div className="rounded-lg border border-(--color-danger-border) bg-danger-subtle p-6">
             <h1 className="text-2xl font-semibold text-(--color-text-heading) mb-2">Στοιχεία χρήστη</h1>
             <p className="text-sm text-(--color-danger)">{error?.message ?? 'Η φόρτωση των στοιχείων χρήστη απέτυχε.'}</p>
+            {/* Show HTTP status and details when available to aid debugging */}
+            { (error as any)?.status && (
+              <p className="text-xs text-(--color-danger) mt-2">HTTP {(error as any).status}</p>
+            ) }
+            { (error as any)?.body && typeof (error as any).body === 'object' && (
+              <pre className="text-xs text-(--color-danger) mt-2 whitespace-pre-wrap">{JSON.stringify((error as any).body, null, 2)}</pre>
+            ) }
           </div>
         </div>
       </div>

@@ -23,47 +23,47 @@ export const RequestStatusLabels: Record<number, string> = {
 };
 
 export enum LicenseCategory {
-  Category0 = 0,
-  Category1 = 1,
-  Category2 = 2,
+  Professional = 0,
+  Producer = 1,
+  Unknown = 2,
 }
 
 export const DefaultLicenseCategoryLabels: Record<number, string> = {
-  [LicenseCategory.Category0]: 'Value-0',
-  [LicenseCategory.Category1]: 'Value-1',
-  [LicenseCategory.Category2]: 'Value-2',
+  [LicenseCategory.Professional]: 'Επαγγελματική',
+  [LicenseCategory.Producer]: 'Παραγωγική',
+  [LicenseCategory.Unknown]: 'Άγνωστη',
 };
 
 export enum LicenseStatus {
-  Status0 = 0,
-  Status1 = 1,
-  Status2 = 2,
-  Status3 = 3,
+  Active = 0,
+  Expired = 1,
+  Suspended = 2,
+  Revoked = 3,
 }
 
 export const DefaultLicenseStatusLabels: Record<number, string> = {
-  [LicenseStatus.Status0]: 'Value-0',
-  [LicenseStatus.Status1]: 'Value-1',
-  [LicenseStatus.Status2]: 'Value-2',
-  [LicenseStatus.Status3]: 'Value-3',
+  [LicenseStatus.Active]: 'Ενεργή',
+  [LicenseStatus.Expired]: 'Ληγμένη',
+  [LicenseStatus.Suspended]: 'Ανασταλμένη',
+  [LicenseStatus.Revoked]: 'Ανακληθείσα',
 };
 
 export enum ChargeStatus {
-  C0 = 0,
-  C1 = 1,
-  C2 = 2,
-  C3 = 3,
-  C4 = 4,
-  C5 = 5,
+  Pending = 0,
+  Confirmed = 1,
+  Cancelled = 2,
+  Exported = 3,
+  Paid = 4,
+  Waived = 5,
 }
 
 export const DefaultChargeStatusLabels: Record<number, string> = {
-  [ChargeStatus.C0]: 'Value-0',
-  [ChargeStatus.C1]: 'Value-1',
-  [ChargeStatus.C2]: 'Value-2',
-  [ChargeStatus.C3]: 'Value-3',
-  [ChargeStatus.C4]: 'Value-4',
-  [ChargeStatus.C5]: 'Value-5',
+  [ChargeStatus.Pending]: 'Εκκρεμής',
+  [ChargeStatus.Confirmed]: 'Επιβεβαιωμένη',
+  [ChargeStatus.Cancelled]: 'Ακυρωμένη',
+  [ChargeStatus.Exported]: 'Εξαχθείσα',
+  [ChargeStatus.Paid]: 'Πληρωμένη',
+  [ChargeStatus.Waived]: 'Απαλλαγμένη',
 };
 
 export enum UserStatus {
@@ -151,7 +151,9 @@ export const GlobalEnumsContext = createContext<GlobalEnumsShape>({
   UserRoleLabels,
   CheckInMethod,
   CheckInMethodLabels,
-  refresh: async () => {},
+  refresh: async () => { },
+  ExportFormat: undefined,
+  ExportFormatLabels: undefined
 });
 
 export const GlobalEnumsProvider = ({ children }: { children: ReactNode }) => {

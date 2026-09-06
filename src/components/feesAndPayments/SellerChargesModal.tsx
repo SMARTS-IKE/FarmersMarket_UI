@@ -3,9 +3,11 @@ import { useSellerQuery } from "../../queries/sellerQueries";
 import { Typography } from "@mui/material";
 import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Box } from "@mui/material";
 import FilterBar from "../../shared/components/FilterBar";
+import { useGlobalEnums } from '../../shared/mappings/GlobalEnums';
 import DataTable from "../../shared/components/DataTable";
 import { useMarketsQuery } from "../../queries/marketQueries";
 import { http } from "../../lib/http";
+import { useAuthStore } from "../../store/authStore";
 import { useQuery } from "@tanstack/react-query";
 
 interface Props {
@@ -55,6 +57,8 @@ export default function SellerChargesModal({ open, sellerId, initialFilters, onC
   });
 
   const { data: seller } = useSellerQuery(sellerId ? String(sellerId) : "");
+  const { ExportFormat, ExportFormatLabels } = useGlobalEnums();
+  const [exportFormat, setExportFormat] = useState<number>(ExportFormat?.XLSX ?? 1);
 
   const formatDateToDDMMYYYY = (iso?: string | null) => {
     if (!iso) return "";
@@ -92,14 +96,22 @@ export default function SellerChargesModal({ open, sellerId, initialFilters, onC
         <Box>
           <DataTable
             rows={(data && (data.items ?? [])) || []}
-            columns={[
-              { key: 'chargeDate', label: 'Ημερομηνία', render: (r:any) => formatDateToDDMMYYYY(r.chargeDate) },
-              { key: 'marketName', label: 'Αγορά' },
-              { key: 'amount', label: 'Ποσό  €', render: (r:any) => `${Number(r.amount ?? 0).toFixed(2)}` },
-              { key: 'feeRuleName', label: 'Κανόνας Χρέωσης' },
-              { key: 'status', label: 'Κατάσταση' },
-              { key: 'notes', label: 'Σημειώσεις' }
-            ] as any}
+            columns={(() => {
+              const { ChargeStatusLabels } = useGlobalEnums();
+              return [
+                { key: 'chargeDate', label: 'Ημερομηνία', render: (r:any) => formatDateToDDMMYYYY(r.chargeDate) },
+                { key: 'marketName', label: 'Αγορά' },
+                { key: 'amount', label: 'Ποσό  €', render: (r:any) => `${Number(r.amount ?? 0).toFixed(2)}` },
+                { key: 'feeRuleName', label: 'Κανόνας Χρέωσης' },
+                { key: 'status', label: 'Κατάσταση', render: (r:any) => {
+                  const statusId = r.status ?? r.statusId ?? r.chargeStatus ?? r.chargeStatusId ?? null;
+                  if (statusId == null || statusId === '') return '—';
+                  const idNum = Number(statusId);
+                  return ChargeStatusLabels && ChargeStatusLabels[idNum] ? ChargeStatusLabels[idNum] : String(statusId);
+                } },
+                { key: 'notes', label: 'Σημειώσεις' }
+              ];
+            })() as any}
             rowKey="id"
             hidePagination={false}
             showFilter={false}
@@ -108,6 +120,62 @@ export default function SellerChargesModal({ open, sellerId, initialFilters, onC
         </Box>
       </DialogContent>
       <DialogActions>
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginRight: 'auto', paddingLeft: 12 }}>
+          <select
+            value={String(exportFormat)}
+            onChange={(e) => setExportFormat(Number(e.target.value))}
+            aria-label="Τύπος εξαγωγής"
+            style={{ padding: '8px 10px', borderRadius: 6, border: '1px solid var(--color-border)', background: 'var(--color-surface)' }}
+          >
+            {ExportFormatLabels && Object.keys(ExportFormatLabels).map((k) => (
+              <option key={k} value={k}>{(ExportFormatLabels as any)[k]}</option>
+            ))}
+          </select>
+          <Button
+            onClick={async () => {
+              try {
+                const qs: string[] = [];
+                qs.push(`SellerId=${encodeURIComponent(String(sellerId))}`);
+                if (filters?.marketId) qs.push(`marketId=${encodeURIComponent(String(filters.marketId))}`);
+                if (filters?.month) qs.push(`month=${filters.month}`);
+                if (filters?.year) qs.push(`year=${filters.year}`);
+                // Request a large page size for exports
+                qs.push('page=1');
+                qs.push('pageSize=10000');
+                const qsStr = qs.join('&');
+                const formatLabel = ExportFormatLabels ? (ExportFormatLabels as any)[String(exportFormat)] : 'xlsx';
+                const formatParam = encodeURIComponent(String(formatLabel).toLowerCase());
+                const BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
+                const requestUrl = `${BASE_URL}/charges?${qsStr}${qsStr ? '&' : ''}format=${formatParam}`;
+                const token = useAuthStore.getState().token;
+                const resp = await fetch(requestUrl, { method: 'GET', headers: { ...(token ? { Authorization: `Bearer ${token}` } : {}) } });
+                if (!resp.ok) {
+                  const txt = await resp.text().catch(() => 'Export failed');
+                  throw new Error(txt || 'Export failed');
+                }
+                const blob = await resp.blob();
+                const disposition = resp.headers.get('Content-Disposition') || '';
+                let filename = `charges.${formatLabel}`;
+                const match = disposition.match(/filename\*=UTF-8''(.+)|filename="?([^";]+)"?/);
+                if (match) filename = decodeURIComponent(match[1] || match[2]);
+                const downloadUrl = window.URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = downloadUrl;
+                a.download = filename;
+                document.body.appendChild(a);
+                a.click();
+                a.remove();
+                window.URL.revokeObjectURL(downloadUrl);
+              } catch (err) {
+                // eslint-disable-next-line no-console
+                console.error('Export failed', err);
+                alert('Η εξαγωγή απέτυχε.');
+              }
+            }}
+          >
+            Εξαγωγή
+          </Button>
+        </div>
         <Button onClick={onClose}>Κλείσιμο</Button>
       </DialogActions>
     </Dialog>

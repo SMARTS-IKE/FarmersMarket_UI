@@ -3,6 +3,7 @@ import { Tab, Tabs, Box, Tooltip } from "@mui/material";
 import CustomButton from "../../../shared/components/CustomButton";
 import { useNavigate } from '@tanstack/react-router';
 import DataTable, { ColumnDef, FilterDef, FilterValues, DropdownItem } from "../../../shared/components/DataTable";
+import { useGlobalEnums } from '../../../shared/mappings/GlobalEnums';
 import type { FeeRule, FeeRuleSearchRequest } from "../../../models/fee";
 import { useFeesQuery } from "../../../queries/feesQueries";
 import { useMarketsQuery } from "../../../queries/marketQueries";
@@ -11,7 +12,8 @@ import LayoutTabsSlot from "../../../shared/components/LayoutTabsSlot";
 import type { Market } from "../../../models/market";
 import ChargesSummary from '../../../components/feesAndPayments/ChargesSummary';
 
-const columns: ColumnDef<FeeRule>[] = [
+// Columns are defined inside the component so we can use `useGlobalEnums`.
+const baseColumns: ColumnDef<FeeRule>[] = [
   {
     key: "marketName",
     label: "Αγορά",
@@ -71,12 +73,14 @@ const columns: ColumnDef<FeeRule>[] = [
 
 export default function AdminFeesPaymentsPage() {
   const [activeTab, setActiveTab] = useState(0);
+  const { ChargeStatusLabels } = useGlobalEnums();
   const [filters, setFilters] = useState<FeeRuleSearchRequest>({
     marketId: "",
     sellerType: "",
     page: 1,
     pageSize: 25,
   });
+  const { ExportFormat, ExportFormatLabels } = useGlobalEnums();
 
   const { data: feesQueryResults } = useFeesQuery(filters);
 
@@ -114,6 +118,24 @@ export default function AdminFeesPaymentsPage() {
     priority: 0,
     legalReference: "",
   }));
+
+  // Create final columns with access to enums
+  const columns: ColumnDef<FeeRule>[] = useMemo(() => {
+    const cols = [...baseColumns];
+    cols.push({
+      key: 'status',
+      label: 'Κατάσταση',
+      filterable: false,
+      render: (row) => {
+        const r: any = row as any;
+        const statusId = r.status ?? r.statusId ?? r.chargeStatus ?? r.chargeStatusId ?? null;
+        if (statusId == null || statusId === '') return '—';
+        const idNum = Number(statusId);
+        return ChargeStatusLabels && ChargeStatusLabels[idNum] ? ChargeStatusLabels[idNum] : String(statusId);
+      }
+    });
+    return cols;
+  }, [ChargeStatusLabels]);
 
   // Fetch markets for the dropdown
   const marketSearchParams = {
@@ -179,6 +201,60 @@ export default function AdminFeesPaymentsPage() {
   };
 
   const navigate = useNavigate();
+  const [exportType, setExportType] = useState<number>(ExportFormat?.CSV ?? 0);
+
+  const handleExport = () => {
+    try {
+      // Build query like list but with large pageSize
+      const params = new URLSearchParams();
+      if (filters.marketId) params.set('MarketId', String(filters.marketId));
+      if (filters.sellerType) params.set('SellerType', String(filters.sellerType));
+      params.set('Page', '1');
+      params.set('PageSize', '10000');
+
+      const formatLabel = ExportFormatLabels ? (ExportFormatLabels as any)[String(exportType)] : undefined;
+      const formatParam = (formatLabel ?? 'xlsx').toLowerCase();
+
+      const token = ((window as any).__fm_token__ ?? null) || (function(){ try { const raw = localStorage.getItem('auth'); if(!raw) return null; const parsed = JSON.parse(raw || '{}'); return parsed.token || null; } catch { return null } })();
+      const BASE_URL = import.meta.env.VITE_API_BASE_URL as string;
+      const qs = params.toString();
+      const sep = qs ? '&' : '';
+      const requestUrl = `${BASE_URL}/fee-rules?${qs}${sep}format=${encodeURIComponent(formatParam)}`;
+
+      fetch(requestUrl, {
+        method: 'GET',
+        headers: {
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        },
+      }).then(async (resp) => {
+        if (!resp.ok) {
+          const txt = await resp.text().catch(() => 'Export failed');
+          throw new Error(txt || 'Export failed');
+        }
+        const blob = await resp.blob();
+        const disposition = resp.headers.get('Content-Disposition') || '';
+        let filename = `fee-rules.${formatParam}`;
+        const match = disposition.match(/filename\*=UTF-8''(.+)|filename="?([^";]+)"?/);
+        if (match) filename = decodeURIComponent(match[1] || match[2]);
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = downloadUrl;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(downloadUrl);
+      }).catch((err) => {
+        // eslint-disable-next-line no-console
+        console.error('Export failed', err);
+        alert('Η εξαγωγή απέτυχε.');
+      });
+    } catch (e) {
+      // eslint-disable-next-line no-console
+      console.error('Export failed', e);
+      alert('Η εξαγωγή απέτυχε.');
+    }
+  };
 
   return (
     <div className="flex h-full w-full flex-col gap-6 text-left overflow-hidden">
@@ -205,7 +281,9 @@ export default function AdminFeesPaymentsPage() {
         {activeTab === 0 && (
           <div className="flex flex-col gap-4">
             <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 1 }}>
-              <CustomButton title="Νέο Τέλος" onClick={() => navigate({ to: '/admin/fees-payments/new' } as any)} />
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <CustomButton title="Νέο Τέλος" onClick={() => navigate({ to: '/admin/fees-payments/new' } as any)} />
+              </div>
             </Box>
 
             <DataTable<FeeRule>
@@ -232,4 +310,3 @@ export default function AdminFeesPaymentsPage() {
     </div>
   );
 }
-    
